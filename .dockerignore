@@ -1,4 +1,10 @@
+.github/
+bin/
 .dockerignore
+.editorconfig
+.gitattributes
+.gitignore
 Dockerfile
 LICENSE
 README.md
+taraxa-indexer
