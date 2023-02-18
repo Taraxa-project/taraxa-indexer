@@ -21,8 +21,8 @@ func (a *ApiHandler) GetAddressDags(ctx echo.Context, address models.AddressFilt
 	var data []models.PaginatedResponse_Data_Item
 	var response models.PaginatedResponse
 	response.Data = data
-	ctx.JSON(http.StatusOK, response)
-	return nil
+	err := ctx.JSON(http.StatusOK, response)
+	return err
 }
 
 // GetAddressPbfts returns all PBFT blocks produced by the selected address
@@ -31,8 +31,8 @@ func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address models.AddressFil
 	var data []models.PaginatedResponse_Data_Item
 	var response models.PaginatedResponse
 	response.Data = data
-	ctx.JSON(http.StatusOK, response)
-	return nil
+	err := ctx.JSON(http.StatusOK, response)
+	return err
 }
 
 // GetAddressTransactions returns all transactions from and to the selected address
@@ -41,8 +41,8 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address models.Add
 	var data []models.PaginatedResponse_Data_Item
 	var response models.PaginatedResponse
 	response.Data = data
-	ctx.JSON(http.StatusOK, response)
-	return nil
+	err := ctx.JSON(http.StatusOK, response)
+	return err
 }
 
 // GetValidators returns all validators for the selected week and the number of PBFT blocks they produced
@@ -51,8 +51,8 @@ func (a *ApiHandler) GetValidators(ctx echo.Context, params models.GetValidators
 	var data []models.PaginatedResponse_Data_Item
 	var response models.PaginatedResponse
 	response.Data = data
-	ctx.JSON(http.StatusOK, response)
-	return nil
+	err := ctx.JSON(http.StatusOK, response)
+	return err
 }
 
 // GetAddressDagTotal returns total number of DAG blocks sent from the selected address
@@ -60,8 +60,8 @@ func (a *ApiHandler) GetAddressDagTotal(ctx echo.Context, address models.Address
 	fmt.Println("GetAddressDagTotal")
 	var count models.Count
 	count.Total = 0
-	ctx.JSON(http.StatusOK, count)
-	return nil
+	err := ctx.JSON(http.StatusOK, count)
+	return err
 }
 
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
@@ -69,8 +69,8 @@ func (a *ApiHandler) GetAddressPbftTotal(ctx echo.Context, address models.Addres
 	fmt.Println("GetAddressPbftTotal")
 	var count models.Count
 	count.Total = 0
-	ctx.JSON(http.StatusOK, count)
-	return nil
+	err := ctx.JSON(http.StatusOK, count)
+	return err
 }
 
 // GetValidatorsTotal returns total number of PBFT blocks produced in selected week
@@ -78,6 +78,6 @@ func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params models.GetValid
 	fmt.Println("GetValidatorsTotal")
 	var count models.Count
 	count.Total = 0
-	ctx.JSON(http.StatusOK, count)
-	return nil
+	err := ctx.JSON(http.StatusOK, count)
+	return err
 }
