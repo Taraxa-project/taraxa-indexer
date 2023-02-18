@@ -23,25 +23,25 @@ import (
 type ServerInterface interface {
 	// Returns all DAG blocks
 	// (GET /address/{address}/dags)
-	GetAddressDags(ctx echo.Context, address AddressFilter) error
+	GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error
+	// Returns total number of DAG blocks
+	// (GET /address/{address}/dags/total)
+	GetAddressDagTotal(ctx echo.Context, address AddressFilter) error
 	// Returns all PBFT blocks
 	// (GET /address/{address}/pbfts)
-	GetAddressPbfts(ctx echo.Context, address AddressFilter) error
-	// Returns total number of DAG blocks
-	// (GET /address/{address}/total-dags)
-	GetAddressTotalDagBlocks(ctx echo.Context, address AddressFilter) error
+	GetAddressPbfts(ctx echo.Context, address AddressFilter, params GetAddressPbftsParams) error
 	// Returns total number of PBFT blocks
-	// (GET /address/{address}/total-pbfts)
-	GetAddressTotalPbftBlocks(ctx echo.Context, address AddressFilter) error
+	// (GET /address/{address}/pbfts/total)
+	GetAddressPbftTotal(ctx echo.Context, address AddressFilter) error
 	// Returns all transactions
 	// (GET /address/{address}/transactions)
-	GetAddressTransactions(ctx echo.Context, address AddressFilter) error
+	GetAddressTransactions(ctx echo.Context, address AddressFilter, params GetAddressTransactionsParams) error
 	// Returns all validators
 	// (GET /validators)
 	GetValidators(ctx echo.Context, params GetValidatorsParams) error
 	// Returns total number of PBFT blocks
 	// (GET /validators/total)
-	GetValidatorsTotalPbftBlocks(ctx echo.Context, params GetValidatorsTotalPbftBlocksParams) error
+	GetValidatorsTotal(ctx echo.Context, params GetValidatorsTotalParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -60,8 +60,33 @@ func (w *ServerInterfaceWrapper) GetAddressDags(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter address: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAddressDagsParams
+	// ------------- Optional query parameter "pagination" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "pagination", ctx.QueryParams(), &params.Pagination)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pagination: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetAddressDags(ctx, address)
+	err = w.Handler.GetAddressDags(ctx, address, params)
+	return err
+}
+
+// GetAddressDagTotal converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAddressDagTotal(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "address" -------------
+	var address AddressFilter
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "address", runtime.ParamLocationPath, ctx.Param("address"), &address)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter address: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetAddressDagTotal(ctx, address)
 	return err
 }
 
@@ -76,13 +101,22 @@ func (w *ServerInterfaceWrapper) GetAddressPbfts(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter address: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAddressPbftsParams
+	// ------------- Optional query parameter "pagination" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "pagination", ctx.QueryParams(), &params.Pagination)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pagination: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetAddressPbfts(ctx, address)
+	err = w.Handler.GetAddressPbfts(ctx, address, params)
 	return err
 }
 
-// GetAddressTotalDagBlocks converts echo context to params.
-func (w *ServerInterfaceWrapper) GetAddressTotalDagBlocks(ctx echo.Context) error {
+// GetAddressPbftTotal converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAddressPbftTotal(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "address" -------------
 	var address AddressFilter
@@ -93,23 +127,7 @@ func (w *ServerInterfaceWrapper) GetAddressTotalDagBlocks(ctx echo.Context) erro
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetAddressTotalDagBlocks(ctx, address)
-	return err
-}
-
-// GetAddressTotalPbftBlocks converts echo context to params.
-func (w *ServerInterfaceWrapper) GetAddressTotalPbftBlocks(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "address" -------------
-	var address AddressFilter
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "address", runtime.ParamLocationPath, ctx.Param("address"), &address)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter address: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetAddressTotalPbftBlocks(ctx, address)
+	err = w.Handler.GetAddressPbftTotal(ctx, address)
 	return err
 }
 
@@ -124,8 +142,17 @@ func (w *ServerInterfaceWrapper) GetAddressTransactions(ctx echo.Context) error 
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter address: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAddressTransactionsParams
+	// ------------- Optional query parameter "pagination" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "pagination", ctx.QueryParams(), &params.Pagination)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pagination: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetAddressTransactions(ctx, address)
+	err = w.Handler.GetAddressTransactions(ctx, address, params)
 	return err
 }
 
@@ -135,11 +162,18 @@ func (w *ServerInterfaceWrapper) GetValidators(ctx echo.Context) error {
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetValidatorsParams
-	// ------------- Required query parameter "filter" -------------
+	// ------------- Required query parameter "week" -------------
 
-	err = runtime.BindQueryParameter("form", true, true, "filter", ctx.QueryParams(), &params.Filter)
+	err = runtime.BindQueryParameter("form", true, true, "week", ctx.QueryParams(), &params.Week)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter filter: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter week: %s", err))
+	}
+
+	// ------------- Optional query parameter "pagination" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "pagination", ctx.QueryParams(), &params.Pagination)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter pagination: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
@@ -147,12 +181,12 @@ func (w *ServerInterfaceWrapper) GetValidators(ctx echo.Context) error {
 	return err
 }
 
-// GetValidatorsTotalPbftBlocks converts echo context to params.
-func (w *ServerInterfaceWrapper) GetValidatorsTotalPbftBlocks(ctx echo.Context) error {
+// GetValidatorsTotal converts echo context to params.
+func (w *ServerInterfaceWrapper) GetValidatorsTotal(ctx echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetValidatorsTotalPbftBlocksParams
+	var params GetValidatorsTotalParams
 	// ------------- Required query parameter "filter" -------------
 
 	err = runtime.BindQueryParameter("form", true, true, "filter", ctx.QueryParams(), &params.Filter)
@@ -161,7 +195,7 @@ func (w *ServerInterfaceWrapper) GetValidatorsTotalPbftBlocks(ctx echo.Context) 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetValidatorsTotalPbftBlocks(ctx, params)
+	err = w.Handler.GetValidatorsTotal(ctx, params)
 	return err
 }
 
@@ -194,40 +228,41 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/address/:address/dags", wrapper.GetAddressDags)
+	router.GET(baseURL+"/address/:address/dags/total", wrapper.GetAddressDagTotal)
 	router.GET(baseURL+"/address/:address/pbfts", wrapper.GetAddressPbfts)
-	router.GET(baseURL+"/address/:address/total-dags", wrapper.GetAddressTotalDagBlocks)
-	router.GET(baseURL+"/address/:address/total-pbfts", wrapper.GetAddressTotalPbftBlocks)
+	router.GET(baseURL+"/address/:address/pbfts/total", wrapper.GetAddressPbftTotal)
 	router.GET(baseURL+"/address/:address/transactions", wrapper.GetAddressTransactions)
 	router.GET(baseURL+"/validators", wrapper.GetValidators)
-	router.GET(baseURL+"/validators/total", wrapper.GetValidatorsTotalPbftBlocks)
+	router.GET(baseURL+"/validators/total", wrapper.GetValidatorsTotal)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+yYTXPbNhPHvwoGz3Nk9BpJtk616yZxZ9J6WiU9uD6A5FJCTAIMsFSk8fC7dwBQIiVR",
-	"FmXZnum4OnHExX+xu79dkHyggUxSKUCgpuMHqoMZJMxeXoShAm0vYcGSNAY6pp1Fp+GPehSXqVmjUXEx",
-	"pbm3kvzAYwT1rMJT2JDrDkfD4Vlv1Bl4NJIqYUjHlAscvi9Xc4EwBWWW/ywzgUYgVTIFhRxs2CiRxebi",
-	"oETuUQXfM64gpOPbYuHd2k763yBA4+mKTXf9MLf7/yuI6Jj+r12WpF3Uo20CzD06Y3p2yPSTsck9GsMc",
-	"mu3eo6iY0CxALsU6F8cGbfe2clsj6dk465LyqYiqSsMg7PWi9+e9Yb/fHfVh1B0F/tnQD8J+r9cbjQDg",
-	"3I8GoT/qQzQ6CwdRN4zOBudnbACd98NRVEfJjR/ha2VfZInvGH/d9Bd+j8r/pDQ9JT1+LIP7hhFHSiYH",
-	"ZYsBlHt0yvSN4gFsUVJX5CnTX7RJyUHLY8rJRQiLhrFpZJhtzk1UGaxNfSljYMIWXh6RhDmLs8MZqMfC",
-	"1WYVR5F/63+lW2aukm7HzDqkOni+spiHDKWqQac8QRqGmPoRPrkDVu6qMnU7/gvgvjyCNrf8A8AiHELE",
-	"shjpuLt5gPR71KMJFzzJEntzt/xLYGpDotfp9R9TcfcPBGc3VojvBpVbRCNLUyAFssBmEBLGYzpe/fUT",
-	"MsUWrMVN1QVLjMLE/kUmwAwPmTLmM8RUj9vt0jz3aAg6UDx1Q4JOZkCKpdcGKVBEszlowuKY3Fx+mJBL",
-	"Q5z2yNXFx+KaMBGSyqzRRAqCpVAwY1xYI1ikUhsxQS5urq2ZTImMCM4YkpAhc1cBE8QHkmkIt7R+WaSx",
-	"VHYQxjwAoW3jFDF/vp7sxJpwfFdYtqSatm13cowrOSoCNR0DSrs8dFudVsfYyhQESzkd0779y6Mpw5ll",
-	"ql2A2X4oLvJ2yKb21hTQoVLN7R+AmRIulSZ7vsueBoHEX9ooNcQQIISkUPxbULsFxYzGdUjH9CNg0VhX",
-	"xpnZj2IJIChNx7fbPgtTgpJEtjWIv7Si3Nw1oZTIlH1WAuoGnOvohv1etGCe3xkhnUqhXQ/2Op0Vx+Am",
-	"AUvTmAc2tvY37U6pZr7M85btjq1wya9//v4bce1DbHtwwcWUMBJzjQY1k31LHOwUwQzPfWWwrorG307y",
-	"FwGL1C0ApaQy5ua8yJKEqeXeypvJZ3m5XT+T35l1NVyZwdcMLNujRVCpkmEWQPgkum6syzeKl32iPJmv",
-	"I2vxbIhV/B7BmH25eddogllT4h5JTbDHNNJ+4iZG9YpNL1c7f5PoueebY9gziX6kImvyIqleFL39ezia",
-	"wmbzbtthbb89EvUBFM0Q+I/F01k8tiwvAuMTZ2LlqbbR8Vtd4Magee5F+QQEq67fKH/VDxgnn8abpXlh",
-	"/LZZ2MvcfPWa3Yyv0nw3BPMq6XCbwZ72wxks1z1Yj9/XckMHqDPv23uQ+56BWpbMOYsnI1d5sT+dN46Q",
-	"HPx0UX78yNfv5EwptnwEQ3vfJLys0XPSNK/WZcVSpVjbOLXXX7lPP0O52KTsEDlHHp//TpBe9eB83WNx",
-	"EysjBGpeX7vPjAsBSATgD6nud76/cPdxpZU4u1b129O21gQ0NtFCZ/eo1hXMm0iF1qyqdJf/EwAA//+j",
-	"w65NPBsAAA==",
+	"H4sIAAAAAAAC/+xZT3PbthP9Khj8fkfWku3W6ehUp24SdyaJJ1WSQ+rDilxJiEmAAZaKNBl+9w4ASiQl",
+	"iiJtxdNm7EsYarHYP+89rKBvPFRJqiRKMnz0jZtwjgm4x8so0mjcIy4hSWPkIz5cDjv+8YDTKrVrDGkh",
+	"ZzwP1i5fiJhQH9XxDGvuTi+eXVz8evZs+EvAp0onQHzEhaSLn8vVQhLOUNvlv6tMknWQapWiJoEubVIE",
+	"sX046CIPuMYvmdAY8dGnYuHtxk5NPmNIdqcrmO3uAz76/2uc8hH/36BsyaDox8AmmAd8DmZ+yPSVtckD",
+	"HuMCu0UfcNIgDYQklNzUom/SLrb1tg0uA5dnU1FeFVndBw19UHIDMyGBMHqHJlXS4G4rIiCw/wrCxL1Q",
+	"Et9O+ehTe81tW/Og3eZmMqWDRuOyagdtP0AsIiCleX6bb9IFrWFls0UZdYXKHMwbXLquRziFLCY+Ip3h",
+	"xulEqRjBhsQNgaaujjcMKpkZ9AaW68na1zoAn18ZehOuin4LJUvFqbc7Fomop30+rAd4fsYDnsBSJFnC",
+	"R6fDYcATIYv/NVGpR33yppgtSh5JIWSWTHxVHlciin17aUSVGA8ozyRW4V3HjKdaJQfdFodkHvAZmBst",
+	"QtxSsiYhmoF5bzDqYNmnnUJGuOyYmyGgrH627yM8qR5FWECcHa5AMyx8b9Z5FPV3+6/9lpWrlNtjZpNS",
+	"E3hKpdyFTjnldEwxnUzp3gxYb1d10xTxR8S7faL1FfGuplmnTZLVKlIrBF1zcTY8O2/z4j8/kJwLrHC+",
+	"m1TuIDp1aAqVJAhdBTEBEfPR+tVvBBqWcCJs1yUk1sPYvWJjBIuHTFvzOVFqRoNBaZ4HPEITapF6keDj",
+	"ObJi6bWFFGpmYIGGQRyzm+cvxuy5RZwJ2NXly+KZgYxYRWsMU5JR6Sicg5DOCJepMtaZZJc3185MpUxN",
+	"Gc2BmD2z/FMIkk2QZQajLV9/LNNYaSeEsQixmEeKnF9fj3dyTQT9VFieKD0bOHYKiis1KhK1jEFtfB1O",
+	"T4YnQ2urUpSQCj7i5+5VwFOgucPUoADm4FvxkA8imLmPZlickNXavkPKtPSltNWb+OoZlMQmK5elwRhD",
+	"wogVHv+W3IWg3Yl8HfERf4lUEOvKbmbj0ZAgoTZu5KrvWZgyUmzqqMEmK+dU2E9tKiVkSp6VAPUC5xnd",
+	"ke8FBXM7itWDKWeLMoQvGepVGUO6MeFdt92ZWPL81qbgx1XXjrPhcM0g9BoEaRqL0K0afDb+fCy3gzju",
+	"MMDujsZ24+PNxre5+9um6CX786+3b5iXCOYkQEghZwxYLAxZOlmEOVbhDtDsAbEPam6rQty2e/de4jL1",
+	"C1Brpa25PROzJAG92otuq+6OE582341v7bo93Blsht9WBjkr5kcim2ifJFv5NC7m5X8tpx6K7La9/Mna",
+	"B3G2xC29SLWKshAjNlX6u2Jufww98GeHi27i7c7B7Rzvo+A3bssnCf8RJdxfXRxFw3vi7WgyXtm3L4/u",
+	"KeSNmbaoRzu1ntT8wWretyHfRc7vh8PKRUk3Wa8u8COE/c5Cqj/4ql+GnuT9h5T32qXzUVS+Dr/vTLFt",
+	"vO/l1WJ9DdSNQ6X5bgpfEe88pea4R2JojquNzjRT7EMZ0AFmfbT7NdNqC9PFJcz9SFW5dnpi1AMYVftp",
+	"po1P7tcai5wSbMekxaIKsDUpKqjb5sUxRx0h63Q5RIFOE053HniL4zDhPzXbPO7kUgeTdYR60dy71yCk",
+	"RGIS6avSdzvXm8LfXZ4k3u6kerW77WuMhrr4Im/X6usKF11cRc6s6uk2/ycAAP//hrZSGD8hAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

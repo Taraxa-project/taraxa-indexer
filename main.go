@@ -1,27 +1,32 @@
 package main
 
 import (
-	"net/http"
+	"fmt"
 	"os"
 
+	"github.com/Taraxa-project/taraxa-indexer/api"
+
+	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
+	}
+
+	swagger.Servers = nil
 
 	e := echo.New()
 
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	e.Use(echomiddleware.Logger())
+	e.Use(middleware.OapiRequestValidator(swagger))
 
-	e.GET("/", func(c echo.Context) error {
-		return c.HTML(http.StatusOK, "Hello, Indexer!")
-	})
-
-	e.GET("/ping", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
-	})
+	apiHandler := api.NewApiHandler()
+	api.RegisterHandlers(e, apiHandler)
 
 	httpPort := os.Getenv("HTTP_PORT")
 	if httpPort == "" {

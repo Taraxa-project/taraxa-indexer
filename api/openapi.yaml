@@ -30,13 +30,19 @@ paths:
         Returns all validators for the selected week and the number of PBFT blocks they produced
       operationId: "getValidators"
       parameters:
-        - name: filter
+        - name: week
           in: query
           description: |
             Week to filter by
           required: true
           schema:
             $ref: "#/components/schemas/WeekFilter"
+        - name: pagination
+          in: query
+          description: |
+            Pagination
+          schema:
+            $ref: "#/components/schemas/PaginationFilter"
       responses:
         "200":
           description: |
@@ -44,9 +50,13 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Validator"
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                properties:
+                  data:
+                    items:
+                      oneOf:
+                        - $ref: "#/components/schemas/Validator"
         default:
           description: |
             Unexpected error
@@ -57,7 +67,7 @@ paths:
       summary: "Returns total number of PBFT blocks"
       description: |
         Returns total number of PBFT blocks produced in selected week
-      operationId: "getValidatorsTotalPbftBlocks"
+      operationId: "getValidatorsTotal"
       parameters:
         - name: filter
           in: query
@@ -77,14 +87,14 @@ paths:
         default:
           description: |
             Unexpected error
-  /address/{address}/total-pbfts:
+  /address/{address}/pbfts/total:
     get:
       tags:
         - Address
       summary: "Returns total number of PBFT blocks"
       description: |
         Returns total number of PBFT blocks produced for the selected address
-      operationId: "getAddressTotalPbftBlocks"
+      operationId: "getAddressPbftTotal"
       parameters:
         - name: address
           in: path
@@ -104,14 +114,14 @@ paths:
         default:
           description: |
             Unexpected error
-  /address/{address}/total-dags:
+  /address/{address}/dags/total:
     get:
       tags:
         - Address
       summary: "Returns total number of DAG blocks"
       description: |
         Returns total number of DAG blocks sent from the selected address
-      operationId: "getAddressTotalDagBlocks"
+      operationId: "getAddressDagTotal"
       parameters:
         - name: address
           in: path
@@ -147,6 +157,12 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/AddressFilter"
+        - name: pagination
+          in: query
+          description: |
+            Pagination
+          schema:
+            $ref: "#/components/schemas/PaginationFilter"
       responses:
         "200":
           description: |
@@ -154,7 +170,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Transaction"
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                properties:
+                  data:
+                    items:
+                      oneOf:
+                        - $ref: "#/components/schemas/Transaction"
         default:
           description: |
             Unexpected error
@@ -174,6 +196,12 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/AddressFilter"
+        - name: pagination
+          in: query
+          description: |
+            Pagination
+          schema:
+            $ref: "#/components/schemas/PaginationFilter"
       responses:
         "200":
           description: |
@@ -181,7 +209,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Dag"
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                properties:
+                  data:
+                    items:
+                      oneOf:
+                        - $ref: "#/components/schemas/Dag"
         default:
           description: |
             Unexpected error
@@ -201,6 +235,12 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/AddressFilter"
+        - name: pagination
+          in: query
+          description: |
+            Pagination
+          schema:
+            $ref: "#/components/schemas/PaginationFilter"
       responses:
         "200":
           description: |
@@ -208,7 +248,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pbft"
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                properties:
+                  data:
+                    items:
+                      oneOf:
+                        - $ref: "#/components/schemas/Pbft"
+
         default:
           description: |
             Unexpected error
@@ -219,7 +266,7 @@ components:
       example: "0x0000000000000000000000000000000000000000"
     Hash:
       type: string
-      example: "0x5d22f492633173e717cb86bcd322277eee9bf5db73ef78d5f1df8598a5e0467f"
+      example: "0x0000000000000000000000000000000000000000000000000000000000000000"
     Age:
       type: integer
       format: int64
@@ -319,6 +366,34 @@ components:
         total:
           type: integer
           format: int64
+    PaginatedResponse:
+      type: object
+      required:
+        - data
+        - total
+        - start
+        - end
+        - hasNext
+      properties:
+        data:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Dag"
+              - $ref: "#/components/schemas/Pbft"
+              - $ref: "#/components/schemas/Transaction"
+              - $ref: "#/components/schemas/Validator"
+        total:
+          type: integer
+          format: int64
+          example: 1
+        start:
+          $ref: "#/components/schemas/Hash"
+        end:
+          $ref: "#/components/schemas/Hash"
+        hasNext:
+          type: boolean
+          default: true
     WeekFilter:
       type: object
       required:
@@ -337,3 +412,14 @@ components:
           default: 2023
     AddressFilter:
       $ref: "#/components/schemas/Address"
+    PaginationFilter:
+      type: object
+      properties:
+        start:
+          $ref: "#/components/schemas/Hash"
+        limit:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          default: 30
