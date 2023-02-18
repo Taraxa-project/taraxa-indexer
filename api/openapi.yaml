@@ -1,0 +1,339 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Taraxa Indexer
+  description: >-
+    The Taraxa Indexer saves all PBFT Blocks, DAG Blocks and Transactions on the
+    Taraxa chain and exposes an API on top of that data that can be used on the
+    Taraxa Explorer
+  contact:
+    name: Taraxa Team
+    email: contact@taraxa.io
+    url: https://taraxa.io
+  license:
+    name: MIT
+    url: https://mit-license.org/
+servers:
+  - url: https://indexer.mainnet.taraxa.io
+    description: Mainnet network
+  - url: https://indexer.testnet.taraxa.io
+    description: Testnet network
+  - url: https://indexer.devnet.taraxa.io
+    description: Devnet network
+paths:
+  /validators:
+    get:
+      tags:
+        - Validators
+      summary: "Returns all validators"
+      description: |
+        Returns all validators for the selected week and the number of PBFT blocks they produced
+      operationId: "getValidators"
+      parameters:
+        - name: filter
+          in: query
+          description: |
+            Week to filter by
+          required: true
+          schema:
+            $ref: "#/components/schemas/WeekFilter"
+      responses:
+        "200":
+          description: |
+            A JSON array of validators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Validator"
+        default:
+          description: |
+            Unexpected error
+  /validators/total:
+    get:
+      tags:
+        - Validators
+      summary: "Returns total number of PBFT blocks"
+      description: |
+        Returns total number of PBFT blocks produced in selected week
+      operationId: "getValidatorsTotalPbftBlocks"
+      parameters:
+        - name: filter
+          in: query
+          description: |
+            Week to filter by
+          required: true
+          schema:
+            $ref: "#/components/schemas/WeekFilter"
+      responses:
+        "200":
+          description: |
+            A JSON object containing the total number of PBFT blocks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+        default:
+          description: |
+            Unexpected error
+  /address/{address}/total-pbfts:
+    get:
+      tags:
+        - Address
+      summary: "Returns total number of PBFT blocks"
+      description: |
+        Returns total number of PBFT blocks produced for the selected address
+      operationId: "getAddressTotalPbftBlocks"
+      parameters:
+        - name: address
+          in: path
+          description: |
+            Address to filter by
+          required: true
+          schema:
+            $ref: "#/components/schemas/AddressFilter"
+      responses:
+        "200":
+          description: |
+            A JSON object containing the total number of PBFT blocks produced for the selected address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+        default:
+          description: |
+            Unexpected error
+  /address/{address}/total-dags:
+    get:
+      tags:
+        - Address
+      summary: "Returns total number of DAG blocks"
+      description: |
+        Returns total number of DAG blocks sent from the selected address
+      operationId: "getAddressTotalDagBlocks"
+      parameters:
+        - name: address
+          in: path
+          description: |
+            Address to filter by
+          required: true
+          schema:
+            $ref: "#/components/schemas/AddressFilter"
+      responses:
+        "200":
+          description: |
+            A JSON object containing the total number of DAG blocks produced for the selected address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+        default:
+          description: |
+            Unexpected error
+  /address/{address}/transactions:
+    get:
+      tags:
+        - Address
+      summary: "Returns all transactions"
+      description: |
+        Returns all transactions from and to the selected address
+      operationId: "getAddressTransactions"
+      parameters:
+        - name: address
+          in: path
+          description: |
+            Address to filter by
+          required: true
+          schema:
+            $ref: "#/components/schemas/AddressFilter"
+      responses:
+        "200":
+          description: |
+            A JSON object containing a list of all of the transactions for the selected address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        default:
+          description: |
+            Unexpected error
+  /address/{address}/dags:
+    get:
+      tags:
+        - Address
+      summary: "Returns all DAG blocks"
+      description: |
+        Returns all DAG blocks sent by the selected address
+      operationId: "getAddressDags"
+      parameters:
+        - name: address
+          in: path
+          description: |
+            Address to filter by
+          required: true
+          schema:
+            $ref: "#/components/schemas/AddressFilter"
+      responses:
+        "200":
+          description: |
+            A JSON object containing a list of all of the DAG blocks sent from the selected address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dag"
+        default:
+          description: |
+            Unexpected error
+  /address/{address}/pbfts:
+    get:
+      tags:
+        - Address
+      summary: "Returns all PBFT blocks"
+      description: |
+        Returns all PBFT blocks produced by the selected address
+      operationId: "getAddressPbfts"
+      parameters:
+        - name: address
+          in: path
+          description: |
+            Address to filter by
+          required: true
+          schema:
+            $ref: "#/components/schemas/AddressFilter"
+      responses:
+        "200":
+          description: |
+            A JSON object containing a list of all of the PBFT blocks produced by the selected address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pbft"
+        default:
+          description: |
+            Unexpected error
+components:
+  schemas:
+    Address:
+      type: string
+      example: "0x0000000000000000000000000000000000000000"
+    Hash:
+      type: string
+      example: "0x5d22f492633173e717cb86bcd322277eee9bf5db73ef78d5f1df8598a5e0467f"
+    Age:
+      type: integer
+      format: int64
+      example: 1676682705
+    Validator:
+      type: object
+      required:
+        - address
+        - pbftCount
+      properties:
+        address:
+          $ref: "#/components/schemas/Address"
+        pbftCount:
+          type: integer
+          format: int64
+    Transaction:
+      type: object
+      required:
+        - hash
+        - block
+        - index
+        - from
+        - to
+        - value
+        - gasUsed
+        - gasPrice
+        - age
+        - status
+      properties:
+        hash:
+          $ref: "#/components/schemas/Hash"
+        block:
+          type: integer
+          format: int64
+        index:
+          type: integer
+          format: int64
+        from:
+          $ref: "#/components/schemas/Address"
+        to:
+          $ref: "#/components/schemas/Address"
+        value:
+          type: string
+          example: "0"
+        gasUsed:
+          type: string
+          example: "0"
+        gasPrice:
+          type: string
+          example: "0"
+        age:
+          $ref: "#/components/schemas/Age"
+        status:
+          type: boolean
+          example: true
+    Dag:
+      type: object
+      required:
+        - hash
+        - level
+        - transactionCount
+        - age
+      properties:
+        hash:
+          $ref: "#/components/schemas/Hash"
+        level:
+          type: integer
+          format: int64
+        transactionCount:
+          type: integer
+          format: int64
+        age:
+          $ref: "#/components/schemas/Age"
+    Pbft:
+      type: object
+      required:
+        - hash
+        - number
+        - transactionCount
+        - age
+      properties:
+        hash:
+          $ref: "#/components/schemas/Hash"
+        number:
+          type: integer
+          format: int64
+        transactionCount:
+          type: integer
+          format: int64
+        age:
+          $ref: "#/components/schemas/Age"
+    Count:
+      type: object
+      required:
+        - total
+      properties:
+        total:
+          type: integer
+          format: int64
+    WeekFilter:
+      type: object
+      required:
+        - week
+        - year
+      properties:
+        week:
+          type: integer
+          format: int32
+          minimum: 1
+          default: 1
+        year:
+          type: integer
+          format: int32
+          minimum: 2023
+          default: 2023
+    AddressFilter:
+      $ref: "#/components/schemas/Address"
