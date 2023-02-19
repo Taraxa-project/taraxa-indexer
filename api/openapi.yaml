@@ -51,12 +51,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/PaginatedResponse"
-                properties:
-                  data:
-                    items:
-                      oneOf:
-                        - $ref: "#/components/schemas/Validator"
+                  - $ref: "#/components/schemas/ValidatorsPaginatedResponse"
         default:
           description: |
             Unexpected error
@@ -83,7 +78,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Count"
+                $ref: "#/components/schemas/CountResponse"
         default:
           description: |
             Unexpected error
@@ -110,7 +105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Count"
+                $ref: "#/components/schemas/CountResponse"
         default:
           description: |
             Unexpected error
@@ -137,7 +132,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Count"
+                $ref: "#/components/schemas/CountResponse"
         default:
           description: |
             Unexpected error
@@ -171,12 +166,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/PaginatedResponse"
-                properties:
-                  data:
-                    items:
-                      oneOf:
-                        - $ref: "#/components/schemas/Transaction"
+                  - $ref: "#/components/schemas/TransactionsPaginatedResponse"
         default:
           description: |
             Unexpected error
@@ -210,12 +200,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/PaginatedResponse"
-                properties:
-                  data:
-                    items:
-                      oneOf:
-                        - $ref: "#/components/schemas/Dag"
+                  - $ref: "#/components/schemas/DagsPaginatedResponse"
         default:
           description: |
             Unexpected error
@@ -249,13 +234,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/PaginatedResponse"
-                properties:
-                  data:
-                    items:
-                      oneOf:
-                        - $ref: "#/components/schemas/Pbft"
-
+                  - $ref: "#/components/schemas/PbftsPaginatedResponse"
         default:
           description: |
             Unexpected error
@@ -358,7 +337,7 @@ components:
           format: int64
         age:
           $ref: "#/components/schemas/Age"
-    Count:
+    CountResponse:
       type: object
       required:
         - total
@@ -369,20 +348,11 @@ components:
     PaginatedResponse:
       type: object
       required:
-        - data
         - total
         - start
         - end
         - hasNext
       properties:
-        data:
-          type: array
-          items:
-            oneOf:
-              - $ref: "#/components/schemas/Dag"
-              - $ref: "#/components/schemas/Pbft"
-              - $ref: "#/components/schemas/Transaction"
-              - $ref: "#/components/schemas/Validator"
         total:
           type: integer
           format: int64
@@ -394,6 +364,42 @@ components:
         hasNext:
           type: boolean
           default: true
+    ValidatorsPaginatedResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResponse"
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Validator"
+    TransactionsPaginatedResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResponse"
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Transaction"
+    DagsPaginatedResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResponse"
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Dag"
+    PbftsPaginatedResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResponse"
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Pbft"
     WeekFilter:
       type: object
       required:
