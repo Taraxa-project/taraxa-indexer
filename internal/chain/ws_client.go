@@ -48,6 +48,7 @@ func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	client.AddTransactionReceiptData(trx)
 	return
 }
 
@@ -58,7 +59,8 @@ func (client *WsClient) AddTransactionReceiptData(trx *transaction) {
 	}
 }
 
-func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags pbftBlockWithDags) {
+func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *pbftBlockWithDags) {
+	pbftWithDags = new(pbftBlockWithDags)
 	err := client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
 	if err != nil {
 		log.Fatal("GetPbftBlockWithDagBlocks error ", err.Error())
@@ -66,7 +68,8 @@ func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags p
 	return
 }
 
-func (client *WsClient) GatDagBlockByHash(hash string) (dag dagBlock) {
+func (client *WsClient) GetDagBlockByHash(hash string) (dag *dagBlock) {
+	dag = new(dagBlock)
 	err := client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	if err != nil {
 		log.Fatal(err.Error())

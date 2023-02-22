@@ -82,14 +82,14 @@ paths:
         default:
           description: |
             Unexpected error
-  /address/{address}/pbfts/total:
+  /address/{address}/stats:
     get:
       tags:
         - Address
-      summary: "Returns total number of PBFT blocks"
+      summary: "Returns stats for the address"
       description: |
-        Returns total number of PBFT blocks produced for the selected address
-      operationId: "getAddressPbftTotal"
+        Returns total number of PBFT blocks, DAG blocks and Transactions produced for the selected address
+      operationId: "getAddressStats"
       parameters:
         - name: address
           in: path
@@ -105,34 +105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CountResponse"
-        default:
-          description: |
-            Unexpected error
-  /address/{address}/dags/total:
-    get:
-      tags:
-        - Address
-      summary: "Returns total number of DAG blocks"
-      description: |
-        Returns total number of DAG blocks sent from the selected address
-      operationId: "getAddressDagTotal"
-      parameters:
-        - name: address
-          in: path
-          description: |
-            Address to filter by
-          required: true
-          schema:
-            $ref: "#/components/schemas/AddressFilter"
-      responses:
-        "200":
-          description: |
-            A JSON object containing the total number of DAG blocks produced for the selected address
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CountResponse"
+                $ref: "#/components/schemas/StatsResponse"
         default:
           description: |
             Unexpected error
@@ -353,6 +326,19 @@ components:
         - total
       properties:
         total:
+          $ref: "#/components/schemas/Counter"
+    StatsResponse:
+      type: object
+      required:
+        - pbftCount
+        - dagsCount
+        - transactionsCount
+      properties:
+        pbftCount:
+          $ref: "#/components/schemas/Counter"
+        dagsCount:
+          $ref: "#/components/schemas/Counter"
+        transactionsCount:
           $ref: "#/components/schemas/Counter"
     PaginatedResponse:
       type: object

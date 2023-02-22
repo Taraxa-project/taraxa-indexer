@@ -105,8 +105,8 @@ func getPrefix(o interface{}) string {
 		return "p"
 	case *models.Dag:
 		return "d"
-	case *Address:
-		return "a"
+	case *AddressStats:
+		return "s"
 	default:
 		err := fmt.Errorf("getPrefix: Unexpected type %T", tt)
 		panic(err)
@@ -118,51 +118,23 @@ func getKey(prefix, author string, number uint64) []byte {
 }
 
 func getPrefixKey(prefix, author string) []byte {
-	return  []byte(fmt.Sprintf("%s%s", prefix, author))
+	return []byte(fmt.Sprintf("%s%s", prefix, author))
 }
 
-func (s *Storage) AddToDB(o interface{}) error {
+func (s *Storage) AddToDB(o interface{}, key1 string, key2 uint64) error {
 	b, err := rlp.EncodeToBytes(o)
 	if err != nil {
 		return err
 	}
 
-	switch tt := o.(type) {
-	case *models.Transaction:
-		err = s.add(getKey(getPrefix(o), tt.From, tt.Age), b)
-		if err != nil {
-			return err
-		}
-		err = s.add(getKey(getPrefix(o), tt.To, tt.Age), b)
-		if err != nil {
-			return err
-		}
-	case *models.Pbft:
-		err = s.add(getKey(getPrefix(o), tt.Author, tt.Number), b)
-		if err != nil {
-			return err
-		}
-	case *models.Dag:
-		err = s.add(getKey(getPrefix(o), tt.Sender, tt.Age), b)
-		if err != nil {
-			return err
-		}
-	case *Address:
-		err = s.add(getPrefixKey(getPrefix(o), tt.Address), b)
-		if err != nil {
-			return err
-		}
-	default:
-		err := fmt.Errorf("AddToDB: Unexpected type %T", tt)
-		panic(err)
-	}
-	return nil
+	err = s.add(getKey(getPrefix(o), key1, key2), b)
+	return err
 }
 
 func (s *Storage) GetFromDB(o interface{}, hash string) error {
 	switch tt := o.(type) {
-	case *Address:
-		key := getPrefixKey(getPrefix(o), hash)
+	case *AddressStats:
+		key := getKey(getPrefix(o), hash, 0)
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err

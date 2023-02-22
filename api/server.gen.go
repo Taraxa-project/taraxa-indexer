@@ -24,15 +24,12 @@ type ServerInterface interface {
 	// Returns all DAG blocks
 	// (GET /address/{address}/dags)
 	GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error
-	// Returns total number of DAG blocks
-	// (GET /address/{address}/dags/total)
-	GetAddressDagTotal(ctx echo.Context, address AddressFilter) error
 	// Returns all PBFT blocks
 	// (GET /address/{address}/pbfts)
 	GetAddressPbfts(ctx echo.Context, address AddressFilter, params GetAddressPbftsParams) error
-	// Returns total number of PBFT blocks
-	// (GET /address/{address}/pbfts/total)
-	GetAddressPbftTotal(ctx echo.Context, address AddressFilter) error
+	// Returns stats for the address
+	// (GET /address/{address}/stats)
+	GetAddressStats(ctx echo.Context, address AddressFilter) error
 	// Returns all transactions
 	// (GET /address/{address}/transactions)
 	GetAddressTransactions(ctx echo.Context, address AddressFilter, params GetAddressTransactionsParams) error
@@ -74,22 +71,6 @@ func (w *ServerInterfaceWrapper) GetAddressDags(ctx echo.Context) error {
 	return err
 }
 
-// GetAddressDagTotal converts echo context to params.
-func (w *ServerInterfaceWrapper) GetAddressDagTotal(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "address" -------------
-	var address AddressFilter
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "address", runtime.ParamLocationPath, ctx.Param("address"), &address)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter address: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetAddressDagTotal(ctx, address)
-	return err
-}
-
 // GetAddressPbfts converts echo context to params.
 func (w *ServerInterfaceWrapper) GetAddressPbfts(ctx echo.Context) error {
 	var err error
@@ -115,8 +96,8 @@ func (w *ServerInterfaceWrapper) GetAddressPbfts(ctx echo.Context) error {
 	return err
 }
 
-// GetAddressPbftTotal converts echo context to params.
-func (w *ServerInterfaceWrapper) GetAddressPbftTotal(ctx echo.Context) error {
+// GetAddressStats converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAddressStats(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "address" -------------
 	var address AddressFilter
@@ -127,7 +108,7 @@ func (w *ServerInterfaceWrapper) GetAddressPbftTotal(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetAddressPbftTotal(ctx, address)
+	err = w.Handler.GetAddressStats(ctx, address)
 	return err
 }
 
@@ -228,9 +209,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/address/:address/dags", wrapper.GetAddressDags)
-	router.GET(baseURL+"/address/:address/dags/total", wrapper.GetAddressDagTotal)
 	router.GET(baseURL+"/address/:address/pbfts", wrapper.GetAddressPbfts)
-	router.GET(baseURL+"/address/:address/pbfts/total", wrapper.GetAddressPbftTotal)
+	router.GET(baseURL+"/address/:address/stats", wrapper.GetAddressStats)
 	router.GET(baseURL+"/address/:address/transactions", wrapper.GetAddressTransactions)
 	router.GET(baseURL+"/validators", wrapper.GetValidators)
 	router.GET(baseURL+"/validators/total", wrapper.GetValidatorsTotal)
@@ -240,31 +220,32 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"0Nclrvq4ipxZ3dNt/lcAAAD//0ebDimaIgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

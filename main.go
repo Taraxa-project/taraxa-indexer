@@ -5,10 +5,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 
 	"github.com/Taraxa-project/taraxa-indexer/api"
+	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
@@ -45,6 +47,12 @@ func main() {
 	apiHandler := api.NewApiHandler(st)
 	api.RegisterHandlers(e, apiHandler)
 	flag.Parse()
-	fmt.Println("passed blockchain_ws", blockchain_ws)
+	fmt.Println("passed blockchain_ws", *blockchain_ws)
+
+	idx, err := indexer.NewIndexer(*blockchain_ws, st)
+	if err != nil {
+		log.Fatal("Problem with indexer", err)
+	}
+	idx.Index()
 	e.Logger.Fatal(e.Start(":" + strconv.FormatInt(int64(*http_port), 10)))
 }

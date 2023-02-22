@@ -58,6 +58,19 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 	return ctx.JSON(http.StatusOK, response)
 }
 
+// GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
+func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) error {
+	var addr storage.AddressStats
+	a.Store.GetFromDB(&addr, address)
+
+	var count StatsResponse
+	count.PbftCount = addr.PbftTotal
+	count.DagsCount = addr.DagTotal
+	count.TransactionsCount = addr.TxTotal
+
+	return ctx.JSON(http.StatusOK, count)
+}
+
 // GetValidators returns all validators for the selected week and the number of PBFT blocks they produced
 func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams) error {
 	fmt.Println("GetValidators")
@@ -69,28 +82,6 @@ func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams)
 		Data: data,
 	}
 	return ctx.JSON(http.StatusOK, response)
-}
-
-// GetAddressDagTotal returns total number of DAG blocks sent from the selected address
-func (a *ApiHandler) GetAddressDagTotal(ctx echo.Context, address AddressFilter) error {
-	var addr storage.Address
-	a.Store.GetFromDB(&addr, address)
-
-	var count CountResponse
-	count.Total = addr.DagTotal
-
-	return ctx.JSON(http.StatusOK, count)
-}
-
-// GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
-func (a *ApiHandler) GetAddressPbftTotal(ctx echo.Context, address AddressFilter) error {
-	var addr storage.Address
-	a.Store.GetFromDB(&addr, address)
-
-	var count CountResponse
-	count.Total = addr.PbftTotal
-
-	return ctx.JSON(http.StatusOK, count)
 }
 
 // GetValidatorsTotal returns total number of PBFT blocks produced in selected week
