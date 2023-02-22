@@ -1,10 +1,12 @@
-//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=models.cfg.yaml api/openapi.yaml
+//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=models/models.cfg.yaml api/openapi.yaml
 
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -13,6 +15,16 @@ import (
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
+
+var (
+	http_port     *int
+	blockchain_ws *string
+)
+
+func init() {
+	http_port = flag.Int("http_port", 8080, "port to listen")
+	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
+}
 
 func main() {
 	st := storage.NewStorage("indexer.db")
@@ -32,11 +44,7 @@ func main() {
 
 	apiHandler := api.NewApiHandler(st)
 	api.RegisterHandlers(e, apiHandler)
-
-	httpPort := os.Getenv("HTTP_PORT")
-	if httpPort == "" {
-		httpPort = "8080"
-	}
-
-	e.Logger.Fatal(e.Start(":" + httpPort))
+	flag.Parse()
+	fmt.Println("passed blockchain_ws", blockchain_ws)
+	e.Logger.Fatal(e.Start(":" + strconv.FormatInt(int64(*http_port), 10)))
 }

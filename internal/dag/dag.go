@@ -10,14 +10,13 @@ import (
 
 var prefix = "dag"
 
-func getKey(sender string, age int64) string {
+func getKey(sender string, age uint64) string {
 	return fmt.Sprintf("%s:%s:%d", prefix, sender, age)
 }
 
 // Dag defines the model for a DAG Block.
 type Dag struct {
 	m.Dag
-	Sender string `json:"sender"`
 }
 
 func (d *Dag) AddToDB(s *storage.Storage) error {
