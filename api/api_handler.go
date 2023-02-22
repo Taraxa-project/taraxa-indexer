@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	addr "github.com/Taraxa-project/taraxa-indexer/internal/address"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/labstack/echo/v4"
@@ -74,20 +73,22 @@ func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams)
 
 // GetAddressDagTotal returns total number of DAG blocks sent from the selected address
 func (a *ApiHandler) GetAddressDagTotal(ctx echo.Context, address AddressFilter) error {
-	add, _ := addr.GetFromDB(a.Store, address)
+	var addr storage.Address
+	a.Store.GetFromDB(&addr, address)
 
 	var count CountResponse
-	count.Total = add.DagTotal
+	count.Total = addr.DagTotal
 
 	return ctx.JSON(http.StatusOK, count)
 }
 
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
 func (a *ApiHandler) GetAddressPbftTotal(ctx echo.Context, address AddressFilter) error {
-	add, _ := addr.GetFromDB(a.Store, address)
+	var addr storage.Address
+	a.Store.GetFromDB(&addr, address)
 
 	var count CountResponse
-	count.Total = add.PbftTotal
+	count.Total = addr.PbftTotal
 
 	return ctx.JSON(http.StatusOK, count)
 }
