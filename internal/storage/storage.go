@@ -27,7 +27,7 @@ func NewStorage(file string) *Storage {
 }
 
 func (s *Storage) add(key, value []byte) error {
-	err := s.DB.Set(key, value, pebble.Sync)
+	err := s.DB.Set(key, value, pebble.NoSync)
 	return err
 }
 
@@ -64,6 +64,35 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
+// in case from = 0 we return the upper bound
+func (s *Storage) GetObjects(o interface{}, hash string, from uint64, count int) ([]interface{}, error) {
+	ret := make([]interface{}, 0, count)
+
+	upper := getPrefixKey(getPrefix(o), hash)
+	start := getKey(getPrefix(o), hash, from)
+
+	iter := s.find([]byte(upper))
+	defer iter.Close()
+
+	if from != 0 {
+		iter.SeekGE([]byte(start))
+	} else {
+		iter.Last()
+	}
+
+	for ; iter.Valid(); iter.Prev() {
+		err := json.Unmarshal(iter.Value(), &o)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, o)
+		if len(ret) == count {
+			return ret, nil
+		}
+	}
+	return ret, nil
+}
+
 func getPrefix(o interface{}) string {
 	switch tt := o.(type) {
 	case *models.Transaction:
@@ -81,7 +110,11 @@ func getPrefix(o interface{}) string {
 }
 
 func getKey(prefix, author string, number uint64) string {
-	return fmt.Sprintf("%s:%s:%d", prefix, author, number)
+	return fmt.Sprintf("%s:%s:%020d", prefix, author, number)
+}
+
+func getPrefixKey(prefix, author string) string {
+	return fmt.Sprintf("%s:%s", prefix, author)
 }
 
 func (s *Storage) AddToDB(o interface{}) error {
@@ -112,7 +145,7 @@ func (s *Storage) AddToDB(o interface{}) error {
 			return err
 		}
 	case *Address:
-		err = s.add([]byte(getKey(getPrefix(o), tt.Address, 0)), b)
+		err = s.add([]byte(getPrefixKey(getPrefix(o), tt.Address)), b)
 		if err != nil {
 			return err
 		}
@@ -126,7 +159,7 @@ func (s *Storage) AddToDB(o interface{}) error {
 func (s *Storage) GetFromDB(o interface{}, hash string) error {
 	switch tt := o.(type) {
 	case *Address:
-		key := []byte(getKey(getPrefix(o), hash, 0))
+		key := []byte(getPrefixKey(getPrefix(o), hash))
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err
