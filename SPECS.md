@@ -11,8 +11,7 @@ The indexer needs to watch for new data from the node and save it at least as fa
 
 ### Able to serve data fast
 
-The API component needs to serve data in a fast and consistent way regardless of if the current queried address has 1 or 1M transactions. We’re not optimizing for disk space here so we can save a transaction twice, for example, once for the sender and once for the receiver. We need to also have an agregate for each address that contains the number of DAG and PBFT blocks that it created and the number of total transactions that the address was mentioned in. These will be late used by the ecosystem apps  to construct the pagination.
-
+The API component needs to serve data in a fast and consistent way regardless of if the current queried address has 1 or 1M transactions. We’re not optimizing for disk space here so we can save a transaction twice, for example, once for the sender and once for the receiver. We need to also have an aggregate for each address that contains the number of DAG and PBFT blocks that it created and the number of total transactions that the address was mentioned in. These will be late used by the ecosystem apps to construct the pagination.
 
 ### Be consistent at any point in time
 
@@ -50,7 +49,6 @@ We can have a fallback here that uses the http RPC endpoint and pools for the �
 The scraper uses the ETH client from go-ethereum to connect to the Taraxa node.
 
 The scraper needs a separate set of structs that correspond to the specs of the node's RPC responses and the ability to transform the data from the node format to the internal, storable, format.
-
 
 Example flow:
 

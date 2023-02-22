@@ -17,8 +17,8 @@ func getKey(addr string) string {
 type Address struct {
 	Address   string `json:"address"`
 	TxTotal   uint64 `json:"txTotal"`
-	DagTotal  int64  `json:"dagTotal"`
-	PbftTotal int64  `json:"pbftTotal"`
+	DagTotal  uint64 `json:"dagTotal"`
+	PbftTotal uint64 `json:"pbftTotal"`
 }
 
 func (a *Address) AddToDB(s *storage.Storage) error {

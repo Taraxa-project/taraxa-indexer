@@ -10,7 +10,7 @@ import (
 
 var prefix = "tx"
 
-func getKey(address string, age int64) string {
+func getKey(address string, age uint64) string {
 	return fmt.Sprintf("%s:%s:%d", prefix, address, age)
 }
 

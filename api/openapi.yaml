@@ -246,9 +246,13 @@ components:
     Hash:
       type: string
       example: "0x0000000000000000000000000000000000000000000000000000000000000000"
+    Counter:
+      type: integer
+      format: uint64
+      example: 123
     Age:
       type: integer
-      format: int64
+      format: uint64
       example: 1676682705
     Validator:
       type: object
@@ -259,30 +263,29 @@ components:
         address:
           $ref: "#/components/schemas/Address"
         pbftCount:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Counter"
     Transaction:
       type: object
       required:
         - hash
-        - block
-        - index
+        - blockNumber
+        - transactionIndex
         - from
         - to
         - value
         - gasUsed
         - gasPrice
+        - nonce
         - age
         - status
+        - type
       properties:
         hash:
           $ref: "#/components/schemas/Hash"
-        block:
-          type: integer
-          format: int64
-        index:
-          type: integer
-          format: int64
+        blockNumber:
+          $ref: "#/components/schemas/Counter"
+        transactionIndex:
+          $ref: "#/components/schemas/Counter"
         from:
           $ref: "#/components/schemas/Address"
         to:
@@ -291,50 +294,57 @@ components:
           type: string
           example: "0"
         gasUsed:
-          type: string
-          example: "0"
+          $ref: "#/components/schemas/Counter"
         gasPrice:
-          type: string
-          example: "0"
+          $ref: "#/components/schemas/Counter"
+        nonce: 
+          $ref: "#/components/schemas/Counter"
         age:
           $ref: "#/components/schemas/Age"
         status:
           type: boolean
           example: true
+        type:
+          type: integer
+          format: uint8
+          enum: [0, 1, 2]
+          x-enum-varnames: [transfer, contract_call, contract_creation]
     Dag:
       type: object
       required:
+        - sender
         - hash
         - level
         - transactionCount
         - age
       properties:
+        sender: 
+          $ref: "#/components/schemas/Address"
         hash:
           $ref: "#/components/schemas/Hash"
         level:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Counter"
         transactionCount:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Counter"
         age:
           $ref: "#/components/schemas/Age"
     Pbft:
       type: object
       required:
+        - author
         - hash
         - number
         - transactionCount
         - age
       properties:
+        author: 
+          $ref: "#/components/schemas/Address"
         hash:
           $ref: "#/components/schemas/Hash"
         number:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Counter"
         transactionCount:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Counter"
         age:
           $ref: "#/components/schemas/Age"
     CountResponse:
@@ -343,8 +353,7 @@ components:
         - total
       properties:
         total:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Counter"
     PaginatedResponse:
       type: object
       required:
@@ -354,8 +363,7 @@ components:
         - hasNext
       properties:
         total:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Counter"
           example: 1
         start:
           $ref: "#/components/schemas/Hash"

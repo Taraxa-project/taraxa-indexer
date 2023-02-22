@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/cockroachdb/pebble v0.0.0-20230217215838-f01d8eff3f8b
-	github.com/deepmap/oapi-codegen v1.12.4
+	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
 	github.com/ethereum/go-ethereum v1.11.1
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/labstack/echo/v4 v4.10.1
@@ -64,7 +64,7 @@ require (
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.3.0 // indirect
+	golang.org/x/tools v0.5.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

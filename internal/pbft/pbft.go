@@ -10,14 +10,13 @@ import (
 
 var prefix = "pbft"
 
-func getKey(author string, number int64) string {
+func getKey(author string, number uint64) string {
 	return fmt.Sprintf("%s:%s:%d", prefix, author, number)
 }
 
 // Pbft defines the model for a PBFT Block.
 type Pbft struct {
 	m.Pbft
-	Author string `json:"author"`
 }
 
 func (p *Pbft) AddToDB(s *storage.Storage) error {
