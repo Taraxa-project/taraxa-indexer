@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+
 	"strconv"
 
 	"github.com/Taraxa-project/taraxa-indexer/api"
@@ -28,9 +31,20 @@ func init() {
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
 }
 
+func setupCloseHandler(st *storage.Storage, fn func()) {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
+	go func() {
+		<-c
+		fn()
+		os.Exit(0)
+	}()
+}
+
 func main() {
 	st := storage.NewStorage("./data/indexer.db")
-	defer st.DB.Close()
+
+	setupCloseHandler(st, func() { st.Close() })
 
 	swagger, err := api.GetSwagger()
 	if err != nil {
