@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/cockroachdb/pebble"
@@ -12,31 +13,56 @@ import (
 )
 
 type Storage struct {
-	DB *pebble.DB
+	db   *pebble.DB
+	path string
 }
 
 func NewStorage(file string) *Storage {
-	var ops pebble.Options
-	if file == "" {
-		ops.FS = vfs.NewMem()
-	}
-	db, err := pebble.Open(file, &ops)
+	db, err := open(file)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return &Storage{
-		DB: db,
+		db:   db,
+		path: file,
 	}
 }
 
+func open(file string) (*pebble.DB, error) {
+	var ops pebble.Options
+	if file == "" {
+		ops.FS = vfs.NewMem()
+	}
+	return pebble.Open(file, &ops)
+}
+
+func (s *Storage) Clean() error {
+	if err := s.db.Close(); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(s.path); err != nil {
+		return err
+	}
+	db, err := open(s.path)
+	if err != nil {
+		return err
+	}
+	s.db = db
+	return nil
+}
+
+func (s *Storage) Close() error {
+	return s.db.Close()
+}
+
 func (s *Storage) add(key, value []byte) error {
-	err := s.DB.Set(key, value, pebble.Sync)
+	err := s.db.Set(key, value, pebble.NoSync)
 	return err
 }
 
 func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
-	value, closer, err := s.DB.Get(key)
+	value, closer, err := s.db.Get(key)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -64,7 +90,7 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 		}
 	}
 
-	iter := s.DB.NewIter(prefixIterOptions(prefix))
+	iter := s.db.NewIter(prefixIterOptions(prefix))
 	return iter
 }
 
