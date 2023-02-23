@@ -17,3 +17,5 @@ taraxa-indexer
 # vendor/
 
 .vscode
+
+data

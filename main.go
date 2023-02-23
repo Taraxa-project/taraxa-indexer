@@ -29,7 +29,8 @@ func init() {
 }
 
 func main() {
-	st := storage.NewStorage("indexer.db")
+	st := storage.NewStorage("./data/indexer.db")
+	defer st.DB.Close()
 
 	swagger, err := api.GetSwagger()
 	if err != nil {
@@ -53,6 +54,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Problem with indexer", err)
 	}
-	idx.Index()
+	go idx.Start()
 	e.Logger.Fatal(e.Start(":" + strconv.FormatInt(int64(*http_port), 10)))
 }

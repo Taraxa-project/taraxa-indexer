@@ -12,44 +12,64 @@ import (
 )
 
 type Indexer struct {
-	client  *chain.WsClient
+	Client  *chain.WsClient
 	storage *storage.Storage
 }
 
 func NewIndexer(url string, storage *storage.Storage) (i *Indexer, err error) {
 	i = new(Indexer)
 	i.storage = storage
-	i.client, err = chain.NewWsClient(url)
+	i.Client, err = chain.NewWsClient(url)
 
 	return
 }
 
-func (indexer *Indexer) Index() {
-	for i := uint64(1050); i < 1055; {
-		fmt.Println("Indexing", i)
-		err := indexer.ProcessBlock(i)
-		if err == nil {
-			i++
-		} else {
-			fmt.Println(err)
+func (i *Indexer) init() {
+	if !i.storage.FinalizedPeriodExists() {
+		i.storage.RecordFinalizedPeriod(1)
+	}
+}
+
+func (i *Indexer) sync() {
+	start := i.storage.GetFinalizedPeriod()
+	end := i.Client.GetLatestPeriod()
+	fmt.Println("Starting sync from", start, "to", end)
+	for p := uint64(start); p <= end; p++ {
+		blk := i.Client.GetBlockByNumber(p)
+		fmt.Println("Processing", p, blk.Number)
+		i.processBlock(blk)
+	}
+}
+
+func (i *Indexer) Start() {
+	i.init()
+	i.sync()
+
+	ch, sub, err := i.Client.SubscribeNewHeads()
+	if err != nil {
+		log.Fatal("Subscription failed")
+	}
+	for {
+		select {
+		case err := <-sub.Err():
+			log.Fatal(err)
+		case block := <-ch:
+			i.processBlock(block)
 		}
 	}
 }
 
-func (i *Indexer) ProcessBlock(num uint64) (err error) {
-	block := i.client.GetBlockByNumber(num)
-	if block == nil {
-		return
-	}
-
+func (i *Indexer) processBlock(raw *chain.Block) (err error) {
+	block := raw.ToModel()
+	transactions := raw.Transactions
 	bc := MakeBlockContext(block.Age)
 
-	for _, trx_hash := range block.Transactions {
+	for _, trx_hash := range transactions {
 		bc.wg.Add(1)
 		go i.ProcessTransaction(bc, trx_hash)
 	}
 
-	block_with_dags := i.client.GetPbftBlockWithDagBlocks(num)
+	block_with_dags := i.Client.GetPbftBlockWithDagBlocks(block.Number)
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
 		bc.wg.Add(1)
 		go i.ProcessDag(bc, dag_hash)
@@ -59,20 +79,20 @@ func (i *Indexer) ProcessBlock(num uint64) (err error) {
 
 	i.SaveAddressStats(bc)
 	bc.GetAddress(i.storage, block.Author).AddPbft()
-	i.storage.AddToDB(block.ToModel(), block.Hash, block.Pbft.Number)
-
+	i.storage.AddToDB(block, block.Hash, block.Number)
+	i.storage.RecordFinalizedPeriod(storage.FinalizationData(block.Number))
 	return
 }
 
 func (i *Indexer) ProcessTransaction(bc *blockContext, hash string) (err error) {
-	trx := i.client.GetTransactionByHash(hash)
+	trx := i.Client.GetTransactionByHash(hash)
 	bc.SaveTransaction(i.storage, trx.ToModelWithAge(bc.age))
 	bc.wg.Done()
 	return
 }
 
 func (i *Indexer) ProcessDag(bc *blockContext, hash string) (err error) {
-	dag := i.client.GetDagBlockByHash(hash)
+	dag := i.Client.GetDagBlockByHash(hash)
 
 	dag_index := bc.GetAddress(i.storage, dag.Sender).AddDag()
 	err = i.storage.AddToDB(dag.ToModel(), dag.Sender, dag_index)

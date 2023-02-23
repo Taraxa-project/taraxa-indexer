@@ -2,7 +2,7 @@ package storage
 
 import "sync"
 
-// Address defines the model for an address aggregate.
+// AddressStats defines the model for an address aggregate.
 type AddressStats struct {
 	Address   string `json:"address"`
 	TxTotal   uint64 `json:"txTotal"`
@@ -36,3 +36,5 @@ func MakeEmptyAddressStats(addr string) *AddressStats {
 	data.Address = addr
 	return data
 }
+
+type FinalizationData uint64
