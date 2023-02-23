@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -9,6 +8,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/vfs"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type Storage struct {
@@ -16,7 +16,11 @@ type Storage struct {
 }
 
 func NewStorage(file string) *Storage {
-	db, err := pebble.Open(file, &pebble.Options{FS: vfs.NewMem()})
+	var ops pebble.Options
+	if file == "" {
+		ops.FS = vfs.NewMem()
+	}
+	db, err := pebble.Open(file, &ops)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,7 +85,7 @@ func (s *Storage) GetObjects(o interface{}, hash string, from uint64, count int)
 	}
 
 	for ; iter.Valid(); iter.Prev() {
-		err := json.Unmarshal(iter.Value(), &o)
+		err := rlp.DecodeBytes(iter.Value(), o)
 		if err != nil {
 			return nil, err
 		}
@@ -118,8 +122,7 @@ func getPrefixKey(prefix, author string) string {
 }
 
 func (s *Storage) AddToDB(o interface{}) error {
-	b, err := json.Marshal(o)
-
+	b, err := rlp.EncodeToBytes(o)
 	if err != nil {
 		return err
 	}
@@ -164,7 +167,7 @@ func (s *Storage) GetFromDB(o interface{}, hash string) error {
 		if err != nil {
 			return err
 		}
-		err = json.Unmarshal(value, &o)
+		err = rlp.DecodeBytes(value, o)
 		if err != nil {
 			return err
 		}

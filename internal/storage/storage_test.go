@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"os"
 	"strconv"
 	"testing"
 
@@ -9,6 +10,8 @@ import (
 
 func TestAddress(t *testing.T) {
 	storage := NewStorage("")
+	defer storage.DB.Close()
+
 	addr := Address{"test", 0, 0, 0}
 	if err := storage.AddToDB(&addr); err != nil {
 		t.Error(err)
@@ -18,7 +21,7 @@ func TestAddress(t *testing.T) {
 		t.Error(err)
 	}
 	var ret Address
-	if err := storage.GetFromDB(&ret, "test") ; err != nil {
+	if err := storage.GetFromDB(&ret, "test"); err != nil {
 		t.Error(err)
 	}
 	if ret != addr {
@@ -28,6 +31,8 @@ func TestAddress(t *testing.T) {
 
 func TestGetObjects(t *testing.T) {
 	storage := NewStorage("")
+	defer storage.DB.Close()
+
 	sender := "user"
 	count := 100
 	for i := 0; i <= count; i++ {
@@ -37,7 +42,7 @@ func TestGetObjects(t *testing.T) {
 		}
 	}
 	var block models.Dag
-	ret, err := storage.GetObjects(&block, sender, 0 ,count)
+	ret, err := storage.GetObjects(&block, sender, 0, count)
 	if err != nil {
 		t.Error(err)
 	}
@@ -52,4 +57,27 @@ func TestGetObjects(t *testing.T) {
 	if len(ret) != 50 {
 		t.Error("Wrong length", len(ret))
 	}
+}
+
+func TestStorage(t *testing.T) {
+	addr := Address{"test", 0, 0, 0}
+	{
+		storage := NewStorage("/tmp/test")
+		if err := storage.AddToDB(&addr); err != nil {
+			t.Error(err)
+		}
+		storage.DB.Close()
+	}
+	{
+		storage := NewStorage("/tmp/test")
+		defer storage.DB.Close()
+		var ret Address
+		if err := storage.GetFromDB(&ret, "test"); err != nil {
+			t.Error(err)
+		}
+		if ret != addr {
+			t.Error("Broken DB")
+		}
+	}
+	os.Remove("/tmp/test")
 }
