@@ -1,17 +1,24 @@
-FROM golang:1.20.1-alpine
+# builder image
+FROM golang:1.20.1-alpine as gobuilder
 
+RUN apk update && apk add curl protobuf make \
+    rm -rf /var/cache/apk/*
+
+RUN mkdir /app
+COPY . /app/
 WORKDIR /app
 
 # Download Go modules
-COPY go.mod .
-COPY go.sum .
 RUN go mod download
 
-# Copy the source code
-COPY *.go ./
-
 # Build
-RUN go build -o /taraxa-indexer
+RUN make build
+
+
+# executable image
+FROM scratch
+
+COPY --from=gobuilder /app/build/linux_amd64/taraxa-indexer /taraxa-indexer
 
 EXPOSE 8080
 ENV HTTP_PORT=8080
