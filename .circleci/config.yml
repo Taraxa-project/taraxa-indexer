@@ -86,7 +86,6 @@ workflows:
                only:
                 - main
                 - develop
-                - chore/circleciconfig
             tags:
               ignore: /.*/
 
