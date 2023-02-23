@@ -8,7 +8,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
-func TestMakeEmptyAddressStats(t *testing.T) {
+func TestGetter(t *testing.T) {
 	storage := NewStorage("")
 	defer storage.Close()
 
@@ -99,5 +99,39 @@ func TestCleanStorage(t *testing.T) {
 	if err := storage.GetFromDB(&ret, "test"); err == nil {
 		t.Error("Clean DB does not work")
 		os.Remove("/tmp/test")
+	}
+}
+
+func TestBatch(t *testing.T) {
+	storage := NewStorage("")
+	defer storage.Close()
+
+	addr := MakeEmptyAddressStats("test")
+	batch := storage.NewBatch()
+
+	if err := batch.AddToBatch(addr, addr.Address, 0); err != nil {
+		t.Error(err)
+	}
+	addr1 := MakeEmptyAddressStats("test1")
+	if err := batch.AddToBatch(addr1, addr1.Address, 0); err != nil {
+		t.Error(err)
+	}
+	if err := batch.Commit(nil); err != nil {
+		t.Error(err)
+	}
+
+	ret := MakeEmptyAddressStats("")
+	if err := storage.GetFromDB(ret, "test"); err != nil {
+		t.Error(err)
+	}
+	if !ret.isEqual(addr) {
+		t.Error("Broken DB")
+	}
+
+	if err := storage.GetFromDB(ret, "test1"); err != nil {
+		t.Error(err)
+	}
+	if !ret.isEqual(addr1) {
+		t.Error("Broken DB")
 	}
 }
