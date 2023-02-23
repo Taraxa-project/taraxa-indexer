@@ -1,5 +1,8 @@
 GOBASE=$(shell pwd)
 GOBIN=$(GOBASE)/bin
+BUILD_DIR=build
+EXECUTABLE=taraxa-indexer
+
 
 help:
 	@echo "This is a helper makefile for taraxa-indexer"
@@ -22,3 +25,10 @@ generate:
 tidy:
 	@echo "tidy..."
 	go mod tidy
+
+build: clean
+	@mkdir -p $(BUILD_DIR)/linux_amd64
+	env GOOS=linux GOARCH=amd64 go build -o $(BUILD_DIR)/linux_amd64/ ./...
+
+clean:
+	rm -rf $(BUILD_DIR)
