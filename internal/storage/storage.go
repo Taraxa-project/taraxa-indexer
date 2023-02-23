@@ -207,3 +207,19 @@ func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	}
 	return nil
 }
+
+type Batch struct {
+	*pebble.Batch
+}
+
+func (s *Storage) NewBatch() *Batch {
+	return &Batch{s.db.NewBatch()}
+}
+
+func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) error {
+	data, err := rlp.EncodeToBytes(o)
+	if err != nil {
+		return err
+	}
+	return b.Set(getKey(getPrefix(o), key1, key2), data, nil)
+}

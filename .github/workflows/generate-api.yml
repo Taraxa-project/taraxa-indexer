@@ -1,5 +1,5 @@
 name: Ensure api generated files are up-to-date
-on: [push, pull_request]
+on: [push]
 jobs:
   build:
     name: Build
