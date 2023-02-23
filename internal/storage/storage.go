@@ -75,11 +75,11 @@ func (s *Storage) GetObjects(o interface{}, hash string, from uint64, count int)
 	upper := getPrefixKey(getPrefix(o), hash)
 	start := getKey(getPrefix(o), hash, from)
 
-	iter := s.find([]byte(upper))
+	iter := s.find(upper)
 	defer iter.Close()
 
 	if from != 0 {
-		iter.SeekGE([]byte(start))
+		iter.SeekGE(start)
 	} else {
 		iter.Last()
 	}
@@ -100,25 +100,25 @@ func (s *Storage) GetObjects(o interface{}, hash string, from uint64, count int)
 func getPrefix(o interface{}) string {
 	switch tt := o.(type) {
 	case *models.Transaction:
-		return "tx"
+		return "t"
 	case *models.Pbft:
-		return "pbft"
+		return "p"
 	case *models.Dag:
-		return "dag"
+		return "d"
 	case *Address:
-		return "address"
+		return "a"
 	default:
 		err := fmt.Errorf("getPrefix: Unexpected type %T", tt)
 		panic(err)
 	}
 }
 
-func getKey(prefix, author string, number uint64) string {
-	return fmt.Sprintf("%s:%s:%020d", prefix, author, number)
+func getKey(prefix, author string, number uint64) []byte {
+	return []byte(fmt.Sprintf("%s%s%020d", prefix, author, number))
 }
 
-func getPrefixKey(prefix, author string) string {
-	return fmt.Sprintf("%s:%s", prefix, author)
+func getPrefixKey(prefix, author string) []byte {
+	return  []byte(fmt.Sprintf("%s%s", prefix, author))
 }
 
 func (s *Storage) AddToDB(o interface{}) error {
@@ -129,26 +129,26 @@ func (s *Storage) AddToDB(o interface{}) error {
 
 	switch tt := o.(type) {
 	case *models.Transaction:
-		err = s.add([]byte(getKey(getPrefix(o), tt.From, tt.Age)), b)
+		err = s.add(getKey(getPrefix(o), tt.From, tt.Age), b)
 		if err != nil {
 			return err
 		}
-		err = s.add([]byte(getKey(getPrefix(o), tt.To, tt.Age)), b)
+		err = s.add(getKey(getPrefix(o), tt.To, tt.Age), b)
 		if err != nil {
 			return err
 		}
 	case *models.Pbft:
-		err = s.add([]byte(getKey(getPrefix(o), tt.Author, tt.Number)), b)
+		err = s.add(getKey(getPrefix(o), tt.Author, tt.Number), b)
 		if err != nil {
 			return err
 		}
 	case *models.Dag:
-		err = s.add([]byte(getKey(getPrefix(o), tt.Sender, tt.Age)), b)
+		err = s.add(getKey(getPrefix(o), tt.Sender, tt.Age), b)
 		if err != nil {
 			return err
 		}
 	case *Address:
-		err = s.add([]byte(getPrefixKey(getPrefix(o), tt.Address)), b)
+		err = s.add(getPrefixKey(getPrefix(o), tt.Address), b)
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func (s *Storage) AddToDB(o interface{}) error {
 func (s *Storage) GetFromDB(o interface{}, hash string) error {
 	switch tt := o.(type) {
 	case *Address:
-		key := []byte(getPrefixKey(getPrefix(o), hash))
+		key := getPrefixKey(getPrefix(o), hash)
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err
@@ -175,7 +175,7 @@ func (s *Storage) GetFromDB(o interface{}, hash string) error {
 			return err
 		}
 	default:
-		err := fmt.Errorf("AddToDB: Unexpected type %T", tt)
+		err := fmt.Errorf("GetFromDB: Unexpected type %T", tt)
 		panic(err)
 	}
 	return nil
