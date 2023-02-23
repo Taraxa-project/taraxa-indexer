@@ -68,6 +68,13 @@ type Pbft struct {
 // PbftsPaginatedResponse defines model for PbftsPaginatedResponse.
 type PbftsPaginatedResponse = PaginatedResponse
 
+// StatsResponse defines model for StatsResponse.
+type StatsResponse struct {
+	DagsCount         Counter `json:"dagsCount"`
+	PbftCount         Counter `json:"pbftCount"`
+	TransactionsCount Counter `json:"transactionsCount"`
+}
+
 // Transaction defines model for Transaction.
 type Transaction struct {
 	Age              Age             `json:"age"`

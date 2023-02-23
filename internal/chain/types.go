@@ -7,6 +7,14 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
+func ParseHexInt(s string) uint64 {
+	v, err := strconv.ParseUint(s, 0, 64)
+	if err != nil {
+		log.Fatal(s, "ParseHexInt ", err)
+	}
+	return v
+}
+
 func parseBool(v string) bool {
 	i, err := strconv.ParseUint(v, 0, 64)
 	if err != nil {
@@ -15,17 +23,17 @@ func parseBool(v string) bool {
 	return i > 0
 }
 
-type block struct {
+type Block struct {
 	models.Pbft
 	Number       string   `json:"number"`
 	Timestamp    string   `json:"timestamp"`
 	Transactions []string `json:"transactions"`
 }
 
-func (b *block) ToModel() (pbft *models.Pbft) {
+func (b *Block) ToModel() (pbft *models.Pbft) {
 	pbft = &b.Pbft
-	pbft.Age, _ = strconv.ParseUint(b.Timestamp, 0, 64)
-	pbft.Number, _ = strconv.ParseUint(b.Number, 0, 64)
+	pbft.Age = ParseHexInt(b.Timestamp)
+	pbft.Number = ParseHexInt(b.Number)
 	pbft.TransactionCount = uint64(len(b.Transactions))
 
 	return
@@ -40,8 +48,8 @@ type dagBlock struct {
 
 func (b *dagBlock) ToModel() (dag *models.Dag) {
 	dag = &b.Dag
-	dag.Age, _ = strconv.ParseUint(b.Timestamp, 0, 64)
-	dag.Level, _ = strconv.ParseUint(b.Level, 0, 64)
+	dag.Age = ParseHexInt(b.Timestamp)
+	dag.Level = ParseHexInt(b.Level)
 	dag.TransactionCount = uint64(len(b.Transactions))
 
 	return
@@ -74,11 +82,11 @@ func (t *transaction) GetType() models.TransactionType {
 
 func (t *transaction) ToModelWithAge(age uint64) (trx *models.Transaction) {
 	trx = &t.Transaction
-	trx.BlockNumber, _ = strconv.ParseUint(t.BlockNumber, 0, 64)
-	trx.Nonce, _ = strconv.ParseUint(t.Nonce, 0, 64)
-	trx.GasPrice, _ = strconv.ParseUint(t.GasPrice, 0, 64)
-	trx.GasUsed, _ = strconv.ParseUint(t.GasUsed, 0, 64)
-	trx.TransactionIndex, _ = strconv.ParseUint(t.TransactionIndex, 0, 64)
+	trx.BlockNumber = ParseHexInt(t.BlockNumber)
+	trx.Nonce = ParseHexInt(t.Nonce)
+	trx.GasPrice = ParseHexInt(t.GasPrice)
+	trx.GasUsed = ParseHexInt(t.GasUsed)
+	trx.TransactionIndex = ParseHexInt(t.TransactionIndex)
 	trx.Status = parseBool(t.Status)
 	trx.Type = t.GetType()
 	trx.Age = age
