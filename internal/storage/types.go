@@ -22,7 +22,7 @@ func (a *AddressStats) AddPbft() uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.PbftTotal++
-	return a.DagTotal
+	return a.PbftTotal
 }
 
 func (a *AddressStats) AddDag() uint64 {

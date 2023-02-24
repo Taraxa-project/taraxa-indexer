@@ -3,6 +3,7 @@ package indexer
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -60,7 +61,7 @@ func (i *Indexer) sync() {
 	for p := uint64(start); p <= end; p++ {
 		blk := i.Client.GetBlockByNumber(p)
 		if p%100 == 0 {
-			fmt.Println(p, "time:", time.Now().Unix(), "diff", time.Since(prev).Milliseconds(), "ms")
+			fmt.Println(p, "elapsed", time.Since(prev).Milliseconds(), "ms")
 			prev = time.Now()
 		}
 		err := i.processBlock(blk)
@@ -99,7 +100,7 @@ func (i *Indexer) Start() {
 func (i *Indexer) processBlock(raw *chain.Block) (err error) {
 	block := raw.ToModel()
 	transactions := raw.Transactions
-	bc := MakeBlockContext(i.storage, block.Age)
+	bc := MakeBlockContext(i.storage, block.Timestamp)
 
 	for _, trx_hash := range transactions {
 		bc.wg.Add(1)
@@ -114,9 +115,9 @@ func (i *Indexer) processBlock(raw *chain.Block) (err error) {
 
 	bc.wg.Wait()
 
-	bc.GetAddress(i.storage, block.Author).AddPbft()
-	i.SaveAddressStats(bc)
-	bc.batch.AddToBatch(block, block.Hash, block.Number)
+	author_pbft_index := bc.GetAddress(i.storage, block.Author).AddPbft()
+	i.AddAddressStatsToBatch(bc)
+	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
 	bc.batch.RecordFinalizedPeriod(storage.FinalizationData(block.Number))
 	bc.batch.CommitBatch()
 
@@ -125,7 +126,7 @@ func (i *Indexer) processBlock(raw *chain.Block) (err error) {
 
 func (i *Indexer) ProcessTransaction(bc *blockContext, hash string) {
 	trx := i.Client.GetTransactionByHash(hash)
-	bc.SaveTransaction(trx.ToModelWithAge(bc.age))
+	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.age))
 	bc.wg.Done()
 }
 
@@ -137,10 +138,10 @@ func (i *Indexer) ProcessDag(bc *blockContext, hash string) {
 	bc.wg.Done()
 }
 
-func (i *Indexer) SaveAddressStats(bc *blockContext) {
+func (i *Indexer) AddAddressStatsToBatch(bc *blockContext) {
 	for _, stats := range bc.addressStats {
 		// json, _ := json.Marshal(stats)
-		// fmt.Println("SaveAddressStats", string(json))
+		// fmt.Println("AddAddressStatsToBatch", string(json))
 		bc.batch.AddToBatch(stats, stats.Address, 0)
 	}
 }
@@ -155,6 +156,7 @@ type blockContext struct {
 }
 
 func (bc *blockContext) GetAddress(s *storage.Storage, addr string) *storage.AddressStats {
+	addr = strings.ToLower(addr)
 	bc.statsMutex.Lock()
 	stats := bc.addressStats[addr]
 	if stats != nil {
@@ -163,13 +165,15 @@ func (bc *blockContext) GetAddress(s *storage.Storage, addr string) *storage.Add
 	}
 	bc.addressStats[addr] = storage.MakeEmptyAddressStats(addr)
 
-	bc.addressStats[addr], _ = s.GetAddressStats(addr)
+	v, err := s.GetAddressStats(addr)
+	if err == nil {
+		bc.addressStats[addr] = v
+	}
 	bc.statsMutex.Unlock()
 	return bc.addressStats[addr]
 }
 
 func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-
 	from_index := bc.GetAddress(bc.storage, trx.From).AddTx()
 	to_index := bc.GetAddress(bc.storage, trx.To).AddTx()
 

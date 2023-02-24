@@ -32,7 +32,7 @@ type Block struct {
 
 func (b *Block) ToModel() (pbft *models.Pbft) {
 	pbft = &b.Pbft
-	pbft.Age = ParseHexInt(b.Timestamp)
+	pbft.Timestamp = ParseHexInt(b.Timestamp)
 	pbft.Number = ParseHexInt(b.Number)
 	pbft.TransactionCount = uint64(len(b.Transactions))
 
@@ -48,7 +48,7 @@ type dagBlock struct {
 
 func (b *dagBlock) ToModel() (dag *models.Dag) {
 	dag = &b.Dag
-	dag.Age = ParseHexInt(b.Timestamp)
+	dag.Timestamp = ParseHexInt(b.Timestamp)
 	dag.Level = ParseHexInt(b.Level)
 	dag.TransactionCount = uint64(len(b.Transactions))
 
@@ -80,7 +80,7 @@ func (t *transaction) GetType() models.TransactionType {
 	return models.Transfer
 }
 
-func (t *transaction) ToModelWithAge(age uint64) (trx *models.Transaction) {
+func (t *transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transaction) {
 	trx = &t.Transaction
 	trx.BlockNumber = ParseHexInt(t.BlockNumber)
 	trx.Nonce = ParseHexInt(t.Nonce)
@@ -89,7 +89,7 @@ func (t *transaction) ToModelWithAge(age uint64) (trx *models.Transaction) {
 	trx.TransactionIndex = ParseHexInt(t.TransactionIndex)
 	trx.Status = parseBool(t.Status)
 	trx.Type = t.GetType()
-	trx.Age = age
+	trx.Timestamp = timestamp
 
 	return
 }

@@ -16,9 +16,6 @@ type Address = string
 // AddressFilter defines model for AddressFilter.
 type AddressFilter = Address
 
-// Age defines model for Age.
-type Age = uint64
-
 // CountResponse defines model for CountResponse.
 type CountResponse struct {
 	Total Counter `json:"total"`
@@ -29,11 +26,11 @@ type Counter = uint64
 
 // Dag defines model for Dag.
 type Dag struct {
-	Age              Age     `json:"age"`
-	Hash             Hash    `json:"hash"`
-	Level            Counter `json:"level"`
-	Sender           Address `json:"sender"`
-	TransactionCount Counter `json:"transactionCount"`
+	Hash             Hash      `json:"hash"`
+	Level            Counter   `json:"level"`
+	Sender           Address   `json:"sender"`
+	Timestamp        Timestamp `json:"timestamp"`
+	TransactionCount Counter   `json:"transactionCount"`
 }
 
 // DagsPaginatedResponse defines model for DagsPaginatedResponse.
@@ -44,25 +41,25 @@ type Hash = string
 
 // PaginatedResponse defines model for PaginatedResponse.
 type PaginatedResponse struct {
-	End     Hash    `json:"end"`
+	End     Counter `json:"end"`
 	HasNext bool    `json:"hasNext"`
-	Start   Hash    `json:"start"`
+	Start   Counter `json:"start"`
 	Total   Counter `json:"total"`
 }
 
 // PaginationFilter defines model for PaginationFilter.
 type PaginationFilter struct {
-	Limit *int32 `json:"limit,omitempty"`
-	Start *Hash  `json:"start,omitempty"`
+	Limit int    `json:"limit"`
+	Start uint32 `json:"start"`
 }
 
 // Pbft defines model for Pbft.
 type Pbft struct {
-	Age              Age     `json:"age"`
-	Author           Address `json:"author"`
-	Hash             Hash    `json:"hash"`
-	Number           Counter `json:"number"`
-	TransactionCount Counter `json:"transactionCount"`
+	Author           Address   `json:"author"`
+	Hash             Hash      `json:"hash"`
+	Number           Counter   `json:"number"`
+	Timestamp        Timestamp `json:"timestamp"`
+	TransactionCount Counter   `json:"transactionCount"`
 }
 
 // PbftsPaginatedResponse defines model for PbftsPaginatedResponse.
@@ -75,9 +72,11 @@ type StatsResponse struct {
 	TransactionsCount Counter `json:"transactionsCount"`
 }
 
+// Timestamp defines model for Timestamp.
+type Timestamp = uint64
+
 // Transaction defines model for Transaction.
 type Transaction struct {
-	Age              Age             `json:"age"`
 	BlockNumber      Counter         `json:"blockNumber"`
 	From             Address         `json:"from"`
 	GasPrice         Counter         `json:"gasPrice"`
@@ -85,6 +84,7 @@ type Transaction struct {
 	Hash             Hash            `json:"hash"`
 	Nonce            Counter         `json:"nonce"`
 	Status           bool            `json:"status"`
+	Timestamp        Timestamp       `json:"timestamp"`
 	To               Address         `json:"to"`
 	TransactionIndex Counter         `json:"transactionIndex"`
 	Type             TransactionType `json:"type"`
@@ -115,19 +115,19 @@ type WeekFilter struct {
 // GetAddressDagsParams defines parameters for GetAddressDags.
 type GetAddressDagsParams struct {
 	// Pagination Pagination
-	Pagination *PaginationFilter `form:"pagination,omitempty" json:"pagination,omitempty"`
+	Pagination PaginationFilter `form:"pagination" json:"pagination"`
 }
 
 // GetAddressPbftsParams defines parameters for GetAddressPbfts.
 type GetAddressPbftsParams struct {
 	// Pagination Pagination
-	Pagination *PaginationFilter `form:"pagination,omitempty" json:"pagination,omitempty"`
+	Pagination PaginationFilter `form:"pagination" json:"pagination"`
 }
 
 // GetAddressTransactionsParams defines parameters for GetAddressTransactions.
 type GetAddressTransactionsParams struct {
 	// Pagination Pagination
-	Pagination *PaginationFilter `form:"pagination,omitempty" json:"pagination,omitempty"`
+	Pagination PaginationFilter `form:"pagination" json:"pagination"`
 }
 
 // GetValidatorsParams defines parameters for GetValidators.
