@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/cockroachdb/pebble"
@@ -98,13 +100,24 @@ type Paginated interface {
 	models.Transaction | models.Dag | models.Pbft
 }
 
-func GetObjectsPage[T Paginated](s *Storage, hash string, from uint64, count int) (ret []T, err error) {
+func ParseKeyIndex(key, prefix string) uint64 {
+	index_str := key[len(prefix):]
+
+	index, err := strconv.ParseUint(index_str, 10, 64)
+	if err != nil {
+		log.Fatal("ParseKeyIndex ", key, prefix)
+	}
+	return index
+}
+
+func GetObjectsPage[T Paginated](s *Storage, hash string, from uint64, count int) (ret []T, pagination *models.PaginatedResponse, err error) {
 	var o T
 	ret = make([]T, 0, count)
-	upper := getPrefixKey(getPrefix(&o), hash)
+	pagination = new(models.PaginatedResponse)
+	prefix := getPrefixKey(getPrefix(&o), hash)
 	start := getKey(getPrefix(&o), hash, from)
 
-	iter := s.find(upper)
+	iter := s.find(prefix)
 	defer iter.Close()
 
 	if from != 0 {
@@ -112,18 +125,24 @@ func GetObjectsPage[T Paginated](s *Storage, hash string, from uint64, count int
 	} else {
 		iter.Last()
 	}
-
+	defer func() {
+		pagination.HasNext = (pagination.End != 1)
+	}()
 	for ; iter.Valid(); iter.Prev() {
-		err := rlp.DecodeBytes(iter.Value(), &o)
+		err = rlp.DecodeBytes(iter.Value(), &o)
+		if len(ret) == 0 {
+			pagination.Start = ParseKeyIndex(string(iter.Key()), string(prefix))
+		}
 		if err != nil {
-			return nil, err
+			return
 		}
 		ret = append(ret, o)
+		pagination.End = ParseKeyIndex(string(iter.Key()), string(prefix))
 		if len(ret) == count {
-			return ret, nil
+			return
 		}
 	}
-	return ret, nil
+	return
 }
 
 func getPrefix(o interface{}) string {
@@ -147,10 +166,12 @@ func getPrefix(o interface{}) string {
 }
 
 func getKey(prefix, author string, number uint64) []byte {
+	author = strings.ToLower(author)
 	return []byte(fmt.Sprintf("%s%s%020d", prefix, author, number))
 }
 
 func getPrefixKey(prefix, author string) []byte {
+	author = strings.ToLower(author)
 	return []byte(fmt.Sprintf("%s%s", prefix, author))
 }
 

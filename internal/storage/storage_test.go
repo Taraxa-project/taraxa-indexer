@@ -1,11 +1,13 @@
 package storage
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetter(t *testing.T) {
@@ -35,27 +37,29 @@ func TestGetObjects(t *testing.T) {
 
 	sender := "user"
 	count := 100
-	for i := 0; i <= count; i++ {
-		block := models.Dag{Age: uint64(i), Hash: "test" + strconv.Itoa(i), Level: 0, Sender: sender, TransactionCount: 0}
-		if err := stor.AddToDB(&block, block.Sender, block.Age); err != nil {
+	for i := 1; i <= count; i++ {
+		block := models.Dag{Timestamp: uint64(i), Hash: "test" + strconv.Itoa(i), Level: 0, Sender: sender, TransactionCount: 0}
+		if err := stor.AddToDB(&block, block.Sender, block.Timestamp); err != nil {
 			t.Error(err)
 		}
 	}
-	ret, err := GetObjectsPage[models.Dag](stor, sender, 0, count)
+	ret, pagination, err := GetObjectsPage[models.Dag](stor, sender, 0, count)
 	if err != nil {
 		t.Error(err)
 	}
-	if len(ret) != count {
-		t.Error("Wrong length", len(ret))
-	}
+	assert.Equal(t, len(ret), count)
+	assert.False(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(100))
+	assert.Equal(t, pagination.End, uint64(1))
 
-	ret, err = GetObjectsPage[models.Dag](stor, sender, 49, 100)
+	ret, pagination, err = GetObjectsPage[models.Dag](stor, sender, 50, 100)
 	if err != nil {
 		t.Error(err)
 	}
-	if len(ret) != 50 {
-		t.Error("Wrong length", len(ret))
-	}
+	assert.Equal(t, len(ret), 50)
+	assert.False(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(50))
+	assert.Equal(t, pagination.End, uint64(1))
 }
 
 func TestStorage(t *testing.T) {
@@ -129,5 +133,15 @@ func TestBatch(t *testing.T) {
 	}
 	if !ret.isEqual(addr1) {
 		t.Error("Broken DB")
+	}
+}
+
+func TestParseKeyIndex(t *testing.T) {
+	v := uint64(28)
+	key := "test0000000" + fmt.Sprint(v)
+	prefix := "test"
+	res := ParseKeyIndex(key, prefix)
+	if v != res {
+		t.Error("ParseKeyIndex ", v, "!=", res)
 	}
 }
