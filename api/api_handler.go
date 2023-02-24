@@ -64,9 +64,10 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
 func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) error {
-	var addr storage.AddressStats
-	a.storage.GetFromDB(&addr, address)
-
+	addr, err := a.storage.GetAddressStats(address)
+	if err != nil {
+		return err
+	}
 	var count StatsResponse
 	count.PbftCount = addr.PbftTotal
 	count.DagsCount = addr.DagTotal
