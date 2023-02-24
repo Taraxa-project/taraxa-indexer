@@ -15,7 +15,6 @@ func (a *AddressStats) AddTx() uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.TxTotal++
-	a.mutex.Unlock()
 	return a.TxTotal
 }
 

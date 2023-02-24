@@ -64,6 +64,7 @@ func main() {
 	flag.Parse()
 	fmt.Println("passed blockchain_ws", *blockchain_ws)
 
+	st.RecordFinalizedPeriod(65000)
 	idx, err := indexer.NewIndexer(*blockchain_ws, st)
 	if err != nil {
 		log.Fatal("Problem with indexer", err)

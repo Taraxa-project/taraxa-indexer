@@ -98,7 +98,7 @@ We store the transaction twice in each address namespace:
 
 And we also increment the number of total transactions for both the first and the second address.
 
-This way we can interate over the transactions easier when we want to display them:
+This way we can iterate over the transactions easier when we want to display them:
 
 ```
 tx:0x00000000000000000000000000000000000000fe:1234:50
