@@ -1,10 +1,10 @@
 package indexer
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -34,9 +34,13 @@ func (i *Indexer) sync() {
 	start := i.storage.GetFinalizedPeriod()
 	end := i.Client.GetLatestPeriod()
 	fmt.Println("Starting sync from", start, "to", end)
+	prev := time.Now()
 	for p := uint64(start); p <= end; p++ {
 		blk := i.Client.GetBlockByNumber(p)
-		fmt.Println("Processing", p, blk.Number)
+		if p%100 == 0 {
+			fmt.Println(p, "time:", time.Now().Unix(), "diff", time.Now().Sub(prev).Milliseconds(), "ms")
+			prev = time.Now()
+		}
 		i.processBlock(blk)
 	}
 }
@@ -44,7 +48,6 @@ func (i *Indexer) sync() {
 func (i *Indexer) Start() {
 	i.init()
 	i.sync()
-
 	ch, sub, err := i.Client.SubscribeNewHeads()
 	if err != nil {
 		log.Fatal("Subscription failed")
@@ -54,6 +57,11 @@ func (i *Indexer) Start() {
 		case err := <-sub.Err():
 			log.Fatal(err)
 		case block := <-ch:
+			fmt.Println("Processing event block", block.ToModel().Number)
+			if chain.ParseHexInt(block.Number) != uint64(i.storage.GetFinalizedPeriod())+1 {
+				i.sync()
+				continue
+			}
 			i.processBlock(block)
 		}
 	}
@@ -62,7 +70,7 @@ func (i *Indexer) Start() {
 func (i *Indexer) processBlock(raw *chain.Block) (err error) {
 	block := raw.ToModel()
 	transactions := raw.Transactions
-	bc := MakeBlockContext(block.Age)
+	bc := MakeBlockContext(i.storage, block.Age)
 
 	for _, trx_hash := range transactions {
 		bc.wg.Add(1)
@@ -77,16 +85,18 @@ func (i *Indexer) processBlock(raw *chain.Block) (err error) {
 
 	bc.wg.Wait()
 
-	i.SaveAddressStats(bc)
 	bc.GetAddress(i.storage, block.Author).AddPbft()
-	i.storage.AddToDB(block, block.Hash, block.Number)
-	i.storage.RecordFinalizedPeriod(storage.FinalizationData(block.Number))
+	i.SaveAddressStats(bc)
+	bc.batch.AddToBatch(block, block.Hash, block.Number)
+	bc.batch.RecordFinalizedPeriod(storage.FinalizationData(block.Number))
+	bc.batch.CommitBatch()
+
 	return
 }
 
 func (i *Indexer) ProcessTransaction(bc *blockContext, hash string) (err error) {
 	trx := i.Client.GetTransactionByHash(hash)
-	bc.SaveTransaction(i.storage, trx.ToModelWithAge(bc.age))
+	bc.SaveTransaction(trx.ToModelWithAge(bc.age))
 	bc.wg.Done()
 	return
 }
@@ -95,7 +105,7 @@ func (i *Indexer) ProcessDag(bc *blockContext, hash string) (err error) {
 	dag := i.Client.GetDagBlockByHash(hash)
 
 	dag_index := bc.GetAddress(i.storage, dag.Sender).AddDag()
-	err = i.storage.AddToDB(dag.ToModel(), dag.Sender, dag_index)
+	err = bc.batch.AddToBatch(dag.ToModel(), dag.Sender, dag_index)
 
 	bc.wg.Done()
 	return
@@ -103,9 +113,9 @@ func (i *Indexer) ProcessDag(bc *blockContext, hash string) (err error) {
 
 func (i *Indexer) SaveAddressStats(bc *blockContext) {
 	for _, stats := range bc.addressStats {
-		json, _ := json.Marshal(stats)
-		fmt.Println("SaveAddressStats", string(json))
-		i.storage.AddToDB(stats, stats.Address, 0)
+		// json, _ := json.Marshal(stats)
+		// fmt.Println("SaveAddressStats", string(json))
+		bc.batch.AddToBatch(stats, stats.Address, 0)
 	}
 }
 
@@ -113,6 +123,8 @@ type blockContext struct {
 	wg           sync.WaitGroup
 	age          uint64
 	addressStats map[string]*storage.AddressStats
+	storage      *storage.Storage
+	batch        *storage.Batch
 	statsMutex   sync.RWMutex
 }
 
@@ -131,21 +143,23 @@ func (bc *blockContext) GetAddress(s *storage.Storage, addr string) *storage.Add
 	return bc.addressStats[addr]
 }
 
-func (bc *blockContext) SaveTransaction(s *storage.Storage, trx *models.Transaction) {
+func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
 
-	from_index := bc.GetAddress(s, trx.From).AddTx()
-	to_index := bc.GetAddress(s, trx.To).AddTx()
+	from_index := bc.GetAddress(bc.storage, trx.From).AddTx()
+	to_index := bc.GetAddress(bc.storage, trx.To).AddTx()
 
-	err1 := s.AddToDB(trx, trx.From, from_index)
-	err2 := s.AddToDB(trx, trx.To, to_index)
+	err1 := bc.batch.AddToBatch(trx, trx.From, from_index)
+	err2 := bc.batch.AddToBatch(trx, trx.To, to_index)
 	if err1 != nil || err2 != nil {
 		log.Fatal("Something wrong saving transaction to DB")
 	}
 }
 
-func MakeBlockContext(age uint64) *blockContext {
+func MakeBlockContext(s *storage.Storage, age uint64) *blockContext {
 	var bc blockContext
 	bc.age = age
 	bc.addressStats = make(map[string]*storage.AddressStats)
+	bc.batch = s.NewBatch()
+	bc.storage = s
 	return &bc
 }

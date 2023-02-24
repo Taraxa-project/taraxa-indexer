@@ -12,7 +12,7 @@ import (
 )
 
 type ApiHandler struct {
-	Store *storage.Storage
+	storage *storage.Storage
 }
 
 func NewApiHandler(s *storage.Storage) *ApiHandler {
@@ -22,12 +22,16 @@ func NewApiHandler(s *storage.Storage) *ApiHandler {
 // GetAddressDags returns all DAG blocks sent by the selected address
 func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
 	fmt.Println("GetAddressDags")
-	var data []Dag
+	limit := int(20)
+	if params.Pagination != nil && params.Pagination.Limit != nil {
+		limit = int(*params.Pagination.Limit)
+	}
+	ret, _ := storage.GetObjectsPage[Dag](a.storage, address, 0, limit)
 	response := struct {
 		DagsPaginatedResponse
-		Data []Dag
+		Data []Dag `json:"data"`
 	}{
-		Data: data,
+		Data: ret,
 	}
 	return ctx.JSON(http.StatusOK, response)
 }
@@ -61,7 +65,7 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
 func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) error {
 	var addr storage.AddressStats
-	a.Store.GetFromDB(&addr, address)
+	a.storage.GetFromDB(&addr, address)
 
 	var count StatsResponse
 	count.PbftCount = addr.PbftTotal

@@ -94,12 +94,15 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-// in case from = 0 we return the upper bound
-func (s *Storage) GetObjects(o interface{}, hash string, from uint64, count int) ([]interface{}, error) {
-	ret := make([]interface{}, 0, count)
+type Paginated interface {
+	models.Transaction | models.Dag | models.Pbft
+}
 
-	upper := getPrefixKey(getPrefix(o), hash)
-	start := getKey(getPrefix(o), hash, from)
+func GetObjectsPage[T Paginated](s *Storage, hash string, from uint64, count int) (ret []T, err error) {
+	var o T
+	ret = make([]T, 0, count)
+	upper := getPrefixKey(getPrefix(&o), hash)
+	start := getKey(getPrefix(&o), hash, from)
 
 	iter := s.find(upper)
 	defer iter.Close()
@@ -111,7 +114,8 @@ func (s *Storage) GetObjects(o interface{}, hash string, from uint64, count int)
 	}
 
 	for ; iter.Valid(); iter.Prev() {
-		err := rlp.DecodeBytes(iter.Value(), o)
+		var o T
+		err := rlp.DecodeBytes(iter.Value(), &o)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +174,6 @@ func (s *Storage) RecordFinalizedPeriod(f FinalizationData) error {
 func (s *Storage) FinalizedPeriodExists() bool {
 	ptr := new(FinalizationData)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
-	fmt.Println("FinalizedPeriodExists", err)
 	return err == nil
 }
 
@@ -206,20 +209,4 @@ func (s *Storage) getFromDB(o interface{}, key []byte) error {
 		panic(err)
 	}
 	return nil
-}
-
-type Batch struct {
-	*pebble.Batch
-}
-
-func (s *Storage) NewBatch() *Batch {
-	return &Batch{s.db.NewBatch()}
-}
-
-func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) error {
-	data, err := rlp.EncodeToBytes(o)
-	if err != nil {
-		return err
-	}
-	return b.Set(getKey(getPrefix(o), key1, key2), data, nil)
 }

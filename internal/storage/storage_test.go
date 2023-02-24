@@ -30,19 +30,18 @@ func TestGetter(t *testing.T) {
 }
 
 func TestGetObjects(t *testing.T) {
-	storage := NewStorage("")
-	defer storage.Close()
+	stor := NewStorage("")
+	defer stor.Close()
 
 	sender := "user"
 	count := 100
 	for i := 0; i <= count; i++ {
 		block := models.Dag{Age: uint64(i), Hash: "test" + strconv.Itoa(i), Level: 0, Sender: sender, TransactionCount: 0}
-		if err := storage.AddToDB(&block, block.Sender, block.Age); err != nil {
+		if err := stor.AddToDB(&block, block.Sender, block.Age); err != nil {
 			t.Error(err)
 		}
 	}
-	var block models.Dag
-	ret, err := storage.GetObjects(&block, sender, 0, count)
+	ret, err := GetObjectsPage[models.Dag](stor, sender, 0, count)
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,7 +49,7 @@ func TestGetObjects(t *testing.T) {
 		t.Error("Wrong length", len(ret))
 	}
 
-	ret, err = storage.GetObjects(&block, sender, 49, 100)
+	ret, err = GetObjectsPage[models.Dag](stor, sender, 49, 100)
 	if err != nil {
 		t.Error(err)
 	}
