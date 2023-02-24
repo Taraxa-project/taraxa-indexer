@@ -25,6 +25,25 @@ func NewIndexer(url string, storage *storage.Storage) (i *Indexer, err error) {
 }
 
 func (i *Indexer) init() {
+	remote_hash := storage.GenesisHash(i.Client.GetBlockByNumber(0).Hash)
+	if i.storage.GenesisHashExist() {
+		local_hash := i.storage.GetGenesisHash()
+		fmt.Println("Checking genesis local", local_hash, "remote", remote_hash)
+		if local_hash != remote_hash {
+			fmt.Println("Genesis hash mismatch. Cleaning DB and restart syncing")
+			if err := i.storage.Clean(); err != nil {
+				log.Fatal("init storage.Clean() ", err)
+			}
+			if err := i.storage.SaveGenesisHash(remote_hash); err != nil {
+				log.Fatal("init storage.SaveGenesisHash ", err)
+			}
+		}
+	} else {
+		if err := i.storage.SaveGenesisHash(remote_hash); err != nil {
+			log.Fatal("init storage.SaveGenesisHash ", err)
+		}
+	}
+
 	if !i.storage.FinalizedPeriodExists() {
 		err := i.storage.RecordFinalizedPeriod(1)
 		if err != nil {

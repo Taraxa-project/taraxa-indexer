@@ -138,6 +138,8 @@ func getPrefix(o interface{}) string {
 		return "s"
 	case *FinalizationData:
 		return "f"
+	case *GenesisHash:
+		return "g"
 	default:
 		err := fmt.Errorf("getPrefix: Unexpected type %T", tt)
 		panic(err)
@@ -191,9 +193,28 @@ func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {
 	return
 }
 
+func (s *Storage) SaveGenesisHash(h GenesisHash) error {
+	return s.addToDB([]byte(getPrefix(&h)), &h)
+}
+
+func (s *Storage) GenesisHashExist() bool {
+	ptr := new(GenesisHash)
+	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
+	return err == nil
+}
+
+func (s *Storage) GetGenesisHash() GenesisHash {
+	ptr := new(GenesisHash)
+	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
+	if err != nil {
+		log.Fatal("GetGenesisHash ", err)
+	}
+	return *ptr
+}
+
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *AddressStats, *FinalizationData:
+	case *AddressStats, *FinalizationData, *GenesisHash:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err
