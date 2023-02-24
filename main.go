@@ -24,11 +24,13 @@ import (
 var (
 	http_port     *int
 	blockchain_ws *string
+	db_path       *string
 )
 
 func init() {
 	http_port = flag.Int("http_port", 8080, "port to listen")
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
+	db_path = flag.String("db_path", "./data", "path to directory where indexer database will be saved")
 }
 
 func setupCloseHandler(st *storage.Storage, fn func()) {
@@ -42,7 +44,11 @@ func setupCloseHandler(st *storage.Storage, fn func()) {
 }
 
 func main() {
-	st := storage.NewStorage("./data/indexer.db")
+	flag.Parse()
+	fmt.Println("passed blockchain_ws", *blockchain_ws)
+	fmt.Println("passed db_path", *db_path)
+
+	st := storage.NewStorage(*db_path)
 
 	setupCloseHandler(st, func() { st.Close() })
 
@@ -61,8 +67,6 @@ func main() {
 
 	apiHandler := api.NewApiHandler(st)
 	api.RegisterHandlers(e, apiHandler)
-	flag.Parse()
-	fmt.Println("passed blockchain_ws", *blockchain_ws)
 
 	idx, err := indexer.NewIndexer(*blockchain_ws, st)
 	if err != nil {
