@@ -20,8 +20,8 @@ func TestGetter(t *testing.T) {
 	if err := storage.AddToDB(addr1, addr1.Address, 0); err != nil {
 		t.Error(err)
 	}
-	ret := MakeEmptyAddressStats("")
-	if err := storage.GetFromDB(ret, "test"); err != nil {
+	ret, err := storage.GetAddressStats("test")
+	if err != nil {
 		t.Error(err)
 	}
 	if !ret.isEqual(addr) {
@@ -70,8 +70,8 @@ func TestStorage(t *testing.T) {
 	{
 		storage := NewStorage("/tmp/test")
 		defer storage.Close()
-		var ret AddressStats
-		if err := storage.GetFromDB(&ret, "test"); err != nil {
+		ret, err := storage.GetAddressStats("test")
+		if err != nil {
 			t.Error(err)
 		}
 		if !ret.isEqual(addr) {
@@ -94,8 +94,8 @@ func TestCleanStorage(t *testing.T) {
 		t.Error(err)
 	}
 
-	var ret AddressStats
-	if err := storage.GetFromDB(&ret, "test"); err == nil {
+	_, err := storage.GetAddressStats("test")
+	if err == nil {
 		t.Error("Clean DB does not work")
 		os.Remove("/tmp/test")
 	}
@@ -108,26 +108,23 @@ func TestBatch(t *testing.T) {
 	addr := MakeEmptyAddressStats("test")
 	batch := storage.NewBatch()
 
-	if err := batch.AddToBatch(addr, addr.Address, 0); err != nil {
-		t.Error(err)
-	}
+	batch.AddToBatch(addr, addr.Address, 0)
 	addr1 := MakeEmptyAddressStats("test1")
-	if err := batch.AddToBatch(addr1, addr1.Address, 0); err != nil {
-		t.Error(err)
-	}
+	batch.AddToBatch(addr1, addr1.Address, 0)
 	if err := batch.Commit(nil); err != nil {
 		t.Error(err)
 	}
 
-	ret := MakeEmptyAddressStats("")
-	if err := storage.GetFromDB(ret, "test"); err != nil {
+	ret, err := storage.GetAddressStats("test")
+	if err != nil {
 		t.Error(err)
 	}
 	if !ret.isEqual(addr) {
 		t.Error("Broken DB")
 	}
 
-	if err := storage.GetFromDB(ret, "test1"); err != nil {
+	ret, err = storage.GetAddressStats("test1")
+	if err != nil {
 		t.Error(err)
 	}
 	if !ret.isEqual(addr1) {

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"log"
 	"sync"
 
 	"github.com/cockroachdb/pebble"
@@ -16,19 +17,28 @@ func (s *Storage) NewBatch() *Batch {
 	return &Batch{s.db.NewBatch(), new(sync.RWMutex)}
 }
 
-func (b *Batch) CommitBatch() error {
+func (b *Batch) CommitBatch() {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	return b.Commit(pebble.NoSync)
+	err := b.Commit(pebble.NoSync)
+	if err != nil {
+		log.Fatal("CommitBatch ", err)
+	}
 }
 
-func (b *Batch) RecordFinalizedPeriod(f FinalizationData) error {
-	return b.addToBatch(&f, []byte(getPrefix(&f)))
+func (b *Batch) RecordFinalizedPeriod(f FinalizationData) {
+	err := b.addToBatch(&f, []byte(getPrefix(&f)))
+	if err != nil {
+		log.Fatal("AddToBatch ", err)
+	}
 }
 
-func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) error {
-	return b.addToBatch(o, getKey(getPrefix(o), key1, key2))
+func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {
+	err := b.addToBatch(o, getKey(getPrefix(o), key1, key2))
+	if err != nil {
+		log.Fatal("AddToBatch ", err)
+	}
 }
 
 func (b *Batch) addToBatch(o interface{}, key []byte) error {
