@@ -50,3 +50,5 @@ func (a *AddressStats) isEqual(b *AddressStats) bool {
 }
 
 type FinalizationData uint64
+
+type GenesisHash string
