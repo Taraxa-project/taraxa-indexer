@@ -26,7 +26,10 @@ func NewIndexer(url string, storage *storage.Storage) (i *Indexer, err error) {
 
 func (i *Indexer) init() {
 	if !i.storage.FinalizedPeriodExists() {
-		i.storage.RecordFinalizedPeriod(1)
+		err := i.storage.RecordFinalizedPeriod(1)
+		if err != nil {
+			log.Fatal("init RecordFinalizedPeriod ", err)
+		}
 	}
 }
 
@@ -38,10 +41,13 @@ func (i *Indexer) sync() {
 	for p := uint64(start); p <= end; p++ {
 		blk := i.Client.GetBlockByNumber(p)
 		if p%100 == 0 {
-			fmt.Println(p, "time:", time.Now().Unix(), "diff", time.Now().Sub(prev).Milliseconds(), "ms")
+			fmt.Println(p, "time:", time.Now().Unix(), "diff", time.Since(prev).Milliseconds(), "ms")
 			prev = time.Now()
 		}
-		i.processBlock(blk)
+		err := i.processBlock(blk)
+		if err != nil {
+			log.Fatal("processBlock", err)
+		}
 	}
 }
 
@@ -56,13 +62,17 @@ func (i *Indexer) Start() {
 		select {
 		case err := <-sub.Err():
 			log.Fatal(err)
-		case block := <-ch:
-			fmt.Println("Processing event block", block.ToModel().Number)
-			if chain.ParseHexInt(block.Number) != uint64(i.storage.GetFinalizedPeriod())+1 {
+		case blk := <-ch:
+			blk_num := chain.ParseHexInt(blk.Number)
+			fmt.Println("Processing event block", blk_num)
+			if blk_num != uint64(i.storage.GetFinalizedPeriod())+1 {
 				i.sync()
 				continue
 			}
-			i.processBlock(block)
+			err := i.processBlock(blk)
+			if err != nil {
+				log.Fatal("processBlock", err)
+			}
 		}
 	}
 }
@@ -94,21 +104,18 @@ func (i *Indexer) processBlock(raw *chain.Block) (err error) {
 	return
 }
 
-func (i *Indexer) ProcessTransaction(bc *blockContext, hash string) (err error) {
+func (i *Indexer) ProcessTransaction(bc *blockContext, hash string) {
 	trx := i.Client.GetTransactionByHash(hash)
 	bc.SaveTransaction(trx.ToModelWithAge(bc.age))
 	bc.wg.Done()
-	return
 }
 
-func (i *Indexer) ProcessDag(bc *blockContext, hash string) (err error) {
+func (i *Indexer) ProcessDag(bc *blockContext, hash string) {
 	dag := i.Client.GetDagBlockByHash(hash)
 
 	dag_index := bc.GetAddress(i.storage, dag.Sender).AddDag()
-	err = bc.batch.AddToBatch(dag.ToModel(), dag.Sender, dag_index)
-
+	bc.batch.AddToBatch(dag.ToModel(), dag.Sender, dag_index)
 	bc.wg.Done()
-	return
 }
 
 func (i *Indexer) SaveAddressStats(bc *blockContext) {
@@ -137,8 +144,7 @@ func (bc *blockContext) GetAddress(s *storage.Storage, addr string) *storage.Add
 	}
 	bc.addressStats[addr] = storage.MakeEmptyAddressStats(addr)
 
-	s.GetFromDB(bc.addressStats[addr], addr)
-
+	bc.addressStats[addr], _ = s.GetAddressStats(addr)
 	bc.statsMutex.Unlock()
 	return bc.addressStats[addr]
 }
@@ -148,11 +154,8 @@ func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
 	from_index := bc.GetAddress(bc.storage, trx.From).AddTx()
 	to_index := bc.GetAddress(bc.storage, trx.To).AddTx()
 
-	err1 := bc.batch.AddToBatch(trx, trx.From, from_index)
-	err2 := bc.batch.AddToBatch(trx, trx.To, to_index)
-	if err1 != nil || err2 != nil {
-		log.Fatal("Something wrong saving transaction to DB")
-	}
+	bc.batch.AddToBatch(trx, trx.From, from_index)
+	bc.batch.AddToBatch(trx, trx.To, to_index)
 }
 
 func MakeBlockContext(s *storage.Storage, age uint64) *blockContext {

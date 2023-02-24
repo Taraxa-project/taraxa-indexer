@@ -185,8 +185,10 @@ func (s *Storage) GetFinalizedPeriod() FinalizationData {
 	return *ptr
 }
 
-func (s *Storage) GetFromDB(o interface{}, hash string) error {
-	return s.getFromDB(o, getKey(getPrefix(o), hash, 0))
+func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {
+	ret = new(AddressStats)
+	err = s.getFromDB(ret, getKey(getPrefix(ret), hash, 0))
+	return
 }
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {

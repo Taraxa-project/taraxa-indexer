@@ -32,7 +32,7 @@ func init() {
 }
 
 func setupCloseHandler(st *storage.Storage, fn func()) {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
 		<-c
@@ -64,7 +64,6 @@ func main() {
 	flag.Parse()
 	fmt.Println("passed blockchain_ws", *blockchain_ws)
 
-	st.RecordFinalizedPeriod(65000)
 	idx, err := indexer.NewIndexer(*blockchain_ws, st)
 	if err != nil {
 		log.Fatal("Problem with indexer", err)
