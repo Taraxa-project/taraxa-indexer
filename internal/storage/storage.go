@@ -114,7 +114,6 @@ func GetObjectsPage[T Paginated](s *Storage, hash string, from uint64, count int
 	}
 
 	for ; iter.Valid(); iter.Prev() {
-		var o T
 		err := rlp.DecodeBytes(iter.Value(), &o)
 		if err != nil {
 			return nil, err
