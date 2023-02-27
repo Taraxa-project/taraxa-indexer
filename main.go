@@ -44,7 +44,7 @@ func setupCloseHandler(st *storage.Storage, fn func()) {
 	}()
 }
 
-var Commit = func() string {
+func GetCommit() string {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {
 			if setting.Key == "vcs.revision" {
@@ -57,7 +57,7 @@ var Commit = func() string {
 
 func main() {
 	flag.Parse()
-	fmt.Println("Built from commit", Commit())
+	fmt.Println("Built from commit", GetCommit())
 	fmt.Println("passed blockchain_ws", *blockchain_ws)
 	fmt.Println("passed db_path", *db_path)
 

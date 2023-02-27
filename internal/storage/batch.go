@@ -27,8 +27,8 @@ func (b *Batch) CommitBatch() {
 	}
 }
 
-func (b *Batch) SaveFinalizedPeriod(f FinalizationData) {
-	err := b.addToBatch(&f, []byte(getPrefix(&f)))
+func (b *Batch) SaveFinalizedPeriod(f *FinalizationData) {
+	err := b.addToBatch(f, []byte(getPrefix(f)))
 	if err != nil {
 		log.Fatal("SaveFinalizedPeriod ", err)
 	}

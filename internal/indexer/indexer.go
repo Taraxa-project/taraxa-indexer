@@ -48,7 +48,7 @@ func (i *Indexer) init() {
 
 func (i *Indexer) sync() {
 	// start processing blocks from the next one
-	start := i.storage.GetFinalizedPeriod() + 1
+	start := i.storage.GetFinalizedPeriod().PbftCount + 1
 	end := i.client.GetLatestPeriod()
 	fmt.Println("Starting sync from", start, "to", end)
 	prev := time.Now()
@@ -58,9 +58,10 @@ func (i *Indexer) sync() {
 			fmt.Println(p, "elapsed", time.Since(prev).Milliseconds(), "ms")
 			prev = time.Now()
 		}
+
 		err := MakeBlockContext(i.storage, i.client).process(blk)
 		if err != nil {
-			log.Fatal("processBlock", err)
+			log.Fatal("processBlock ", err)
 		}
 	}
 }
@@ -76,13 +77,15 @@ func (i *Indexer) Start() {
 		select {
 		case err := <-sub.Err():
 			log.Fatal(err)
-		case blk := <-ch:
-			blk_num := chain.ParseInt(blk.Number)
+		case sub_blk := <-ch:
+			blk_num := chain.ParseInt(sub_blk.Number)
 			fmt.Println("Processing event block", blk_num)
-			if blk_num != uint64(i.storage.GetFinalizedPeriod())+1 {
+			if blk_num != i.storage.GetFinalizedPeriod().PbftCount+1 {
 				i.sync()
 				continue
 			}
+			// We need to get block from API one more time because chain isn't returning transactions in this subscription object
+			blk := i.client.GetBlockByNumber(blk_num)
 			err = MakeBlockContext(i.storage, i.client).process(blk)
 			if err != nil {
 				log.Fatal("processBlock", err)

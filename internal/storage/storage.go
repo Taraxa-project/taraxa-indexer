@@ -195,13 +195,13 @@ func (s *Storage) FinalizedPeriodExists() bool {
 	return err == nil
 }
 
-func (s *Storage) GetFinalizedPeriod() FinalizationData {
+func (s *Storage) GetFinalizedPeriod() *FinalizationData {
 	ptr := new(FinalizationData)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
 	if err != nil {
 		log.Fatal("GetFinalizedPeriod ", err)
 	}
-	return *ptr
+	return ptr
 }
 
 func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {
