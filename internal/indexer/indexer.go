@@ -3,30 +3,27 @@ package indexer
 import (
 	"fmt"
 	"log"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
 type Indexer struct {
-	Client  *chain.WsClient
+	client  *chain.WsClient
 	storage *storage.Storage
 }
 
 func NewIndexer(url string, storage *storage.Storage) (i *Indexer, err error) {
 	i = new(Indexer)
 	i.storage = storage
-	i.Client, err = chain.NewWsClient(url)
-
+	i.client, err = chain.NewWsClient(url)
 	return
 }
 
 func (i *Indexer) init() {
-	remote_hash := storage.GenesisHash(i.Client.GetBlockByNumber(0).Hash)
+	remote_hash := storage.GenesisHash(i.client.GetBlockByNumber(0).Hash)
+	db_clean := false
 	if i.storage.GenesisHashExist() {
 		local_hash := i.storage.GetGenesisHash()
 		fmt.Println("Checking genesis local", local_hash, "remote", remote_hash)
@@ -35,36 +32,33 @@ func (i *Indexer) init() {
 			if err := i.storage.Clean(); err != nil {
 				log.Fatal("init storage.Clean() ", err)
 			}
-			if err := i.storage.SaveGenesisHash(remote_hash); err != nil {
-				log.Fatal("init storage.SaveGenesisHash ", err)
-			}
+			db_clean = true
 		}
 	} else {
-		if err := i.storage.SaveGenesisHash(remote_hash); err != nil {
-			log.Fatal("init storage.SaveGenesisHash ", err)
-		}
+		db_clean = true
+	}
+	if !db_clean {
+		return
 	}
 
-	if !i.storage.FinalizedPeriodExists() {
-		err := i.storage.RecordFinalizedPeriod(1)
-		if err != nil {
-			log.Fatal("init RecordFinalizedPeriod ", err)
-		}
-	}
+	genesis := MakeGenesis(i.storage, i.client, string(remote_hash))
+	// Genesis hash and finalized period(0) is set inside
+	genesis.process()
 }
 
 func (i *Indexer) sync() {
-	start := i.storage.GetFinalizedPeriod()
-	end := i.Client.GetLatestPeriod()
+	// start processing blocks from the next one
+	start := i.storage.GetFinalizedPeriod() + 1
+	end := i.client.GetLatestPeriod()
 	fmt.Println("Starting sync from", start, "to", end)
 	prev := time.Now()
 	for p := uint64(start); p <= end; p++ {
-		blk := i.Client.GetBlockByNumber(p)
+		blk := i.client.GetBlockByNumber(p)
 		if p%100 == 0 {
 			fmt.Println(p, "elapsed", time.Since(prev).Milliseconds(), "ms")
 			prev = time.Now()
 		}
-		err := i.processBlock(blk)
+		err := MakeBlockContext(i.storage, i.client).process(blk)
 		if err != nil {
 			log.Fatal("processBlock", err)
 		}
@@ -74,7 +68,7 @@ func (i *Indexer) sync() {
 func (i *Indexer) Start() {
 	i.init()
 	i.sync()
-	ch, sub, err := i.Client.SubscribeNewHeads()
+	ch, sub, err := i.client.SubscribeNewHeads()
 	if err != nil {
 		log.Fatal("Subscription failed")
 	}
@@ -83,109 +77,16 @@ func (i *Indexer) Start() {
 		case err := <-sub.Err():
 			log.Fatal(err)
 		case blk := <-ch:
-			blk_num := chain.ParseHexInt(blk.Number)
+			blk_num := chain.ParseInt(blk.Number)
 			fmt.Println("Processing event block", blk_num)
 			if blk_num != uint64(i.storage.GetFinalizedPeriod())+1 {
 				i.sync()
 				continue
 			}
-			err := i.processBlock(blk)
+			err = MakeBlockContext(i.storage, i.client).process(blk)
 			if err != nil {
 				log.Fatal("processBlock", err)
 			}
 		}
 	}
-}
-
-func (i *Indexer) processBlock(raw *chain.Block) (err error) {
-	block := raw.ToModel()
-	transactions := raw.Transactions
-	bc := MakeBlockContext(i.storage, block.Timestamp)
-
-	for _, trx_hash := range transactions {
-		bc.wg.Add(1)
-		go i.ProcessTransaction(bc, trx_hash)
-	}
-
-	block_with_dags := i.Client.GetPbftBlockWithDagBlocks(block.Number)
-	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		bc.wg.Add(1)
-		go i.ProcessDag(bc, dag_hash)
-	}
-
-	bc.wg.Wait()
-
-	author_pbft_index := bc.GetAddress(i.storage, block.Author).AddPbft()
-	i.AddAddressStatsToBatch(bc)
-	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
-	bc.batch.RecordFinalizedPeriod(storage.FinalizationData(block.Number))
-	bc.batch.CommitBatch()
-
-	return
-}
-
-func (i *Indexer) ProcessTransaction(bc *blockContext, hash string) {
-	trx := i.Client.GetTransactionByHash(hash)
-	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.age))
-	bc.wg.Done()
-}
-
-func (i *Indexer) ProcessDag(bc *blockContext, hash string) {
-	dag := i.Client.GetDagBlockByHash(hash)
-
-	dag_index := bc.GetAddress(i.storage, dag.Sender).AddDag()
-	bc.batch.AddToBatch(dag.ToModel(), dag.Sender, dag_index)
-	bc.wg.Done()
-}
-
-func (i *Indexer) AddAddressStatsToBatch(bc *blockContext) {
-	for _, stats := range bc.addressStats {
-		// json, _ := json.Marshal(stats)
-		// fmt.Println("AddAddressStatsToBatch", string(json))
-		bc.batch.AddToBatch(stats, stats.Address, 0)
-	}
-}
-
-type blockContext struct {
-	wg           sync.WaitGroup
-	age          uint64
-	addressStats map[string]*storage.AddressStats
-	storage      *storage.Storage
-	batch        *storage.Batch
-	statsMutex   sync.RWMutex
-}
-
-func (bc *blockContext) GetAddress(s *storage.Storage, addr string) *storage.AddressStats {
-	addr = strings.ToLower(addr)
-	bc.statsMutex.Lock()
-	stats := bc.addressStats[addr]
-	if stats != nil {
-		bc.statsMutex.Unlock()
-		return stats
-	}
-	bc.addressStats[addr] = storage.MakeEmptyAddressStats(addr)
-
-	v, err := s.GetAddressStats(addr)
-	if err == nil {
-		bc.addressStats[addr] = v
-	}
-	bc.statsMutex.Unlock()
-	return bc.addressStats[addr]
-}
-
-func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-	from_index := bc.GetAddress(bc.storage, trx.From).AddTx()
-	to_index := bc.GetAddress(bc.storage, trx.To).AddTx()
-
-	bc.batch.AddToBatch(trx, trx.From, from_index)
-	bc.batch.AddToBatch(trx, trx.To, to_index)
-}
-
-func MakeBlockContext(s *storage.Storage, age uint64) *blockContext {
-	var bc blockContext
-	bc.age = age
-	bc.addressStats = make(map[string]*storage.AddressStats)
-	bc.batch = s.NewBatch()
-	bc.storage = s
-	return &bc
 }
