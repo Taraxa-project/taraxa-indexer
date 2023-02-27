@@ -159,6 +159,8 @@ func getPrefix(o interface{}) string {
 		return "f"
 	case *GenesisHash:
 		return "g"
+	case *WeekStats:
+		return "w"
 	default:
 		err := fmt.Errorf("getPrefix: Unexpected type %T", tt)
 		panic(err)
@@ -173,6 +175,20 @@ func getKey(prefix, author string, number uint64) []byte {
 func getPrefixKey(prefix, author string) []byte {
 	author = strings.ToLower(author)
 	return []byte(fmt.Sprintf("%s%s", prefix, author))
+}
+
+func getWeekKey(prefix string, year, week int) []byte {
+	return []byte(fmt.Sprintf("%s%d%02d", prefix, year, week))
+}
+
+func (s *Storage) GetWeekStats(year, week int) WeekStats {
+	ptr := MakeEmptyWeekStats()
+	ptr.key = []byte(getWeekKey(getPrefix(ptr), year, week))
+	err := s.getFromDB(ptr, ptr.key)
+	if err != nil && err != pebble.ErrNotFound {
+		log.Fatal("GetFinalizedPeriod ", err)
+	}
+	return *ptr
 }
 
 func (s *Storage) AddToDB(o interface{}, key1 string, key2 uint64) error {
@@ -221,7 +237,7 @@ func (s *Storage) GetGenesisHash() GenesisHash {
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *AddressStats, *FinalizationData, *GenesisHash:
+	case *AddressStats, *FinalizationData, *GenesisHash, *WeekStats:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err

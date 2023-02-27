@@ -2,7 +2,10 @@ package storage
 
 import (
 	"log"
+	"sort"
 	"sync"
+
+	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
 // AddressStats defines the model for an address aggregate.
@@ -70,6 +73,46 @@ func (f1 *FinalizationData) Check(f2 *FinalizationData) {
 	if f1.TrxCount != f2.TrxCount {
 		log.Fatal("Transactions consistency check failed ", f1.TrxCount, "!=", f2.TrxCount)
 	}
+}
+
+type WeekStats struct {
+	Validators []models.Validator
+	Total      uint32
+	key        []byte `rlp:"-"`
+}
+
+func MakeEmptyWeekStats() *WeekStats {
+	data := new(WeekStats)
+	return data
+}
+
+func (w *WeekStats) AddPbftBlock(block *models.Pbft) {
+	w.Total++
+	for k, v := range w.Validators {
+		if v.Address == block.Author {
+			w.Validators[k].PbftCount++
+			return
+		}
+	}
+	w.Validators = append(w.Validators, models.Validator{Address: block.Author, PbftCount: 1})
+}
+
+func (w *WeekStats) GetPaginated(from int, count int) ([]models.Validator, *models.PaginatedResponse) {
+	pagination := new(models.PaginatedResponse)
+	pagination.Total = uint64(len(w.Validators))
+	pagination.Start = uint64(from)
+	end := uint64(from + count)
+	pagination.HasNext = (end < pagination.Total)
+	if end > pagination.Total {
+		end = pagination.Total
+	}
+	pagination.End = end
+
+	// Sort
+	sort.Slice(w.Validators, func(i, j int) bool {
+		return w.Validators[i].PbftCount > w.Validators[j].PbftCount
+	})
+	return w.Validators[from:end], pagination
 }
 
 type GenesisHash string
