@@ -52,6 +52,7 @@ jobs:
 
             if [[ ! -z ${CIRCLE_TAG} ]]; then
               docker tag ${IMAGE}:${VERSION} ${GCP_IMAGE}:${CIRCLE_TAG}
+              docker tag ${IMAGE}:${VERSION} ${GCP_IMAGE}:latest
             fi
 
       - run:
@@ -72,6 +73,7 @@ jobs:
 
             if [[ ! -z ${CIRCLE_TAG} ]]; then
               docker push ${GCP_IMAGE}:${CIRCLE_TAG}
+              docker push ${GCP_IMAGE}:latest
             fi
 
 workflows:
