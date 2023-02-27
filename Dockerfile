@@ -16,7 +16,8 @@ RUN make build
 
 
 # executable image
-FROM scratch
+FROM alpine
+RUN apk add --no-cache ca-certificates && update-ca-certificates
 
 COPY --from=gobuilder /app/build/linux_amd64/taraxa-indexer /taraxa-indexer
 
