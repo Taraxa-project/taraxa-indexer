@@ -26,11 +26,8 @@ func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext 
 	bc.batch = s.NewBatch()
 	bc.client = client
 	bc.addressStats = make(map[string]*storage.AddressStats)
-	if s.FinalizedPeriodExists() {
-		bc.finalized = s.GetFinalizedPeriod()
-	} else {
-		bc.finalized = new(storage.FinalizationData)
-	}
+	bc.finalized = s.GetFinalizedPeriod()
+
 	return &bc
 }
 
