@@ -43,6 +43,8 @@ func (g *Genesis) process() {
 	}
 	fmt.Println("GENESIS:", len(g.genesis.InitialBalances), "init balance transactions parsed")
 
+	// Genesis transactions isn't real transactions, so don't count it here
+	g.bc.finalized.TrxCount = 0
 	g.bc.batch.SaveGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.commit(0)
 }

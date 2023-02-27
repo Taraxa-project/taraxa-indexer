@@ -189,19 +189,13 @@ func (s *Storage) addToDB(key []byte, o interface{}) error {
 	return err
 }
 
-func (s *Storage) FinalizedPeriodExists() bool {
+func (s *Storage) GetFinalizedPeriod() *FinalizationData {
 	ptr := new(FinalizationData)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
-	return err == nil
-}
-
-func (s *Storage) GetFinalizedPeriod() FinalizationData {
-	ptr := new(FinalizationData)
-	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
-	if err != nil {
+	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetFinalizedPeriod ", err)
 	}
-	return *ptr
+	return ptr
 }
 
 func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {

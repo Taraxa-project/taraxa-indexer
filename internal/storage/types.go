@@ -1,6 +1,9 @@
 package storage
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
 // AddressStats defines the model for an address aggregate.
 type AddressStats struct {
@@ -49,6 +52,24 @@ func (a *AddressStats) isEqual(b *AddressStats) bool {
 	return false
 }
 
-type FinalizationData uint64
+type FinalizationData struct {
+	DagCount  uint64 `json:"blk_executed"`
+	TrxCount  uint64 `json:"trx_executed"`
+	PbftCount uint64 `json:"pbft_size"`
+}
+
+func (f1 *FinalizationData) Check(f2 *FinalizationData) {
+	// Perform this check only if we are getting data for the same block from node
+	if f1.PbftCount != f2.PbftCount {
+		return
+	}
+	if f1.DagCount != f2.DagCount {
+		log.Fatal("Dag consistency check failed", f1.DagCount, "!=", f2.DagCount)
+	}
+
+	if f1.TrxCount != f2.TrxCount {
+		log.Fatal("Transactions consistency check failed ", f1.TrxCount, "!=", f2.TrxCount)
+	}
+}
 
 type GenesisHash string

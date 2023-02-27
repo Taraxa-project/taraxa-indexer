@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -92,6 +93,12 @@ func (client *WsClient) GetGenesis() (genesis *GenesisObject) {
 	if err != nil {
 		log.Fatal("GetGenesis ", err.Error())
 	}
+	return
+}
+
+func (client *WsClient) GetNodeStats() (ns *storage.FinalizationData, err error) {
+	ns = new(storage.FinalizationData)
+	err = client.rpc.Call(&ns, "get_node_status")
 	return
 }
 
