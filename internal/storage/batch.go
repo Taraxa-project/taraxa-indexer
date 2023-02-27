@@ -27,10 +27,17 @@ func (b *Batch) CommitBatch() {
 	}
 }
 
-func (b *Batch) RecordFinalizedPeriod(f FinalizationData) {
+func (b *Batch) SaveFinalizedPeriod(f FinalizationData) {
 	err := b.addToBatch(&f, []byte(getPrefix(&f)))
 	if err != nil {
-		log.Fatal("AddToBatch ", err)
+		log.Fatal("SaveFinalizedPeriod ", err)
+	}
+}
+
+func (b *Batch) SaveGenesisHash(h GenesisHash) {
+	err := b.addToBatch(&h, []byte(getPrefix(&h)))
+	if err != nil {
+		log.Fatal("SaveGenesisHash ", err)
 	}
 }
 

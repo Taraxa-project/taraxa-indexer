@@ -189,10 +189,6 @@ func (s *Storage) addToDB(key []byte, o interface{}) error {
 	return err
 }
 
-func (s *Storage) RecordFinalizedPeriod(f FinalizationData) error {
-	return s.addToDB([]byte(getPrefix(&f)), &f)
-}
-
 func (s *Storage) FinalizedPeriodExists() bool {
 	ptr := new(FinalizationData)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
@@ -212,10 +208,6 @@ func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {
 	ret = new(AddressStats)
 	err = s.getFromDB(ret, getKey(getPrefix(ret), hash, 0))
 	return
-}
-
-func (s *Storage) SaveGenesisHash(h GenesisHash) error {
-	return s.addToDB([]byte(getPrefix(&h)), &h)
 }
 
 func (s *Storage) GenesisHashExist() bool {

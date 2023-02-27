@@ -48,7 +48,7 @@ func (client *WsClient) GetLatestPeriod() uint64 {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	return ParseHexInt(blk.Number)
+	return ParseInt(blk.Number)
 }
 
 func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction) {
@@ -82,6 +82,15 @@ func (client *WsClient) GetDagBlockByHash(hash string) (dag *dagBlock) {
 	err := client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	if err != nil {
 		log.Fatal("GetDagBlockByHash ", err.Error())
+	}
+	return
+}
+
+func (client *WsClient) GetGenesis() (genesis *GenesisObject) {
+	genesis = new(GenesisObject)
+	err := client.rpc.Call(&genesis, "taraxa_getConfig")
+	if err != nil {
+		log.Fatal("GetGenesis ", err.Error())
 	}
 	return
 }
