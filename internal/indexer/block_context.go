@@ -3,6 +3,7 @@ package indexer
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -42,6 +43,10 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 	transactions := &raw.Transactions
 
 	bc.finalized.TrxCount += block.TransactionCount
+	
+	bc.wg.Add(1)
+	go bc.updateValidatorStats(block)
+
 	for _, trx_hash := range *transactions {
 		bc.wg.Add(1)
 		go bc.processTransaction(trx_hash)
@@ -73,6 +78,15 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 func (bc *blockContext) processTransaction(hash string) {
 	trx := bc.client.GetTransactionByHash(hash)
 	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.age))
+	bc.wg.Done()
+}
+
+func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
+	tn := time.Unix(int64(block.Timestamp), 0)
+	year, week := tn.ISOWeek()
+	weekStats := bc.storage.GetWeekStats(year, week)
+	weekStats.AddPbftBlock(block)
+	bc.batch.UpdateWeekStats(weekStats)
 	bc.wg.Done()
 }
 

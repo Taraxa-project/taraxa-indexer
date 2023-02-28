@@ -41,6 +41,13 @@ func (b *Batch) SaveGenesisHash(h GenesisHash) {
 	}
 }
 
+func (b *Batch) UpdateWeekStats(w WeekStats) {
+	err := b.addToBatch(&w, w.key)
+	if err != nil {
+		log.Fatal("AddToBatch ", err)
+	}
+}
+
 func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {
 	err := b.addToBatch(o, getKey(getPrefix(o), key1, key2))
 	if err != nil {

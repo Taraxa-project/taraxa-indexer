@@ -111,20 +111,26 @@ func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) er
 // GetValidators returns all validators for the selected week and the number of PBFT blocks they produced
 func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams) error {
 	fmt.Println("GetValidators")
-	var data []Validator
+
+	stats := a.storage.GetWeekStats(int(params.Week.Year), int(params.Week.Week))
+	ret, pagination := stats.GetPaginated(int(params.Pagination.Start), params.Pagination.Limit)
+
 	response := struct {
 		DagsPaginatedResponse
-		Data []Validator
+		Data []Validator `json:"data"`
 	}{
-		Data: data,
+		DagsPaginatedResponse: *pagination,
+		Data:                  ret,
 	}
+
 	return ctx.JSON(http.StatusOK, response)
 }
 
 // GetValidatorsTotal returns total number of PBFT blocks produced in selected week
 func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTotalParams) error {
+	stats := a.storage.GetWeekStats(int(params.Filter.Year), int(params.Filter.Week))
 	var count CountResponse
-	count.Total = 0
+	count.Total = uint64(stats.Total)
 	err := ctx.JSON(http.StatusOK, count)
 	return err
 }
