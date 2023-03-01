@@ -43,7 +43,7 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 	transactions := &raw.Transactions
 
 	bc.finalized.TrxCount += block.TransactionCount
-	
+
 	bc.wg.Add(1)
 	go bc.updateValidatorStats(block)
 
@@ -107,9 +107,9 @@ func (bc *blockContext) addAddressStatsToBatch() {
 func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.AddressStats {
 	addr = strings.ToLower(addr)
 	bc.statsMutex.Lock()
+	defer bc.statsMutex.Unlock()
 	stats := bc.addressStats[addr]
 	if stats != nil {
-		bc.statsMutex.Unlock()
 		return stats
 	}
 	bc.addressStats[addr] = storage.MakeEmptyAddressStats(addr)
@@ -118,7 +118,6 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 	if err == nil {
 		bc.addressStats[addr] = v
 	}
-	bc.statsMutex.Unlock()
 	return bc.addressStats[addr]
 }
 
