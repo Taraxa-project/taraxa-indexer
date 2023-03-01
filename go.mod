@@ -7,7 +7,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
 	github.com/ethereum/go-ethereum v1.11.1
 	github.com/getkin/kin-openapi v0.112.0
-	github.com/labstack/echo/v4 v4.10.1
+	github.com/labstack/echo/v4 v4.10.2
 	github.com/stretchr/testify v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
 )
