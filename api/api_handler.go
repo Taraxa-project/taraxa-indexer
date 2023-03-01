@@ -27,7 +27,9 @@ func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, par
 		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
 	}
 
-	ret, pagination, err := storage.GetObjectsPage[Dag](a.storage, address, uint64(params.Pagination.Start), params.Pagination.Limit)
+	start, limit := getPagination(params.Pagination)
+
+	ret, pagination, err := storage.GetObjectsPage[Dag](a.storage, address, start, limit)
 	if err != nil {
 		return ctx.JSON(http.StatusNotFound, "Dags not found for "+address)
 	}
@@ -52,7 +54,9 @@ func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, pa
 		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
 	}
 
-	ret, pagination, err := storage.GetObjectsPage[Pbft](a.storage, address, uint64(params.Pagination.Start), params.Pagination.Limit)
+	start, limit := getPagination(params.Pagination)
+
+	ret, pagination, err := storage.GetObjectsPage[Pbft](a.storage, address, start, limit)
 	if err != nil {
 		return ctx.JSON(http.StatusNotFound, "Pbfts not found for "+address)
 	}
@@ -77,7 +81,9 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
 	}
 
-	ret, pagination, err := storage.GetObjectsPage[Transaction](a.storage, address, uint64(params.Pagination.Start), params.Pagination.Limit)
+	start, limit := getPagination(params.Pagination)
+
+	ret, pagination, err := storage.GetObjectsPage[Transaction](a.storage, address, start, limit)
 	if err != nil {
 		return ctx.JSON(http.StatusNotFound, "Transactions not found for "+address)
 	}
@@ -112,8 +118,10 @@ func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) er
 func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams) error {
 	fmt.Println("GetValidators")
 
+	start, limit := getPagination(params.Pagination)
+
 	stats := a.storage.GetWeekStats(int(params.Week.Year), int(params.Week.Week))
-	ret, pagination := stats.GetPaginated(int(params.Pagination.Start), params.Pagination.Limit)
+	ret, pagination := stats.GetPaginated(start, limit)
 
 	response := struct {
 		DagsPaginatedResponse
@@ -133,4 +141,20 @@ func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTo
 	count.Total = uint64(stats.Total)
 	err := ctx.JSON(http.StatusOK, count)
 	return err
+}
+
+func getPagination(param *PaginationFilter) (uint64, uint64) {
+	if param == nil {
+		return uint64(0), uint64(30)
+	}
+
+	return getPaginationStart(param.Start), param.Limit
+}
+
+func getPaginationStart(param *uint64) uint64 {
+	if param == nil {
+		return uint64(0)
+	}
+
+	return *param
 }

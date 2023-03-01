@@ -97,11 +97,11 @@ func (w *WeekStats) AddPbftBlock(block *models.Pbft) {
 	w.Validators = append(w.Validators, models.Validator{Address: block.Author, PbftCount: 1})
 }
 
-func (w *WeekStats) GetPaginated(from int, count int) ([]models.Validator, *models.PaginatedResponse) {
+func (w *WeekStats) GetPaginated(from, count uint64) ([]models.Validator, *models.PaginatedResponse) {
 	pagination := new(models.PaginatedResponse)
 	pagination.Total = uint64(len(w.Validators))
-	pagination.Start = uint64(from)
-	end := uint64(from + count)
+	pagination.Start = from
+	end := from + count
 	pagination.HasNext = (end < pagination.Total)
 	if end > pagination.Total {
 		end = pagination.Total

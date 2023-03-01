@@ -49,8 +49,8 @@ type PaginatedResponse struct {
 
 // PaginationFilter defines model for PaginationFilter.
 type PaginationFilter struct {
-	Limit int    `json:"limit"`
-	Start uint32 `json:"start"`
+	Limit uint64  `json:"limit"`
+	Start *uint64 `json:"start,omitempty"`
 }
 
 // Pbft defines model for Pbft.
@@ -115,19 +115,19 @@ type WeekFilter struct {
 // GetAddressDagsParams defines parameters for GetAddressDags.
 type GetAddressDagsParams struct {
 	// Pagination Pagination
-	Pagination PaginationFilter `form:"pagination" json:"pagination"`
+	Pagination *PaginationFilter `form:"pagination,omitempty" json:"pagination,omitempty"`
 }
 
 // GetAddressPbftsParams defines parameters for GetAddressPbfts.
 type GetAddressPbftsParams struct {
 	// Pagination Pagination
-	Pagination PaginationFilter `form:"pagination" json:"pagination"`
+	Pagination *PaginationFilter `form:"pagination,omitempty" json:"pagination,omitempty"`
 }
 
 // GetAddressTransactionsParams defines parameters for GetAddressTransactions.
 type GetAddressTransactionsParams struct {
 	// Pagination Pagination
-	Pagination PaginationFilter `form:"pagination" json:"pagination"`
+	Pagination *PaginationFilter `form:"pagination,omitempty" json:"pagination,omitempty"`
 }
 
 // GetValidatorsParams defines parameters for GetValidators.
