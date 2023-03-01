@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/cockroachdb/pebble v0.0.0-20230217215838-f01d8eff3f8b
 	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
-	github.com/ethereum/go-ethereum v1.11.1
+	github.com/ethereum/go-ethereum v1.11.2
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/labstack/echo/v4 v4.10.1
 	github.com/stretchr/testify v1.8.2
