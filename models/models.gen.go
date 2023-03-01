@@ -49,8 +49,8 @@ type PaginatedResponse struct {
 
 // PaginationFilter defines model for PaginationFilter.
 type PaginationFilter struct {
-	Limit int    `json:"limit"`
-	Start uint32 `json:"start"`
+	Limit uint64  `json:"limit"`
+	Start *uint64 `json:"start"`
 }
 
 // Pbft defines model for Pbft.
@@ -136,7 +136,7 @@ type GetValidatorsParams struct {
 	Week WeekFilter `form:"week" json:"week"`
 
 	// Pagination Pagination
-	Pagination *PaginationFilter `form:"pagination,omitempty" json:"pagination,omitempty"`
+	Pagination PaginationFilter `form:"pagination" json:"pagination"`
 }
 
 // GetValidatorsTotalParams defines parameters for GetValidatorsTotal.

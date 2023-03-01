@@ -9,6 +9,7 @@ require (
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/labstack/echo/v4 v4.10.1
 	github.com/stretchr/testify v1.8.1
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -70,6 +71,5 @@ require (
 	golang.org/x/tools v0.5.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

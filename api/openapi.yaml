@@ -39,6 +39,7 @@ paths:
             $ref: "#/components/schemas/WeekFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
           schema:
@@ -127,9 +128,9 @@ paths:
             $ref: "#/components/schemas/AddressFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
-          required: true
           schema:
             $ref: "#/components/schemas/PaginationFilter"
       responses:
@@ -162,9 +163,9 @@ paths:
             $ref: "#/components/schemas/AddressFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
-          required: true
           schema:
             $ref: "#/components/schemas/PaginationFilter"
       responses:
@@ -197,9 +198,9 @@ paths:
             $ref: "#/components/schemas/AddressFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
-          required: true
           schema:
             $ref: "#/components/schemas/PaginationFilter"
       responses:
@@ -418,16 +419,16 @@ components:
     PaginationFilter:
       type: object
       required:
-        - start
         - limit
       properties:
         start:
           type: integer
-          format: uint32
+          format: uint64
           default: 0
+          nullable: true
         limit:
           type: integer
-          format: int
+          format: uint64
           minimum: 1
           maximum: 100
           default: 30
