@@ -39,6 +39,7 @@ paths:
             $ref: "#/components/schemas/WeekFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
           schema:
@@ -127,6 +128,7 @@ paths:
             $ref: "#/components/schemas/AddressFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
           schema:
@@ -161,6 +163,7 @@ paths:
             $ref: "#/components/schemas/AddressFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
           schema:
@@ -195,6 +198,7 @@ paths:
             $ref: "#/components/schemas/AddressFilter"
         - name: pagination
           in: query
+          required: true
           description: |
             Pagination
           schema:
@@ -421,6 +425,7 @@ components:
           type: integer
           format: uint64
           default: 0
+          nullable: true
         limit:
           type: integer
           format: uint64

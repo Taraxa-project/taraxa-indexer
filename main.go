@@ -16,9 +16,10 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/deepmap/oapi-codegen/pkg/middleware"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
 
 	"github.com/labstack/echo/v4"
-	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 var (
@@ -64,8 +65,17 @@ func main() {
 
 	setupCloseHandler(st, func() { st.Close() })
 
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
+	}
+
+	swagger.Servers = nil
+
 	e := echo.New()
 
+	e.Use(middleware.OapiRequestValidator(swagger))
 	e.Use(echomiddleware.Logger())
 
 	apiHandler := api.NewApiHandler(st)
