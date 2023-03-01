@@ -43,7 +43,7 @@ func TestGetObjects(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	ret, pagination, err := GetObjectsPage[models.Dag](stor, sender, 0, count)
+	ret, pagination, err := GetObjectsPage[models.Dag](stor, sender, 0, uint64(count))
 	if err != nil {
 		t.Error(err)
 	}

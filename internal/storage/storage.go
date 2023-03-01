@@ -110,7 +110,8 @@ func ParseKeyIndex(key, prefix string) uint64 {
 	return index
 }
 
-func GetObjectsPage[T Paginated](s *Storage, hash string, from uint64, count int) (ret []T, pagination *models.PaginatedResponse, err error) {
+func GetObjectsPage[T Paginated](s *Storage, hash string, from, count uint64) (ret []T, pagination *models.PaginatedResponse, err error) {
+
 	var o T
 	ret = make([]T, 0, count)
 	pagination = new(models.PaginatedResponse)
@@ -138,7 +139,7 @@ func GetObjectsPage[T Paginated](s *Storage, hash string, from uint64, count int
 		}
 		ret = append(ret, o)
 		pagination.End = ParseKeyIndex(string(iter.Key()), string(prefix))
-		if len(ret) == count {
+		if uint64(len(ret)) == count {
 			return
 		}
 	}

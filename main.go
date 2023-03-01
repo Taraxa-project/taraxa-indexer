@@ -16,10 +16,10 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
-	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
+
+	"github.com/labstack/echo/v4"
 )
 
 var (
@@ -75,8 +75,8 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(echomiddleware.Logger())
 	e.Use(middleware.OapiRequestValidator(swagger))
+	e.Use(echomiddleware.Logger())
 
 	apiHandler := api.NewApiHandler(st)
 	api.RegisterHandlers(e, apiHandler)
