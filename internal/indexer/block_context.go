@@ -11,14 +11,14 @@ import (
 )
 
 type blockContext struct {
-	storage      *storage.Storage
-	batch        *storage.Batch
-	client       *chain.WsClient
-	wg           sync.WaitGroup
-	age          uint64
-	addressStats map[string]*storage.AddressStats
-	finalized    *storage.FinalizationData
-	statsMutex   sync.RWMutex
+	storage        *storage.Storage
+	batch          *storage.Batch
+	client         *chain.WsClient
+	wg             sync.WaitGroup
+	blockTimestamp uint64
+	addressStats   map[string]*storage.AddressStats
+	finalized      *storage.FinalizationData
+	statsMutex     sync.RWMutex
 }
 
 func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext {
@@ -43,6 +43,7 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 	transactions := &raw.Transactions
 
 	bc.finalized.TrxCount += block.TransactionCount
+	bc.blockTimestamp = block.Timestamp
 
 	bc.wg.Add(1)
 	go bc.updateValidatorStats(block)
@@ -77,7 +78,7 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 
 func (bc *blockContext) processTransaction(hash string) {
 	trx := bc.client.GetTransactionByHash(hash)
-	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.age))
+	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.blockTimestamp))
 	bc.wg.Done()
 }
 
