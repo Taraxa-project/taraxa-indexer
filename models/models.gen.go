@@ -39,6 +39,9 @@ type DagsPaginatedResponse = PaginatedResponse
 // Hash defines model for Hash.
 type Hash = string
 
+// LastTimestamp defines model for LastTimestamp.
+type LastTimestamp = uint64
+
 // PaginatedResponse defines model for PaginatedResponse.
 type PaginatedResponse struct {
 	End     Counter `json:"end"`
@@ -67,9 +70,12 @@ type PbftsPaginatedResponse = PaginatedResponse
 
 // StatsResponse defines model for StatsResponse.
 type StatsResponse struct {
-	DagsCount         Counter `json:"dagsCount"`
-	PbftCount         Counter `json:"pbftCount"`
-	TransactionsCount Counter `json:"transactionsCount"`
+	DagsCount                Counter        `json:"dagsCount"`
+	LastDagTimestamp         *LastTimestamp `json:"lastDagTimestamp,omitempty" rlp:"nil"`
+	LastPbftTimestamp        *LastTimestamp `json:"lastPbftTimestamp,omitempty" rlp:"nil"`
+	LastTransactionTimestamp *LastTimestamp `json:"lastTransactionTimestamp,omitempty" rlp:"nil"`
+	PbftCount                Counter        `json:"pbftCount"`
+	TransactionsCount        Counter        `json:"transactionsCount"`
 }
 
 // Timestamp defines model for Timestamp.

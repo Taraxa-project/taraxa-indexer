@@ -63,7 +63,7 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 	bc.wg.Wait()
 
 	bc.finalized.PbftCount++
-	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft()
+	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft(block.Timestamp)
 	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
 
 	// If stats is available check for consistency
@@ -92,10 +92,10 @@ func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 }
 
 func (bc *blockContext) processDag(hash string) {
-	dag := bc.client.GetDagBlockByHash(hash)
+	dag := bc.client.GetDagBlockByHash(hash).ToModel()
 
-	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag()
-	bc.batch.AddToBatch(dag.ToModel(), dag.Sender, dag_index)
+	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
+	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
 	bc.wg.Done()
 }
 
@@ -123,8 +123,8 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 }
 
 func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-	from_index := bc.getAddress(bc.storage, trx.From).AddTx()
-	to_index := bc.getAddress(bc.storage, trx.To).AddTx()
+	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
+	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
 
 	bc.batch.AddToBatch(trx, trx.From, from_index)
 	bc.batch.AddToBatch(trx, trx.To, to_index)

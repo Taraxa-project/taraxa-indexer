@@ -32,7 +32,7 @@ func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, par
 		return ctx.JSON(http.StatusNotFound, "Dags not found for "+address)
 	}
 
-	pagination.Total = stats.DagTotal
+	pagination.Total = stats.DagsCount
 	response := struct {
 		PaginatedResponse
 		Data []Dag `json:"data"`
@@ -57,7 +57,7 @@ func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, pa
 		return ctx.JSON(http.StatusNotFound, "Pbfts not found for "+address)
 	}
 
-	pagination.Total = stats.PbftTotal
+	pagination.Total = stats.PbftCount
 	response := struct {
 		PaginatedResponse
 		Data []Pbft `json:"data"`
@@ -82,7 +82,7 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 		return ctx.JSON(http.StatusNotFound, "Transactions not found for "+address)
 	}
 
-	pagination.Total = stats.TxTotal
+	pagination.Total = stats.TransactionsCount
 	response := struct {
 		PaginatedResponse
 		Data []Transaction `json:"data"`
@@ -97,15 +97,10 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) error {
 	addr, err := a.storage.GetAddressStats(address)
 	if err != nil {
-		fmt.Println(err)
-		return ctx.JSON(http.StatusNotFound, err)
+		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
 	}
-	var count StatsResponse
-	count.PbftCount = addr.PbftTotal
-	count.DagsCount = addr.DagTotal
-	count.TransactionsCount = addr.TxTotal
 
-	return ctx.JSON(http.StatusOK, count)
+	return ctx.JSON(http.StatusOK, addr.StatsResponse)
 }
 
 // GetValidators returns all validators for the selected week and the number of PBFT blocks they produced
