@@ -41,7 +41,7 @@ func (i *Indexer) init() {
 		return
 	}
 
-	genesis := MakeGenesis(i.storage, i.client, string(remote_hash))
+	genesis := MakeGenesis(i.storage, i.client, remote_hash)
 	// Genesis hash and finalized period(0) is set inside
 	genesis.process()
 }
