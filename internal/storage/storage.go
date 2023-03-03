@@ -214,10 +214,13 @@ func (s *Storage) GetFinalizedPeriod() *FinalizationData {
 	return ptr
 }
 
-func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {
-	ret = new(AddressStats)
-	err = s.getFromDB(ret, getKey(getPrefix(ret), hash, 0))
-	return
+func (s *Storage) GetAddressStats(addr string) *AddressStats {
+	ptr := MakeEmptyAddressStats(addr)
+	err := s.getFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
+	if err != nil && err != pebble.ErrNotFound {
+		log.Fatal("GetAddressStats ", err)
+	}
+	return ptr
 }
 
 func (s *Storage) GenesisHashExist() bool {

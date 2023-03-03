@@ -113,12 +113,9 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 	if stats != nil {
 		return stats
 	}
-	bc.addressStats[addr] = storage.MakeEmptyAddressStats(addr)
 
-	v, err := s.GetAddressStats(addr)
-	if err == nil {
-		bc.addressStats[addr] = v
-	}
+	bc.addressStats[addr] = s.GetAddressStats(addr)
+
 	return bc.addressStats[addr]
 }
 
