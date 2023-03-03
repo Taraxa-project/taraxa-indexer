@@ -1,11 +1,11 @@
 package storage
 
 import (
-	"log"
 	"sort"
 	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 // AddressStats defines the model for an address aggregate.
@@ -62,17 +62,17 @@ type FinalizationData struct {
 	PbftCount uint64 `json:"pbft_size"`
 }
 
-func (f1 *FinalizationData) Check(f2 *FinalizationData) {
+func (local *FinalizationData) Check(remote *FinalizationData) {
 	// Perform this check only if we are getting data for the same block from node
-	if f1.PbftCount != f2.PbftCount {
+	if local.PbftCount != remote.PbftCount {
 		return
 	}
-	if f1.DagCount != f2.DagCount {
-		log.Fatal("Dag consistency check failed", f1.DagCount, "!=", f2.DagCount)
+	if local.DagCount != remote.DagCount {
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Dag consistency check failed")
 	}
 
-	if f1.TrxCount != f2.TrxCount {
-		log.Fatal("Transactions consistency check failed ", f1.TrxCount, "!=", f2.TrxCount)
+	if local.TrxCount != remote.TrxCount {
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Transactions consistency check failed ")
 	}
 }
 

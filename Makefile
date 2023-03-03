@@ -20,6 +20,9 @@ tools: $(GOBIN)/golangci-lint
 lint: tools
 	$(GOBIN)/golangci-lint run ./...
 
+test:
+	go test ./...
+
 generate:
 	go generate ./...
 

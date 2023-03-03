@@ -27,7 +27,7 @@ func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext 
 	bc.batch = s.NewBatch()
 	bc.client = client
 	bc.addressStats = make(map[string]*storage.AddressStats)
-	bc.finalized = s.GetFinalizedPeriod()
+	bc.finalized = s.GetFinalizationData()
 
 	return &bc
 }
@@ -38,7 +38,7 @@ func (bc *blockContext) commit(period uint64) {
 	bc.batch.CommitBatch()
 }
 
-func (bc *blockContext) process(raw *chain.Block) (err error) {
+func (bc *blockContext) process(raw *chain.Block) {
 	block := raw.ToModel()
 	transactions := &raw.Transactions
 
@@ -67,13 +67,11 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
 
 	// If stats is available check for consistency
-	stats, stats_err := bc.client.GetNodeStats()
+	remote_stats, stats_err := bc.client.GetNodeStats()
 	if stats_err == nil {
-		stats.Check(bc.finalized)
+		bc.finalized.Check(remote_stats)
 	}
 	bc.commit(block.Number)
-
-	return
 }
 
 func (bc *blockContext) processTransaction(hash string) {

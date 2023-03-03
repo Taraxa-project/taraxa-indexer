@@ -4,34 +4,42 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"log"
 	"os"
 	"os/signal"
-	"runtime/debug"
+	"path/filepath"
 	"syscall"
 
 	"strconv"
 
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
+	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
-	echomiddleware "github.com/labstack/echo/v4/middleware"
-
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
 	http_port     *int
 	blockchain_ws *string
-	db_path       *string
+	data_dir      *string
+	log_level     *string
 )
 
 func init() {
 	http_port = flag.Int("http_port", 8080, "port to listen")
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
-	db_path = flag.String("db_path", "./data", "path to directory where indexer database will be saved")
+	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
+	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
+
+	flag.Parse()
+
+	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
+
+	log.WithField("blockchain_ws", *blockchain_ws).Info("Passed argument")
+	log.WithField("data_dir", *data_dir).Info("Passed argument")
+	log.WithField("log_level", *log_level).Info("Passed argument")
 }
 
 func setupCloseHandler(st *storage.Storage, fn func()) {
@@ -44,31 +52,13 @@ func setupCloseHandler(st *storage.Storage, fn func()) {
 	}()
 }
 
-func GetCommit() string {
-	if info, ok := debug.ReadBuildInfo(); ok {
-		for _, setting := range info.Settings {
-			if setting.Key == "vcs.revision" {
-				return setting.Value
-			}
-		}
-	}
-	return ""
-}
-
 func main() {
-	flag.Parse()
-	fmt.Println("Built from commit", GetCommit())
-	fmt.Println("passed blockchain_ws", *blockchain_ws)
-	fmt.Println("passed db_path", *db_path)
-
-	st := storage.NewStorage(*db_path)
-
+	st := storage.NewStorage(filepath.Join(*data_dir, "db"))
 	setupCloseHandler(st, func() { st.Close() })
 
 	swagger, err := api.GetSwagger()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
-		os.Exit(1)
+		log.WithField("error", err).Fatal("Error loading swagger spec")
 	}
 
 	swagger.Servers = nil
@@ -76,15 +66,18 @@ func main() {
 	e := echo.New()
 
 	e.Use(middleware.OapiRequestValidator(swagger))
-	e.Use(echomiddleware.Logger())
+	// It is logging every incoming request. Do we need this?
+	// e.Use(echomiddleware.Logger())
 
 	apiHandler := api.NewApiHandler(st)
 	api.RegisterHandlers(e, apiHandler)
 
 	idx, err := indexer.NewIndexer(*blockchain_ws, st)
 	if err != nil {
-		log.Fatal("Problem with indexer", err)
+		log.WithField("error", err).Fatal("Can't create indexer")
 	}
 	go idx.Start()
-	e.Logger.Fatal(e.Start(":" + strconv.FormatInt(int64(*http_port), 10)))
+
+	err = e.Start(":" + strconv.FormatInt(int64(*http_port), 10))
+	log.WithField("error", err).Fatal("Can't start http server")
 }

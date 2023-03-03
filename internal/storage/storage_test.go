@@ -15,11 +15,11 @@ func TestGetter(t *testing.T) {
 	defer storage.Close()
 
 	addr := MakeEmptyAddressStats("test")
-	if err := storage.AddToDB(addr, addr.Address, 0); err != nil {
+	if err := storage.addToDBTest(addr, addr.Address, 0); err != nil {
 		t.Error(err)
 	}
 	addr1 := MakeEmptyAddressStats("test1")
-	if err := storage.AddToDB(addr1, addr1.Address, 0); err != nil {
+	if err := storage.addToDBTest(addr1, addr1.Address, 0); err != nil {
 		t.Error(err)
 	}
 	ret := storage.GetAddressStats("test")
@@ -33,10 +33,10 @@ func TestGetObjects(t *testing.T) {
 	defer stor.Close()
 
 	sender := "user"
-	count := 100
-	for i := 1; i <= count; i++ {
-		block := models.Dag{Timestamp: uint64(i), Hash: "test" + strconv.Itoa(i), Level: 0, Sender: sender, TransactionCount: 0}
-		if err := stor.AddToDB(&block, block.Sender, block.Timestamp); err != nil {
+	count := uint64(100)
+	for i := uint64(1); i <= count; i++ {
+		block := models.Dag{Timestamp: i, Hash: "test" + strconv.FormatUint(i, 10), Level: 0, Sender: sender, TransactionCount: 0}
+		if err := stor.addToDBTest(&block, block.Sender, block.Timestamp); err != nil {
 			t.Error(err)
 		}
 	}
@@ -44,7 +44,7 @@ func TestGetObjects(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, len(ret), count)
+	assert.Equal(t, uint64(len(ret)), count)
 	assert.False(t, pagination.HasNext)
 	assert.Equal(t, pagination.Start, uint64(100))
 	assert.Equal(t, pagination.End, uint64(1))
@@ -63,7 +63,7 @@ func TestStorage(t *testing.T) {
 	addr := MakeEmptyAddressStats("test")
 	{
 		storage := NewStorage("/tmp/test")
-		if err := storage.AddToDB(addr, addr.Address, 0); err != nil {
+		if err := storage.addToDBTest(addr, addr.Address, 0); err != nil {
 			t.Error(err)
 		}
 		storage.Close()
@@ -85,7 +85,7 @@ func TestCleanStorage(t *testing.T) {
 	storage := NewStorage("/tmp/test")
 	defer storage.Close()
 
-	if err := storage.AddToDB(stats, stats.Address, 0); err != nil {
+	if err := storage.addToDBTest(stats, stats.Address, 0); err != nil {
 		t.Error(err)
 	}
 
