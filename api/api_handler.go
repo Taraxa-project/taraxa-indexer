@@ -4,6 +4,7 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -22,14 +23,11 @@ func NewApiHandler(s *storage.Storage) *ApiHandler {
 // GetAddressDags returns all DAG blocks sent by the selected address
 func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
 	fmt.Println("GetAddressDags")
-	stats, err := a.storage.GetAddressStats(address)
-	if err != nil {
-		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
-	}
+	stats := a.storage.GetAddressStats(address)
 
 	ret, pagination, err := storage.GetObjectsPage[Dag](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
 	if err != nil {
-		return ctx.JSON(http.StatusNotFound, "Dags not found for "+address)
+		log.Fatal("Error getting Dags for " + address + ": " + err.Error())
 	}
 
 	pagination.Total = stats.DagsCount
@@ -47,14 +45,11 @@ func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, par
 // GetAddressPbfts returns all PBFT blocks produced by the selected address
 func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, params GetAddressPbftsParams) error {
 	fmt.Println("GetAddressPbfts")
-	stats, err := a.storage.GetAddressStats(address)
-	if err != nil {
-		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
-	}
+	stats := a.storage.GetAddressStats(address)
 
 	ret, pagination, err := storage.GetObjectsPage[Pbft](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
 	if err != nil {
-		return ctx.JSON(http.StatusNotFound, "Pbfts not found for "+address)
+		log.Fatal("Error getting Pbfts for " + address + ": " + err.Error())
 	}
 
 	pagination.Total = stats.PbftCount
@@ -72,14 +67,11 @@ func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, pa
 // GetAddressTransactions returns all transactions from and to the selected address
 func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFilter, params GetAddressTransactionsParams) error {
 	fmt.Println("GetAddressTransactions")
-	stats, err := a.storage.GetAddressStats(address)
-	if err != nil {
-		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
-	}
+	stats := a.storage.GetAddressStats(address)
 
 	ret, pagination, err := storage.GetObjectsPage[Transaction](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
 	if err != nil {
-		return ctx.JSON(http.StatusNotFound, "Transactions not found for "+address)
+		log.Fatal("Error getting Transactions for ", address, ": ", err.Error())
 	}
 
 	pagination.Total = stats.TransactionsCount
@@ -95,11 +87,7 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
 func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) error {
-	addr, err := a.storage.GetAddressStats(address)
-	if err != nil {
-		return ctx.JSON(http.StatusNotFound, "Data for address "+address+" not found")
-	}
-
+	addr := a.storage.GetAddressStats(address)
 	return ctx.JSON(http.StatusOK, addr.StatsResponse)
 }
 

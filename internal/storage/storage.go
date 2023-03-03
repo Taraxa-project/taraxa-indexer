@@ -111,7 +111,6 @@ func ParseKeyIndex(key, prefix string) uint64 {
 }
 
 func GetObjectsPage[T Paginated](s *Storage, hash string, from, count uint64) (ret []T, pagination *models.PaginatedResponse, err error) {
-
 	var o T
 	ret = make([]T, 0, count)
 	pagination = new(models.PaginatedResponse)
@@ -127,7 +126,7 @@ func GetObjectsPage[T Paginated](s *Storage, hash string, from, count uint64) (r
 		iter.Last()
 	}
 	defer func() {
-		pagination.HasNext = (pagination.End != 1)
+		pagination.HasNext = (pagination.End > 1)
 	}()
 	for ; iter.Valid(); iter.Prev() {
 		err = rlp.DecodeBytes(iter.Value(), &o)
@@ -215,10 +214,13 @@ func (s *Storage) GetFinalizedPeriod() *FinalizationData {
 	return ptr
 }
 
-func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {
-	ret = new(AddressStats)
-	err = s.getFromDB(ret, getKey(getPrefix(ret), hash, 0))
-	return
+func (s *Storage) GetAddressStats(addr string) *AddressStats {
+	ptr := MakeEmptyAddressStats(addr)
+	err := s.getFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
+	if err != nil && err != pebble.ErrNotFound {
+		log.Fatal("GetAddressStats ", err)
+	}
+	return ptr
 }
 
 func (s *Storage) GenesisHashExist() bool {
