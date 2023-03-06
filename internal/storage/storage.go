@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
@@ -100,44 +99,33 @@ type Paginated interface {
 	models.Transaction | models.Dag | models.Pbft
 }
 
-func ParseKeyIndex(key, prefix string) uint64 {
-	index_str := key[len(prefix):]
-
-	index, err := strconv.ParseUint(index_str, 10, 64)
-	if err != nil {
-		log.WithFields(log.Fields{"key": key, "prefix": prefix, "error": err}).Fatal("ParseKeyIndex failed")
-	}
-	return index
-}
-
-func GetObjectsPage[T Paginated](s *Storage, hash string, from, count uint64) (ret []T, pagination *models.PaginatedResponse, err error) {
+func GetObjectsPage[T Paginated](s *Storage, hash string, from, count, total uint64) (ret []T, pagination *models.PaginatedResponse, err error) {
 	var o T
 	ret = make([]T, 0, count)
+
 	pagination = new(models.PaginatedResponse)
+	pagination.Start = from
+	pagination.Total = total
+	end := from + count
+	pagination.HasNext = (end < pagination.Total)
+	if end > pagination.Total {
+		end = pagination.Total
+	}
+	pagination.End = end
+
 	prefix := getPrefixKey(getPrefix(&o), hash)
-	start := getKey(getPrefix(&o), hash, from)
-	defer func() {
-		pagination.HasNext = (pagination.End > 1)
-	}()
+	start := getKey(getPrefix(&o), hash, total-from)
 
 	iter := s.find(prefix)
 	defer iter.Close()
+	iter.SeekGE(start)
 
-	if from != 0 {
-		iter.SeekGE(start)
-	} else {
-		iter.Last()
-	}
 	for ; iter.Valid(); iter.Prev() {
 		err = rlp.DecodeBytes(iter.Value(), &o)
-		if len(ret) == 0 {
-			pagination.Start = ParseKeyIndex(string(iter.Key()), string(prefix))
-		}
 		if err != nil {
 			return
 		}
 		ret = append(ret, o)
-		pagination.End = ParseKeyIndex(string(iter.Key()), string(prefix))
 		if uint64(len(ret)) == count {
 			return
 		}

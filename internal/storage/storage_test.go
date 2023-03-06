@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"testing"
@@ -40,23 +39,33 @@ func TestGetObjects(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	ret, pagination, err := GetObjectsPage[models.Dag](stor, sender, 0, uint64(count))
+
+	ret, pagination, err := GetObjectsPage[models.Dag](stor, sender, 0, count, count)
 	if err != nil {
 		t.Error(err)
 	}
 	assert.Equal(t, uint64(len(ret)), count)
 	assert.False(t, pagination.HasNext)
-	assert.Equal(t, pagination.Start, uint64(100))
-	assert.Equal(t, pagination.End, uint64(1))
+	assert.Equal(t, pagination.Start, uint64(0))
+	assert.Equal(t, pagination.End, uint64(100))
 
-	ret, pagination, err = GetObjectsPage[models.Dag](stor, sender, 50, 100)
+	ret, pagination, err = GetObjectsPage[models.Dag](stor, sender, 50, 50, 100)
 	if err != nil {
 		t.Error(err)
 	}
 	assert.Equal(t, len(ret), 50)
 	assert.False(t, pagination.HasNext)
 	assert.Equal(t, pagination.Start, uint64(50))
-	assert.Equal(t, pagination.End, uint64(1))
+	assert.Equal(t, pagination.End, uint64(100))
+
+	ret, pagination, err = GetObjectsPage[models.Dag](stor, sender, 0, 25, 100)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, len(ret), 25)
+	assert.True(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(0))
+	assert.Equal(t, pagination.End, uint64(25))
 }
 
 func TestStorage(t *testing.T) {
@@ -123,15 +132,5 @@ func TestBatch(t *testing.T) {
 	ret = storage.GetAddressStats("test1")
 	if !ret.isEqual(addr1) {
 		t.Error("Broken DB")
-	}
-}
-
-func TestParseKeyIndex(t *testing.T) {
-	v := uint64(28)
-	key := "test0000000" + fmt.Sprint(v)
-	prefix := "test"
-	res := ParseKeyIndex(key, prefix)
-	if v != res {
-		t.Error("ParseKeyIndex ", v, "!=", res)
 	}
 }
