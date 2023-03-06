@@ -24,14 +24,14 @@ func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, par
 	logFields := log.Fields{"address": address, "params": params}
 	log.WithFields(logFields).Trace("GetAddressDags")
 
-	ret, pagination, err := storage.GetObjectsPage[Dag](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
+	stats := a.storage.GetAddressStats(address)
+	total := stats.DagsCount
+
+	ret, pagination, err := storage.GetObjectsPage[Dag](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit, total)
 	if err != nil {
 		logFields["error"] = err
 		log.WithFields(logFields).Fatal("Error getting Dags")
 	}
-
-	stats := a.storage.GetAddressStats(address)
-	pagination.Total = stats.DagsCount
 
 	response := struct {
 		PaginatedResponse
@@ -49,14 +49,14 @@ func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, pa
 	logFields := log.Fields{"address": address, "params": params}
 	log.WithFields(logFields).Trace("GetAddressPbfts")
 
-	ret, pagination, err := storage.GetObjectsPage[Pbft](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
+	stats := a.storage.GetAddressStats(address)
+	total := stats.PbftCount
+
+	ret, pagination, err := storage.GetObjectsPage[Pbft](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit, total)
 	if err != nil {
 		logFields["error"] = err
 		log.WithFields(logFields).Fatal("Error getting Pbfts")
 	}
-
-	stats := a.storage.GetAddressStats(address)
-	pagination.Total = stats.PbftCount
 
 	response := struct {
 		PaginatedResponse
@@ -74,14 +74,14 @@ func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFil
 	logFields := log.Fields{"address": address, "params": params}
 	log.WithFields(logFields).Trace("GetAddressTransactions")
 
-	ret, pagination, err := storage.GetObjectsPage[Transaction](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
+	stats := a.storage.GetAddressStats(address)
+	total := stats.TransactionsCount
+
+	ret, pagination, err := storage.GetObjectsPage[Transaction](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit, total)
 	if err != nil {
 		logFields["error"] = err
 		log.WithFields(logFields).Debug("Error getting Transactions")
 	}
-
-	stats := a.storage.GetAddressStats(address)
-	pagination.Total = stats.TransactionsCount
 
 	response := struct {
 		PaginatedResponse
