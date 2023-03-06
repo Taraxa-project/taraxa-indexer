@@ -30,6 +30,10 @@ func MakeFormatter() (formatter *Formatter) {
 // Whole this thing is needed to convert fields that are structs to json format
 func (f *Formatter) Format(entry *log.Entry) ([]byte, error) {
 	for k, v := range entry.Data {
+		// skip error field
+		if k == "error" {
+			continue
+		}
 		val := reflect.ValueOf(v)
 		if val.Kind() == reflect.Ptr {
 			val = val.Elem()

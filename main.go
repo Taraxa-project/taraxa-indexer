@@ -58,7 +58,7 @@ func main() {
 
 	swagger, err := api.GetSwagger()
 	if err != nil {
-		log.WithField("error", err).Fatal("Error loading swagger spec")
+		log.WithError(err).Fatal("Error loading swagger spec")
 	}
 
 	swagger.Servers = nil
@@ -74,10 +74,10 @@ func main() {
 
 	idx, err := indexer.NewIndexer(*blockchain_ws, st)
 	if err != nil {
-		log.WithField("error", err).Fatal("Can't create indexer")
+		log.WithError(err).Fatal("Can't create indexer")
 	}
 	go idx.Start()
 
 	err = e.Start(":" + strconv.FormatInt(int64(*http_port), 10))
-	log.WithField("error", err).Fatal("Can't start http server")
+	log.WithError(err).Fatal("Can't start http server")
 }

@@ -57,9 +57,9 @@ func (a *AddressStats) isEqual(b *AddressStats) bool {
 }
 
 type FinalizationData struct {
-	DagCount  uint64 `json:"blk_executed"`
-	TrxCount  uint64 `json:"trx_executed"`
-	PbftCount uint64 `json:"pbft_size"`
+	DagCount  uint64 `json:"dag_blocks_executed"`
+	TrxCount  uint64 `json:"transactions_executed"`
+	PbftCount uint64 `json:"pbft_period"`
 }
 
 func (local *FinalizationData) Check(remote *FinalizationData) {

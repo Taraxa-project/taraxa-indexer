@@ -23,35 +23,35 @@ func (b *Batch) CommitBatch() {
 
 	err := b.Commit(pebble.NoSync)
 	if err != nil {
-		log.WithField("error", err).Fatal("CommitBatch failed")
+		log.WithError(err).Fatal("CommitBatch failed")
 	}
 }
 
 func (b *Batch) SaveFinalizedPeriod(f *FinalizationData) {
 	err := b.addToBatch(f, []byte(getPrefix(f)))
 	if err != nil {
-		log.WithField("error", err).Fatal("SaveFinalizedPeriod failed")
+		log.WithError(err).Fatal("SaveFinalizedPeriod failed")
 	}
 }
 
 func (b *Batch) SaveGenesisHash(h GenesisHash) {
 	err := b.addToBatch(&h, []byte(getPrefix(&h)))
 	if err != nil {
-		log.WithField("error", err).Fatal("SaveGenesisHashSaveGenesisHash failed")
+		log.WithError(err).Fatal("SaveGenesisHashSaveGenesisHash failed")
 	}
 }
 
 func (b *Batch) UpdateWeekStats(w WeekStats) {
 	err := b.addToBatch(&w, w.key)
 	if err != nil {
-		log.WithField("error", err).Fatal("UpdateWeekStats failed")
+		log.WithError(err).Fatal("UpdateWeekStats failed")
 	}
 }
 
 func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {
 	err := b.addToBatch(o, getKey(getPrefix(o), key1, key2))
 	if err != nil {
-		log.WithField("error", err).Fatal("AddToBatch failed")
+		log.WithError(err).Fatal("AddToBatch failed")
 	}
 }
 

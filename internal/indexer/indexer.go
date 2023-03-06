@@ -28,7 +28,7 @@ func (i *Indexer) init() {
 		if local_hash != remote_hash {
 			log.WithFields(log.Fields{"local_hash": local_hash, "remote_hash": remote_hash}).Warn("Genesis changed, reseting")
 			if err := i.storage.Clean(); err != nil {
-				log.WithField("error", err).Warn("Error during storage cleaning")
+				log.WithError(err).Warn("Error during storage cleaning")
 			}
 			db_clean = true
 		}
@@ -71,14 +71,14 @@ func (i *Indexer) Start() {
 			log.Fatal(err)
 		case sub_blk := <-ch:
 			p := chain.ParseInt(sub_blk.Number)
-			log.WithFields(log.Fields{"period": p}).Info("Applying block from subscription channel")
 			if p != i.storage.GetFinalizationData().PbftCount+1 {
 				i.sync()
 				continue
 			}
 			// We need to get block from API one more time because chain isn't returning transactions in this subscription object
 			blk := i.client.GetBlockByNumber(p)
-			MakeBlockContext(i.storage, i.client).process(blk)
+			dc, tc := MakeBlockContext(i.storage, i.client).process(blk)
+			log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Info("Applied block from subscription")
 		}
 	}
 }

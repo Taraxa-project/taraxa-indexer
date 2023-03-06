@@ -21,7 +21,7 @@ type Storage struct {
 func NewStorage(file string) *Storage {
 	db, err := open(file)
 	if err != nil {
-		log.WithField("error", err).Fatal("Can't create storage")
+		log.WithError(err).Fatal("Can't create storage")
 	}
 
 	return &Storage{
@@ -174,7 +174,7 @@ func (s *Storage) GetWeekStats(year, week int) WeekStats {
 	ptr.key = []byte(getWeekKey(getPrefix(ptr), year, week))
 	err := s.getFromDB(ptr, ptr.key)
 	if err != nil && err != pebble.ErrNotFound {
-		log.WithField("error", err).Fatal("GetWeekStats failed")
+		log.WithError(err).Fatal("GetWeekStats failed")
 	}
 	return *ptr
 }
@@ -197,7 +197,7 @@ func (s *Storage) GetFinalizationData() *FinalizationData {
 	ptr := new(FinalizationData)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
 	if err != nil && err != pebble.ErrNotFound {
-		log.WithField("error", err).Fatal("GetFinalizationData failed")
+		log.WithError(err).Fatal("GetFinalizationData failed")
 	}
 	return ptr
 }
@@ -221,7 +221,7 @@ func (s *Storage) GetGenesisHash() GenesisHash {
 	ptr := new(GenesisHash)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
 	if err != nil {
-		log.WithField("error", err).Fatal("GetGenesisHash failed")
+		log.WithError(err).Fatal("GetGenesisHash failed")
 	}
 	return *ptr
 }
