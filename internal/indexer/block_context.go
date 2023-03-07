@@ -8,6 +8,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type blockContext struct {
@@ -38,11 +39,12 @@ func (bc *blockContext) commit(period uint64) {
 	bc.batch.CommitBatch()
 }
 
-func (bc *blockContext) process(raw *chain.Block) {
+func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64) {
 	block := raw.ToModel()
 	transactions := &raw.Transactions
 
-	bc.finalized.TrxCount += block.TransactionCount
+	trx_count = block.TransactionCount
+	bc.finalized.TrxCount += trx_count
 	bc.blockTimestamp = block.Timestamp
 
 	bc.wg.Add(1)
@@ -54,7 +56,8 @@ func (bc *blockContext) process(raw *chain.Block) {
 	}
 
 	block_with_dags := bc.client.GetPbftBlockWithDagBlocks(block.Number)
-	bc.finalized.DagCount += uint64(len(block_with_dags.Schedule.DagBlocksOrder))
+	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
+	bc.finalized.DagCount += dags_count
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
 		bc.wg.Add(1)
 		go bc.processDag(dag_hash)
@@ -64,14 +67,16 @@ func (bc *blockContext) process(raw *chain.Block) {
 
 	bc.finalized.PbftCount++
 	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft(block.Timestamp)
+	log.WithFields(log.Fields{"author": block.Author, "hash": block.Hash}).Debug("Saving PBFT block")
 	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
 
 	// If stats is available check for consistency
-	remote_stats, stats_err := bc.client.GetNodeStats()
+	remote_stats, stats_err := bc.client.GetChainStats()
 	if stats_err == nil {
 		bc.finalized.Check(remote_stats)
 	}
 	bc.commit(block.Number)
+	return
 }
 
 func (bc *blockContext) processTransaction(hash string) {
@@ -92,6 +97,7 @@ func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 func (bc *blockContext) processDag(hash string) {
 	dag := bc.client.GetDagBlockByHash(hash).ToModel()
 
+	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Debug("Saving DAG block")
 	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
 	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
 	bc.wg.Done()
@@ -118,6 +124,7 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 }
 
 func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
+	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Debug("Saving transaction")
 	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
 	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
 
