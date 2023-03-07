@@ -95,17 +95,30 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-type Paginated interface {
-	models.Transaction | models.Dag | models.Pbft
+func GetTotal[T Paginated](s *Storage, address string) (r uint64) {
+	stats := s.GetAddressStats(address)
+
+	var o T
+	switch t := any(o).(type) {
+	case models.Dag:
+		r = stats.DagsCount
+	case models.Pbft:
+		r = stats.PbftCount
+	case models.Transaction:
+		r = stats.TransactionsCount
+	default:
+		log.WithField("type", t).Fatal("GetCount incorrect type passed")
+	}
+	return
 }
 
-func GetObjectsPage[T Paginated](s *Storage, hash string, from, count, total uint64) (ret []T, pagination *models.PaginatedResponse, err error) {
+func GetObjectsPage[T Paginated](s *Storage, address string, from, count uint64) (ret []T, pagination *models.PaginatedResponse) {
 	var o T
 	ret = make([]T, 0, count)
 
 	pagination = new(models.PaginatedResponse)
 	pagination.Start = from
-	pagination.Total = total
+	pagination.Total = GetTotal[T](s, address)
 	end := from + count
 	pagination.HasNext = (end < pagination.Total)
 	if end > pagination.Total {
@@ -113,17 +126,17 @@ func GetObjectsPage[T Paginated](s *Storage, hash string, from, count, total uin
 	}
 	pagination.End = end
 
-	prefix := getPrefixKey(getPrefix(&o), hash)
-	start := getKey(getPrefix(&o), hash, total-from)
+	prefix := getPrefixKey(getPrefix(&o), address)
+	start := getKey(getPrefix(&o), address, pagination.Total-from)
 
 	iter := s.find(prefix)
 	defer iter.Close()
 	iter.SeekGE(start)
 
 	for ; iter.Valid(); iter.Prev() {
-		err = rlp.DecodeBytes(iter.Value(), &o)
+		err := rlp.DecodeBytes(iter.Value(), &o)
 		if err != nil {
-			return
+			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")
 		}
 		ret = append(ret, o)
 		if uint64(len(ret)) == count {

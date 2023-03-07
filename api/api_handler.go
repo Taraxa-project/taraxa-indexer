@@ -19,83 +19,41 @@ func NewApiHandler(s *storage.Storage) *ApiHandler {
 	return &ApiHandler{s}
 }
 
-// GetAddressDags returns all DAG blocks sent by the selected address
-func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
-	logFields := log.Fields{"address": address, "params": params}
-	log.WithFields(logFields).Trace("GetAddressDags")
+func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilter, pag *PaginationParam) interface{} {
+	logFields := log.Fields{"type": storage.GetTypeName[T](), "address": address, "pagination": pag}
+	log.WithFields(logFields).Debug("GetAddressDataPage")
 
-	stats := a.storage.GetAddressStats(address)
-	total := stats.DagsCount
-
-	ret, pagination, err := storage.GetObjectsPage[Dag](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit, total)
-	if err != nil {
-		logFields["error"] = err
-		log.WithFields(logFields).Fatal("Error getting Dags")
-	}
+	ret, pagination := storage.GetObjectsPage[T](a.storage, address, getPaginationStart(pag.Start), pag.Limit)
 
 	response := struct {
 		PaginatedResponse
-		Data []Dag `json:"data"`
+		Data []T `json:"data"`
 	}{
 		PaginatedResponse: *pagination,
 		Data:              ret,
 	}
 
-	return ctx.JSON(http.StatusOK, response)
+	return response
+}
+
+// GetAddressDags returns all DAG blocks sent by the selected address
+func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
+	return ctx.JSON(http.StatusOK, GetAddressDataPage[Dag](a, address, &params.Pagination))
 }
 
 // GetAddressPbfts returns all PBFT blocks produced by the selected address
 func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, params GetAddressPbftsParams) error {
-	logFields := log.Fields{"address": address, "params": params}
-	log.WithFields(logFields).Trace("GetAddressPbfts")
-
-	stats := a.storage.GetAddressStats(address)
-	total := stats.PbftCount
-
-	ret, pagination, err := storage.GetObjectsPage[Pbft](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit, total)
-	if err != nil {
-		logFields["error"] = err
-		log.WithFields(logFields).Fatal("Error getting Pbfts")
-	}
-
-	response := struct {
-		PaginatedResponse
-		Data []Pbft `json:"data"`
-	}{
-		PaginatedResponse: *pagination,
-		Data:              ret,
-	}
-
-	return ctx.JSON(http.StatusOK, response)
+	return ctx.JSON(http.StatusOK, GetAddressDataPage[Pbft](a, address, &params.Pagination))
 }
 
 // GetAddressTransactions returns all transactions from and to the selected address
 func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFilter, params GetAddressTransactionsParams) error {
-	logFields := log.Fields{"address": address, "params": params}
-	log.WithFields(logFields).Trace("GetAddressTransactions")
-
-	stats := a.storage.GetAddressStats(address)
-	total := stats.TransactionsCount
-
-	ret, pagination, err := storage.GetObjectsPage[Transaction](a.storage, address, getPaginationStart(params.Pagination.Start), params.Pagination.Limit, total)
-	if err != nil {
-		logFields["error"] = err
-		log.WithFields(logFields).Debug("Error getting Transactions")
-	}
-
-	response := struct {
-		PaginatedResponse
-		Data []Transaction `json:"data"`
-	}{
-		PaginatedResponse: *pagination,
-		Data:              ret,
-	}
-	return ctx.JSON(http.StatusOK, response)
+	return ctx.JSON(http.StatusOK, GetAddressDataPage[Transaction](a, address, &params.Pagination))
 }
 
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
 func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) error {
-	log.WithField("address", address).Trace("GetAddressStats")
+	log.WithField("address", address).Debug("GetAddressStats")
 
 	addr := a.storage.GetAddressStats(address)
 	return ctx.JSON(http.StatusOK, addr.StatsResponse)
@@ -103,7 +61,7 @@ func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) er
 
 // GetValidators returns all validators for the selected week and the number of PBFT blocks they produced
 func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams) error {
-	log.WithField("params", params).Trace("GetValidators")
+	log.WithField("params", params).Debug("GetValidators")
 
 	stats := a.storage.GetWeekStats(int(params.Week.Year), int(params.Week.Week))
 	ret, pagination := stats.GetPaginated(getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
@@ -121,7 +79,7 @@ func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams)
 
 // GetValidatorsTotal returns total number of PBFT blocks produced in selected week
 func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTotalParams) error {
-	log.WithField("params", params).Trace("GetValidatorsTotal")
+	log.WithField("params", params).Debug("GetValidatorsTotal")
 	stats := a.storage.GetWeekStats(int(params.Filter.Year), int(params.Filter.Week))
 	var count CountResponse
 	count.Total = uint64(stats.Total)
