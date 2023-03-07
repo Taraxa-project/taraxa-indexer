@@ -27,7 +27,7 @@ func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext 
 	bc.batch = s.NewBatch()
 	bc.client = client
 	bc.addressStats = make(map[string]*storage.AddressStats)
-	bc.finalized = s.GetFinalizedPeriod()
+	bc.finalized = s.GetFinalizationData()
 
 	return &bc
 }
@@ -38,7 +38,7 @@ func (bc *blockContext) commit(period uint64) {
 	bc.batch.CommitBatch()
 }
 
-func (bc *blockContext) process(raw *chain.Block) (err error) {
+func (bc *blockContext) process(raw *chain.Block) {
 	block := raw.ToModel()
 	transactions := &raw.Transactions
 
@@ -63,17 +63,15 @@ func (bc *blockContext) process(raw *chain.Block) (err error) {
 	bc.wg.Wait()
 
 	bc.finalized.PbftCount++
-	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft()
+	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft(block.Timestamp)
 	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
 
 	// If stats is available check for consistency
-	stats, stats_err := bc.client.GetNodeStats()
+	remote_stats, stats_err := bc.client.GetNodeStats()
 	if stats_err == nil {
-		stats.Check(bc.finalized)
+		bc.finalized.Check(remote_stats)
 	}
 	bc.commit(block.Number)
-
-	return
 }
 
 func (bc *blockContext) processTransaction(hash string) {
@@ -92,10 +90,10 @@ func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 }
 
 func (bc *blockContext) processDag(hash string) {
-	dag := bc.client.GetDagBlockByHash(hash)
+	dag := bc.client.GetDagBlockByHash(hash).ToModel()
 
-	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag()
-	bc.batch.AddToBatch(dag.ToModel(), dag.Sender, dag_index)
+	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
+	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
 	bc.wg.Done()
 }
 
@@ -113,18 +111,15 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 	if stats != nil {
 		return stats
 	}
-	bc.addressStats[addr] = storage.MakeEmptyAddressStats(addr)
 
-	v, err := s.GetAddressStats(addr)
-	if err == nil {
-		bc.addressStats[addr] = v
-	}
+	bc.addressStats[addr] = s.GetAddressStats(addr)
+
 	return bc.addressStats[addr]
 }
 
 func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-	from_index := bc.getAddress(bc.storage, trx.From).AddTx()
-	to_index := bc.getAddress(bc.storage, trx.To).AddTx()
+	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
+	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
 
 	bc.batch.AddToBatch(trx, trx.From, from_index)
 	bc.batch.AddToBatch(trx, trx.To, to_index)

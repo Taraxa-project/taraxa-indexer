@@ -1,12 +1,11 @@
 package indexer
 
 import (
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	log "github.com/sirupsen/logrus"
 )
 
 type Indexer struct {
@@ -26,11 +25,10 @@ func (i *Indexer) init() {
 	db_clean := false
 	if i.storage.GenesisHashExist() {
 		local_hash := i.storage.GetGenesisHash()
-		fmt.Println("Checking genesis local", local_hash, "remote", remote_hash)
 		if local_hash != remote_hash {
-			fmt.Println("Genesis hash mismatch. Cleaning DB and restart syncing")
+			log.WithFields(log.Fields{"local_hash": local_hash, "remote_hash": remote_hash}).Warn("Genesis changed, reseting")
 			if err := i.storage.Clean(); err != nil {
-				log.Fatal("init storage.Clean() ", err)
+				log.WithField("error", err).Warn("Error during storage cleaning")
 			}
 			db_clean = true
 		}
@@ -41,55 +39,46 @@ func (i *Indexer) init() {
 		return
 	}
 
-	genesis := MakeGenesis(i.storage, i.client, string(remote_hash))
+	genesis := MakeGenesis(i.storage, i.client, remote_hash)
 	// Genesis hash and finalized period(0) is set inside
 	genesis.process()
 }
 
 func (i *Indexer) sync() {
 	// start processing blocks from the next one
-	start := i.storage.GetFinalizedPeriod().PbftCount + 1
+	start := i.storage.GetFinalizationData().PbftCount + 1
 	end := i.client.GetLatestPeriod()
-	fmt.Println("Starting sync from", start, "to", end)
+	log.WithFields(log.Fields{"start": start, "end": end}).Info("Start syncing")
 	prev := time.Now()
 	for p := uint64(start); p <= end; p++ {
 		blk := i.client.GetBlockByNumber(p)
 		if p%100 == 0 {
-			fmt.Println(p, "elapsed", time.Since(prev).Milliseconds(), "ms")
+			log.WithFields(log.Fields{"period": p, "elapsed_ms": time.Since(prev).Milliseconds()}).Info("Syncing: block applied")
 			prev = time.Now()
 		}
 
-		err := MakeBlockContext(i.storage, i.client).process(blk)
-		if err != nil {
-			log.Fatal("processBlock ", err)
-		}
+		MakeBlockContext(i.storage, i.client).process(blk)
 	}
 }
 
 func (i *Indexer) Start() {
 	i.init()
 	i.sync()
-	ch, sub, err := i.client.SubscribeNewHeads()
-	if err != nil {
-		log.Fatal("Subscription failed")
-	}
+	ch, sub := i.client.SubscribeNewHeads()
 	for {
 		select {
 		case err := <-sub.Err():
 			log.Fatal(err)
 		case sub_blk := <-ch:
-			blk_num := chain.ParseInt(sub_blk.Number)
-			fmt.Println("Processing event block", blk_num)
-			if blk_num != i.storage.GetFinalizedPeriod().PbftCount+1 {
+			p := chain.ParseInt(sub_blk.Number)
+			log.WithFields(log.Fields{"period": p}).Info("Applying block from subscription channel")
+			if p != i.storage.GetFinalizationData().PbftCount+1 {
 				i.sync()
 				continue
 			}
 			// We need to get block from API one more time because chain isn't returning transactions in this subscription object
-			blk := i.client.GetBlockByNumber(blk_num)
-			err = MakeBlockContext(i.storage, i.client).process(blk)
-			if err != nil {
-				log.Fatal("processBlock", err)
-			}
+			blk := i.client.GetBlockByNumber(p)
+			MakeBlockContext(i.storage, i.client).process(blk)
 		}
 	}
 }

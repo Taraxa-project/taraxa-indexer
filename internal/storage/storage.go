@@ -3,15 +3,14 @@ package storage
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/vfs"
 	"github.com/ethereum/go-ethereum/rlp"
+	log "github.com/sirupsen/logrus"
 )
 
 type Storage struct {
@@ -22,7 +21,7 @@ type Storage struct {
 func NewStorage(file string) *Storage {
 	db, err := open(file)
 	if err != nil {
-		log.Fatal(err)
+		log.WithField("error", err).Fatal("Can't create storage")
 	}
 
 	return &Storage{
@@ -100,45 +99,33 @@ type Paginated interface {
 	models.Transaction | models.Dag | models.Pbft
 }
 
-func ParseKeyIndex(key, prefix string) uint64 {
-	index_str := key[len(prefix):]
-
-	index, err := strconv.ParseUint(index_str, 10, 64)
-	if err != nil {
-		log.Fatal("ParseKeyIndex ", key, prefix)
-	}
-	return index
-}
-
-func GetObjectsPage[T Paginated](s *Storage, hash string, from, count uint64) (ret []T, pagination *models.PaginatedResponse, err error) {
-
+func GetObjectsPage[T Paginated](s *Storage, hash string, from, count, total uint64) (ret []T, pagination *models.PaginatedResponse, err error) {
 	var o T
 	ret = make([]T, 0, count)
+
 	pagination = new(models.PaginatedResponse)
+	pagination.Start = from
+	pagination.Total = total
+	end := from + count
+	pagination.HasNext = (end < pagination.Total)
+	if end > pagination.Total {
+		end = pagination.Total
+	}
+	pagination.End = end
+
 	prefix := getPrefixKey(getPrefix(&o), hash)
-	start := getKey(getPrefix(&o), hash, from)
+	start := getKey(getPrefix(&o), hash, total-from)
 
 	iter := s.find(prefix)
 	defer iter.Close()
+	iter.SeekGE(start)
 
-	if from != 0 {
-		iter.SeekGE(start)
-	} else {
-		iter.Last()
-	}
-	defer func() {
-		pagination.HasNext = (pagination.End != 1)
-	}()
 	for ; iter.Valid(); iter.Prev() {
 		err = rlp.DecodeBytes(iter.Value(), &o)
-		if len(ret) == 0 {
-			pagination.Start = ParseKeyIndex(string(iter.Key()), string(prefix))
-		}
 		if err != nil {
 			return
 		}
 		ret = append(ret, o)
-		pagination.End = ParseKeyIndex(string(iter.Key()), string(prefix))
 		if uint64(len(ret)) == count {
 			return
 		}
@@ -146,26 +133,26 @@ func GetObjectsPage[T Paginated](s *Storage, hash string, from, count uint64) (r
 	return
 }
 
-func getPrefix(o interface{}) string {
+func getPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
 	case *models.Transaction:
-		return "t"
+		ret = "t"
 	case *models.Pbft:
-		return "p"
+		ret = "p"
 	case *models.Dag:
-		return "d"
+		ret = "d"
 	case *AddressStats:
-		return "s"
+		ret = "s"
 	case *FinalizationData:
-		return "f"
+		ret = "f"
 	case *GenesisHash:
-		return "g"
+		ret = "g"
 	case *WeekStats:
-		return "w"
+		ret = "w"
 	default:
-		err := fmt.Errorf("getPrefix: Unexpected type %T", tt)
-		panic(err)
+		log.WithField("type", tt).Fatal("getPrefix: Unexpected type")
 	}
+	return
 }
 
 func getKey(prefix, author string, number uint64) []byte {
@@ -187,12 +174,12 @@ func (s *Storage) GetWeekStats(year, week int) WeekStats {
 	ptr.key = []byte(getWeekKey(getPrefix(ptr), year, week))
 	err := s.getFromDB(ptr, ptr.key)
 	if err != nil && err != pebble.ErrNotFound {
-		log.Fatal("GetFinalizedPeriod ", err)
+		log.WithField("error", err).Fatal("GetWeekStats failed")
 	}
 	return *ptr
 }
 
-func (s *Storage) AddToDB(o interface{}, key1 string, key2 uint64) error {
+func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {
 	return s.addToDB(getKey(getPrefix(o), key1, key2), o)
 }
 
@@ -206,19 +193,22 @@ func (s *Storage) addToDB(key []byte, o interface{}) error {
 	return err
 }
 
-func (s *Storage) GetFinalizedPeriod() *FinalizationData {
+func (s *Storage) GetFinalizationData() *FinalizationData {
 	ptr := new(FinalizationData)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
 	if err != nil && err != pebble.ErrNotFound {
-		log.Fatal("GetFinalizedPeriod ", err)
+		log.WithField("error", err).Fatal("GetFinalizationData failed")
 	}
 	return ptr
 }
 
-func (s *Storage) GetAddressStats(hash string) (ret *AddressStats, err error) {
-	ret = new(AddressStats)
-	err = s.getFromDB(ret, getKey(getPrefix(ret), hash, 0))
-	return
+func (s *Storage) GetAddressStats(addr string) *AddressStats {
+	ptr := MakeEmptyAddressStats(addr)
+	err := s.getFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
+	if err != nil && err != pebble.ErrNotFound {
+		log.Fatal("GetAddressStats ", err)
+	}
+	return ptr
 }
 
 func (s *Storage) GenesisHashExist() bool {
@@ -231,7 +221,7 @@ func (s *Storage) GetGenesisHash() GenesisHash {
 	ptr := new(GenesisHash)
 	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
 	if err != nil {
-		log.Fatal("GetGenesisHash ", err)
+		log.WithField("error", err).Fatal("GetGenesisHash failed")
 	}
 	return *ptr
 }
@@ -251,8 +241,7 @@ func (s *Storage) getFromDB(o interface{}, key []byte) error {
 			return err
 		}
 	default:
-		err := fmt.Errorf("GetFromDB: Unexpected type %T", tt)
-		panic(err)
+		log.WithField("type", tt).Fatal("getFromDB: Unexpected type")
 	}
 	return nil
 }

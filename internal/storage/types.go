@@ -1,41 +1,42 @@
 package storage
 
 import (
-	"log"
 	"sort"
 	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 // AddressStats defines the model for an address aggregate.
 type AddressStats struct {
-	Address   string       `json:"address"`
-	TxTotal   uint64       `json:"txTotal"`
-	DagTotal  uint64       `json:"dagTotal"`
-	PbftTotal uint64       `json:"pbftTotal"`
-	mutex     sync.RWMutex `rlp:"-"`
+	models.StatsResponse
+	Address string       `json:"address"`
+	mutex   sync.RWMutex `rlp:"-"`
 }
 
-func (a *AddressStats) AddTx() uint64 {
+func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
-	a.TxTotal++
-	return a.TxTotal
+	a.TransactionsCount++
+	a.LastTransactionTimestamp = &timestamp
+	return a.TransactionsCount
 }
 
-func (a *AddressStats) AddPbft() uint64 {
+func (a *AddressStats) AddPbft(timestamp models.Timestamp) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
-	a.PbftTotal++
-	return a.PbftTotal
+	a.PbftCount++
+	a.LastPbftTimestamp = &timestamp
+	return a.PbftCount
 }
 
-func (a *AddressStats) AddDag() uint64 {
+func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
-	a.DagTotal++
-	return a.DagTotal
+	a.DagsCount++
+	a.LastDagTimestamp = &timestamp
+	return a.DagsCount
 }
 
 func MakeEmptyAddressStats(addr string) *AddressStats {
@@ -49,7 +50,7 @@ func (a *AddressStats) isEqual(b *AddressStats) bool {
 	defer a.mutex.Unlock()
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
-	if a.Address == b.Address && a.TxTotal == b.TxTotal && a.DagTotal == b.DagTotal && a.PbftTotal == b.PbftTotal {
+	if a.Address == b.Address && a.TransactionsCount == b.TransactionsCount && a.DagsCount == b.DagsCount && a.PbftCount == b.PbftCount {
 		return true
 	}
 	return false
@@ -61,17 +62,17 @@ type FinalizationData struct {
 	PbftCount uint64 `json:"pbft_size"`
 }
 
-func (f1 *FinalizationData) Check(f2 *FinalizationData) {
+func (local *FinalizationData) Check(remote *FinalizationData) {
 	// Perform this check only if we are getting data for the same block from node
-	if f1.PbftCount != f2.PbftCount {
+	if local.PbftCount != remote.PbftCount {
 		return
 	}
-	if f1.DagCount != f2.DagCount {
-		log.Fatal("Dag consistency check failed", f1.DagCount, "!=", f2.DagCount)
+	if local.DagCount != remote.DagCount {
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Dag consistency check failed")
 	}
 
-	if f1.TrxCount != f2.TrxCount {
-		log.Fatal("Transactions consistency check failed ", f1.TrxCount, "!=", f2.TrxCount)
+	if local.TrxCount != remote.TrxCount {
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Transactions consistency check failed ")
 	}
 }
 

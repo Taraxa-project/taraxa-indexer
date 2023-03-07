@@ -15,11 +15,11 @@ type Genesis struct {
 	hash    string
 }
 
-func MakeGenesis(s *storage.Storage, c *chain.WsClient, genesisHash string) *Genesis {
+func MakeGenesis(s *storage.Storage, c *chain.WsClient, genesisHash storage.GenesisHash) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = c.GetGenesis()
-	genesis.hash = genesisHash
+	genesis.hash = string(genesisHash)
 	genesis.bc = MakeBlockContext(s, c)
 
 	return &genesis
@@ -33,6 +33,7 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
 	trx.Value = value
 	trx.BlockNumber = 0
 	trx.Timestamp = chain.ParseInt(g.genesis.DagGenesisBlock.Timestamp)
+	trx.Status = true
 	return &trx
 }
 
