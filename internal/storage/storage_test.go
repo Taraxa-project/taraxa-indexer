@@ -33,35 +33,32 @@ func TestGetObjects(t *testing.T) {
 
 	sender := "user"
 	count := uint64(100)
+
+	stats := MakeEmptyAddressStats(sender)
+	stats.DagsCount = count
+	if err := stor.addToDBTest(stats, stats.Address, 0); err != nil {
+		t.Error(err)
+	}
+
 	for i := uint64(1); i <= count; i++ {
 		block := models.Dag{Timestamp: i, Hash: "test" + strconv.FormatUint(i, 10), Level: 0, Sender: sender, TransactionCount: 0}
-		if err := stor.addToDBTest(&block, block.Sender, block.Timestamp); err != nil {
+		if err := stor.addToDBTest(&block, sender, block.Timestamp); err != nil {
 			t.Error(err)
 		}
 	}
-
-	ret, pagination, err := GetObjectsPage[models.Dag](stor, sender, 0, count, count)
-	if err != nil {
-		t.Error(err)
-	}
+	ret, pagination := GetObjectsPage[models.Dag](stor, sender, 0, uint64(count))
 	assert.Equal(t, uint64(len(ret)), count)
 	assert.False(t, pagination.HasNext)
 	assert.Equal(t, pagination.Start, uint64(0))
 	assert.Equal(t, pagination.End, uint64(100))
 
-	ret, pagination, err = GetObjectsPage[models.Dag](stor, sender, 50, 50, 100)
-	if err != nil {
-		t.Error(err)
-	}
+	ret, pagination = GetObjectsPage[models.Dag](stor, sender, 50, 100)
 	assert.Equal(t, len(ret), 50)
 	assert.False(t, pagination.HasNext)
 	assert.Equal(t, pagination.Start, uint64(50))
 	assert.Equal(t, pagination.End, uint64(100))
 
-	ret, pagination, err = GetObjectsPage[models.Dag](stor, sender, 0, 25, 100)
-	if err != nil {
-		t.Error(err)
-	}
+	ret, pagination = GetObjectsPage[models.Dag](stor, sender, 0, 25)
 	assert.Equal(t, len(ret), 25)
 	assert.True(t, pagination.HasNext)
 	assert.Equal(t, pagination.Start, uint64(0))

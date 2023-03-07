@@ -1,12 +1,25 @@
 package storage
 
 import (
+	"reflect"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
+
+type Paginated interface {
+	models.Transaction | models.Dag | models.Pbft
+}
+
+func GetTypeName[T any]() string {
+	var t T
+	tt := reflect.TypeOf(t)
+	// Don't include package name in this returned value
+	return strings.Split(tt.String(), ".")[1]
+}
 
 // AddressStats defines the model for an address aggregate.
 type AddressStats struct {

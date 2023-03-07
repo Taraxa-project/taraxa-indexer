@@ -36,10 +36,13 @@ func init() {
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
-
-	log.WithField("blockchain_ws", *blockchain_ws).Info("Passed argument")
-	log.WithField("data_dir", *data_dir).Info("Passed argument")
-	log.WithField("log_level", *log_level).Info("Passed argument")
+	log.Print("\n\n\n")
+	log.WithFields(log.Fields{
+		"http_port":     *http_port,
+		"blockchain_ws": *blockchain_ws,
+		"data_dir":      *data_dir,
+		"log_level":     *log_level}).
+		Info("Application started")
 }
 
 func setupCloseHandler(st *storage.Storage, fn func()) {

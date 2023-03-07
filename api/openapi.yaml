@@ -92,13 +92,7 @@ paths:
         Returns total number of PBFT blocks, DAG blocks and Transactions produced for the selected address
       operationId: "getAddressStats"
       parameters:
-        - name: address
-          in: path
-          description: |
-            Address to filter by
-          required: true
-          schema:
-            $ref: "#/components/schemas/AddressFilter"
+        - $ref: '#/components/parameters/addressParam'
       responses:
         "200":
           description: |
@@ -119,20 +113,8 @@ paths:
         Returns all transactions from and to the selected address
       operationId: "getAddressTransactions"
       parameters:
-        - name: address
-          in: path
-          description: |
-            Address to filter by
-          required: true
-          schema:
-            $ref: "#/components/schemas/AddressFilter"
-        - name: pagination
-          in: query
-          required: true
-          description: |
-            Pagination
-          schema:
-            $ref: "#/components/schemas/PaginationFilter"
+        - $ref: '#/components/parameters/addressParam'
+        - $ref: '#/components/parameters/paginationParam'
       responses:
         "200":
           description: |
@@ -154,20 +136,8 @@ paths:
         Returns all DAG blocks sent by the selected address
       operationId: "getAddressDags"
       parameters:
-        - name: address
-          in: path
-          description: |
-            Address to filter by
-          required: true
-          schema:
-            $ref: "#/components/schemas/AddressFilter"
-        - name: pagination
-          in: query
-          required: true
-          description: |
-            Pagination
-          schema:
-            $ref: "#/components/schemas/PaginationFilter"
+        - $ref: '#/components/parameters/addressParam'
+        - $ref: '#/components/parameters/paginationParam'
       responses:
         "200":
           description: |
@@ -189,20 +159,8 @@ paths:
         Returns all PBFT blocks produced by the selected address
       operationId: "getAddressPbfts"
       parameters:
-        - name: address
-          in: path
-          description: |
-            Address to filter by
-          required: true
-          schema:
-            $ref: "#/components/schemas/AddressFilter"
-        - name: pagination
-          in: query
-          required: true
-          description: |
-            Pagination
-          schema:
-            $ref: "#/components/schemas/PaginationFilter"
+        - $ref: '#/components/parameters/addressParam'
+        - $ref: '#/components/parameters/paginationParam'
       responses:
         "200":
           description: |
@@ -445,3 +403,21 @@ components:
           minimum: 1
           maximum: 100
           default: 30
+  parameters:
+    addressParam:
+      name: address
+      in: path
+      description: |
+        Address to filter by
+      required: true
+      schema:
+        $ref: "#/components/schemas/AddressFilter"
+    paginationParam:
+      name: pagination
+      in: query
+      required: true
+      description: |
+        Pagination
+      schema:
+        $ref: "#/components/schemas/PaginationFilter"
+
