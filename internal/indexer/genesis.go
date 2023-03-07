@@ -1,11 +1,10 @@
 package indexer
 
 import (
-	"fmt"
-
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type Genesis struct {
@@ -42,7 +41,7 @@ func (g *Genesis) process() {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)
 	}
-	fmt.Println("GENESIS:", len(g.genesis.InitialBalances), "init balance transactions parsed")
+	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
 	g.bc.finalized.TrxCount = 0

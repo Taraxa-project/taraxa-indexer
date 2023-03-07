@@ -118,22 +118,28 @@ type WeekFilter struct {
 	Year int32 `json:"year"`
 }
 
+// AddressParam defines model for addressParam.
+type AddressParam = AddressFilter
+
+// PaginationParam defines model for paginationParam.
+type PaginationParam = PaginationFilter
+
 // GetAddressDagsParams defines parameters for GetAddressDags.
 type GetAddressDagsParams struct {
 	// Pagination Pagination
-	Pagination PaginationFilter `form:"pagination" json:"pagination"`
+	Pagination PaginationParam `form:"pagination" json:"pagination"`
 }
 
 // GetAddressPbftsParams defines parameters for GetAddressPbfts.
 type GetAddressPbftsParams struct {
 	// Pagination Pagination
-	Pagination PaginationFilter `form:"pagination" json:"pagination"`
+	Pagination PaginationParam `form:"pagination" json:"pagination"`
 }
 
 // GetAddressTransactionsParams defines parameters for GetAddressTransactions.
 type GetAddressTransactionsParams struct {
 	// Pagination Pagination
-	Pagination PaginationFilter `form:"pagination" json:"pagination"`
+	Pagination PaginationParam `form:"pagination" json:"pagination"`
 }
 
 // GetValidatorsParams defines parameters for GetValidators.

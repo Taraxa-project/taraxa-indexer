@@ -36,10 +36,13 @@ func init() {
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
-
-	log.WithField("blockchain_ws", *blockchain_ws).Info("Passed argument")
-	log.WithField("data_dir", *data_dir).Info("Passed argument")
-	log.WithField("log_level", *log_level).Info("Passed argument")
+	log.Print("\n\n\n")
+	log.WithFields(log.Fields{
+		"http_port":     *http_port,
+		"blockchain_ws": *blockchain_ws,
+		"data_dir":      *data_dir,
+		"log_level":     *log_level}).
+		Info("Application started")
 }
 
 func setupCloseHandler(st *storage.Storage, fn func()) {
@@ -58,7 +61,7 @@ func main() {
 
 	swagger, err := api.GetSwagger()
 	if err != nil {
-		log.WithField("error", err).Fatal("Error loading swagger spec")
+		log.WithError(err).Fatal("Error loading swagger spec")
 	}
 
 	swagger.Servers = nil
@@ -74,10 +77,10 @@ func main() {
 
 	idx, err := indexer.NewIndexer(*blockchain_ws, st)
 	if err != nil {
-		log.WithField("error", err).Fatal("Can't create indexer")
+		log.WithError(err).Fatal("Can't create indexer")
 	}
 	go idx.Start()
 
 	err = e.Start(":" + strconv.FormatInt(int64(*http_port), 10))
-	log.WithField("error", err).Fatal("Can't start http server")
+	log.WithError(err).Fatal("Can't start http server")
 }

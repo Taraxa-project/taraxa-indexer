@@ -30,7 +30,7 @@ func NewWsClient(url string) (*WsClient, error) {
 func (client *WsClient) Call(method string, args ...interface{}) (res map[string]interface{}) {
 	err := client.rpc.Call(&res, method, args...)
 	if err != nil {
-		log.WithField("error", err).Fatal("Call failed")
+		log.WithError(err).Fatal("Call failed")
 	}
 	return
 }
@@ -48,7 +48,7 @@ func (client *WsClient) GetLatestPeriod() uint64 {
 	blk := new(Block)
 	err := client.rpc.Call(blk, "eth_getBlockByNumber", "latest", false)
 	if err != nil {
-		log.WithField("error", err).Fatal("GetLatestPeriod failed")
+		log.WithError(err).Fatal("GetLatestPeriod failed")
 	}
 	return ParseInt(blk.Number)
 }
@@ -57,7 +57,7 @@ func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction) {
 	trx = new(transaction)
 	err := client.rpc.Call(trx, "eth_getTransactionByHash", hash)
 	if err != nil {
-		log.WithField("error", err).Fatal("GetTransactionByHash failed")
+		log.WithError(err).Fatal("GetTransactionByHash failed")
 	}
 	client.AddTransactionReceiptData(trx)
 	return
@@ -66,7 +66,7 @@ func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction) {
 func (client *WsClient) AddTransactionReceiptData(trx *transaction) {
 	err := client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
 	if err != nil {
-		log.WithField("error", err).Fatal("AddTransactionReceiptData failed")
+		log.WithError(err).Fatal("AddTransactionReceiptData failed")
 	}
 }
 
@@ -83,7 +83,7 @@ func (client *WsClient) GetDagBlockByHash(hash string) (dag *dagBlock) {
 	dag = new(dagBlock)
 	err := client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	if err != nil {
-		log.WithField("error", err).Fatal("GetDagBlockByHash failed")
+		log.WithError(err).Fatal("GetDagBlockByHash failed")
 	}
 	return
 }
@@ -92,14 +92,14 @@ func (client *WsClient) GetGenesis() (genesis *GenesisObject) {
 	genesis = new(GenesisObject)
 	err := client.rpc.Call(&genesis, "taraxa_getConfig")
 	if err != nil {
-		log.WithField("error", err).Fatal("GetGenesis failed")
+		log.WithError(err).Fatal("GetGenesis failed")
 	}
 	return
 }
 
-func (client *WsClient) GetNodeStats() (ns *storage.FinalizationData, err error) {
+func (client *WsClient) GetChainStats() (ns *storage.FinalizationData, err error) {
 	ns = new(storage.FinalizationData)
-	err = client.rpc.Call(&ns, "get_node_status")
+	err = client.rpc.Call(&ns, "taraxa_getChainStats")
 	return
 }
 
@@ -107,7 +107,7 @@ func (client *WsClient) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscriptio
 	ch := make(chan *Block)
 	sub, err := client.rpc.Subscribe(client.ctx, "eth", ch, "newHeads")
 	if err != nil {
-		log.WithField("error", err).Fatal("SubscribeNewHeads failed")
+		log.WithError(err).Fatal("SubscribeNewHeads failed")
 	}
 	return ch, sub
 }
