@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
@@ -59,6 +60,39 @@ func TestGetObjects(t *testing.T) {
 	assert.Equal(t, pagination.End, uint64(100))
 
 	ret, pagination = GetObjectsPage[models.Dag](stor, sender, 0, 25)
+	assert.Equal(t, len(ret), 25)
+	assert.True(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(0))
+	assert.Equal(t, pagination.End, uint64(25))
+}
+
+func TestGetPaginatedWeekStats(t *testing.T) {
+	stor := NewStorage("")
+	defer stor.Close()
+
+	tn := time.Now()
+	year, week := tn.ISOWeek()
+	weekStats := stor.GetWeekStats(year, week)
+
+	count := uint64(100)
+	for i := uint64(1); i <= count; i++ {
+		block := models.Pbft{Author: "user" + strconv.FormatUint(i, 10), Hash: "test" + strconv.FormatUint(i, 10), Number: i, Timestamp: uint64(tn.Unix()), TransactionCount: 0}
+		weekStats.AddPbftBlock(&block)
+	}
+
+	ret, pagination := weekStats.GetPaginated(0, count)
+	assert.Equal(t, uint64(len(ret)), count)
+	assert.False(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(0))
+	assert.Equal(t, pagination.End, uint64(100))
+
+	ret, pagination = weekStats.GetPaginated(50, 50)
+	assert.Equal(t, len(ret), 50)
+	assert.False(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(50))
+	assert.Equal(t, pagination.End, uint64(100))
+
+	ret, pagination = weekStats.GetPaginated(0, 25)
 	assert.Equal(t, len(ret), 25)
 	assert.True(t, pagination.HasNext)
 	assert.Equal(t, pagination.Start, uint64(0))
