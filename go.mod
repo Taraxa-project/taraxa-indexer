@@ -9,6 +9,7 @@ require (
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/labstack/echo/v4 v4.10.1
 	github.com/sirupsen/logrus v1.9.0
+	github.com/spiretechnology/go-pool v1.0.0
 	github.com/stretchr/testify v1.8.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0

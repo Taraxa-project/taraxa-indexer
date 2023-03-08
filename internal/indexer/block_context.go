@@ -9,13 +9,14 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
+	"github.com/spiretechnology/go-pool"
 )
 
 type blockContext struct {
 	storage        *storage.Storage
 	batch          *storage.Batch
 	client         *chain.WsClient
-	wg             sync.WaitGroup
+	pool           pool.Pool
 	blockTimestamp uint64
 	addressStats   map[string]*storage.AddressStats
 	finalized      *storage.FinalizationData
@@ -27,6 +28,8 @@ func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext 
 	bc.storage = s
 	bc.batch = s.NewBatch()
 	bc.client = client
+	// pool limit is limit of concurrent ws requests to the node
+	bc.pool = pool.New(200)
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
 
@@ -47,15 +50,7 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	bc.finalized.TrxCount += trx_count
 	bc.blockTimestamp = block.Timestamp
 
-	bc.wg.Add(1)
-	go bc.updateValidatorStats(block)
-
-	for _, trx_hash := range *transactions {
-		bc.wg.Add(1)
-		go func(h string) {
-			err = bc.processTransaction(h)
-		}(trx_hash)
-	}
+	bc.pool.Go(func() { bc.updateValidatorStats(block) })
 
 	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
 	if pbft_err != nil {
@@ -63,14 +58,19 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
 	bc.finalized.DagCount += dags_count
+
+	for _, trx_hash := range *transactions {
+		bc.pool.Go(func() {
+			err = bc.processTransaction(trx_hash)
+		})
+	}
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		bc.wg.Add(1)
-		go func(h string) {
-			err = bc.processDag(h)
-		}(dag_hash)
+		bc.pool.Go(func() {
+			err = bc.processDag(dag_hash)
+		})
 	}
 
-	bc.wg.Wait()
+	bc.pool.Wait()
 	if err != nil {
 		return
 	}
@@ -90,7 +90,6 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 }
 
 func (bc *blockContext) processTransaction(hash string) error {
-	defer bc.wg.Done()
 	trx, err := bc.client.GetTransactionByHash(hash)
 	if err != nil {
 		return err
@@ -101,7 +100,6 @@ func (bc *blockContext) processTransaction(hash string) error {
 }
 
 func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
-	defer bc.wg.Done()
 	tn := time.Unix(int64(block.Timestamp), 0)
 	year, week := tn.ISOWeek()
 	weekStats := bc.storage.GetWeekStats(year, week)
@@ -110,7 +108,6 @@ func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 }
 
 func (bc *blockContext) processDag(hash string) error {
-	defer bc.wg.Done()
 	raw_dag, err := bc.client.GetDagBlockByHash(hash)
 	if err != nil {
 		return err
