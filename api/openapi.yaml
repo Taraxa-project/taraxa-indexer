@@ -383,7 +383,7 @@ components:
         year:
           type: integer
           format: int32
-          minimum: 2023
+          minimum: 2022
           default: 2023
     AddressFilter:
       $ref: "#/components/schemas/Address"
