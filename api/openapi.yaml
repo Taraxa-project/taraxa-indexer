@@ -189,6 +189,7 @@ components:
       type: integer
       format: uint64
       example: 1676682705
+      nullable: true
       # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
       x-oapi-codegen-extra-tags:
         rlp: "nil"
@@ -302,6 +303,9 @@ components:
         - pbftCount
         - dagsCount
         - transactionsCount
+        - lastPbftTimestamp
+        - lastDagTimestamp
+        - lastTransactionTimestamp
       properties:
         pbftCount:
           $ref: "#/components/schemas/Counter"

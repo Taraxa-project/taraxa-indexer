@@ -71,9 +71,9 @@ type PbftsPaginatedResponse = PaginatedResponse
 // StatsResponse defines model for StatsResponse.
 type StatsResponse struct {
 	DagsCount                Counter        `json:"dagsCount"`
-	LastDagTimestamp         *LastTimestamp `json:"lastDagTimestamp,omitempty" rlp:"nil"`
-	LastPbftTimestamp        *LastTimestamp `json:"lastPbftTimestamp,omitempty" rlp:"nil"`
-	LastTransactionTimestamp *LastTimestamp `json:"lastTransactionTimestamp,omitempty" rlp:"nil"`
+	LastDagTimestamp         *LastTimestamp `json:"lastDagTimestamp" rlp:"nil"`
+	LastPbftTimestamp        *LastTimestamp `json:"lastPbftTimestamp" rlp:"nil"`
+	LastTransactionTimestamp *LastTimestamp `json:"lastTransactionTimestamp" rlp:"nil"`
 	PbftCount                Counter        `json:"pbftCount"`
 	TransactionsCount        Counter        `json:"transactionsCount"`
 }
