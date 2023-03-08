@@ -35,65 +35,51 @@ func (client *WsClient) Call(method string, args ...interface{}) (res map[string
 	return
 }
 
-func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block) {
+func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
 	blk = new(Block)
-	err := client.rpc.Call(blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
-	if err != nil {
-		log.WithFields(log.Fields{"number": number, "error": err}).Fatal("GetBlockByNumber failed")
-	}
+	err = client.rpc.Call(blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
 	return
 }
 
-func (client *WsClient) GetLatestPeriod() uint64 {
+func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	blk := new(Block)
 	err := client.rpc.Call(blk, "eth_getBlockByNumber", "latest", false)
 	if err != nil {
-		log.WithError(err).Fatal("GetLatestPeriod failed")
+		return 0, err
 	}
-	return ParseInt(blk.Number)
+	return ParseInt(blk.Number), err
 }
 
-func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction) {
+func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction, err error) {
 	trx = new(transaction)
-	err := client.rpc.Call(trx, "eth_getTransactionByHash", hash)
+	err = client.rpc.Call(trx, "eth_getTransactionByHash", hash)
 	if err != nil {
-		log.WithError(err).Fatal("GetTransactionByHash failed")
+		return
 	}
-	client.AddTransactionReceiptData(trx)
+	err = client.AddTransactionReceiptData(trx)
 	return
 }
 
-func (client *WsClient) AddTransactionReceiptData(trx *transaction) {
-	err := client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
-	if err != nil {
-		log.WithError(err).Fatal("AddTransactionReceiptData failed")
-	}
+func (client *WsClient) AddTransactionReceiptData(trx *transaction) (err error) {
+	err = client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
+	return
 }
 
-func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *pbftBlockWithDags) {
+func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *pbftBlockWithDags, err error) {
 	pbftWithDags = new(pbftBlockWithDags)
-	err := client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
-	if err != nil {
-		log.WithFields(log.Fields{"number": period, "error": err}).Fatal("GetPbftBlockWithDagBlocks failed")
-	}
+	err = client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
 	return
 }
 
-func (client *WsClient) GetDagBlockByHash(hash string) (dag *dagBlock) {
+func (client *WsClient) GetDagBlockByHash(hash string) (dag *dagBlock, err error) {
 	dag = new(dagBlock)
-	err := client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
-	if err != nil {
-		log.WithError(err).Fatal("GetDagBlockByHash failed")
-	}
+	err = client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	return
 }
 
-func (client *WsClient) GetGenesis() (genesis *GenesisObject) {
+func (client *WsClient) GetGenesis() (genesis *GenesisObject, err error) {
 	genesis = new(GenesisObject)
-	err := client.rpc.Call(&genesis, "taraxa_getConfig")
-	if err != nil {
-		log.WithError(err).Fatal("GetGenesis failed")
-	}
+	err = client.rpc.Call(&genesis, "taraxa_getConfig")
 	return
 }
 
@@ -103,13 +89,10 @@ func (client *WsClient) GetChainStats() (ns *storage.FinalizationData, err error
 	return
 }
 
-func (client *WsClient) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription) {
+func (client *WsClient) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription, error) {
 	ch := make(chan *Block)
 	sub, err := client.rpc.Subscribe(client.ctx, "eth", ch, "newHeads")
-	if err != nil {
-		log.WithError(err).Fatal("SubscribeNewHeads failed")
-	}
-	return ch, sub
+	return ch, sub, err
 }
 
 // Close disconnects from the node
