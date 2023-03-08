@@ -39,7 +39,7 @@ func (bc *blockContext) commit(period uint64) {
 	bc.batch.CommitBatch()
 }
 
-func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64) {
+func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
 	block := raw.ToModel()
 	transactions := &raw.Transactions
 
@@ -52,18 +52,28 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64)
 
 	for _, trx_hash := range *transactions {
 		bc.wg.Add(1)
-		go bc.processTransaction(trx_hash)
+		go func(h string) {
+			err = bc.processTransaction(h)
+		}(trx_hash)
 	}
 
-	block_with_dags := bc.client.GetPbftBlockWithDagBlocks(block.Number)
+	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
+	if pbft_err != nil {
+		return
+	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
 	bc.finalized.DagCount += dags_count
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
 		bc.wg.Add(1)
-		go bc.processDag(dag_hash)
+		go func(h string) {
+			err = bc.processDag(h)
+		}(dag_hash)
 	}
 
 	bc.wg.Wait()
+	if err != nil {
+		return
+	}
 
 	bc.finalized.PbftCount++
 	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft(block.Timestamp)
@@ -79,28 +89,37 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64)
 	return
 }
 
-func (bc *blockContext) processTransaction(hash string) {
-	trx := bc.client.GetTransactionByHash(hash)
+func (bc *blockContext) processTransaction(hash string) error {
+	defer bc.wg.Done()
+	trx, err := bc.client.GetTransactionByHash(hash)
+	if err != nil {
+		return err
+	}
+
 	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.blockTimestamp))
-	bc.wg.Done()
+	return nil
 }
 
 func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
+	defer bc.wg.Done()
 	tn := time.Unix(int64(block.Timestamp), 0)
 	year, week := tn.ISOWeek()
 	weekStats := bc.storage.GetWeekStats(year, week)
 	weekStats.AddPbftBlock(block)
 	bc.batch.UpdateWeekStats(weekStats)
-	bc.wg.Done()
 }
 
-func (bc *blockContext) processDag(hash string) {
-	dag := bc.client.GetDagBlockByHash(hash).ToModel()
-
-	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Debug("Saving DAG block")
+func (bc *blockContext) processDag(hash string) error {
+	defer bc.wg.Done()
+	raw_dag, err := bc.client.GetDagBlockByHash(hash)
+	if err != nil {
+		return err
+	}
+	dag := raw_dag.ToModel()
+	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
 	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
 	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
-	bc.wg.Done()
+	return nil
 }
 
 func (bc *blockContext) addAddressStatsToBatch() {
@@ -124,7 +143,7 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 }
 
 func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Debug("Saving transaction")
+	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
 	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
 
