@@ -42,6 +42,12 @@ func (g *Genesis) process() {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)
 	}
+
+	// TODO[45]: Old genesis structure. Remove
+	for addr, value := range g.genesis.FinalChain.State.GenesisBalances {
+		trx := g.makeInitBalanceTrx(addr, value)
+		g.bc.SaveTransaction(trx)
+	}
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
