@@ -122,11 +122,16 @@ func (i *Indexer) run() error {
 			return err
 		case sub_blk := <-ch:
 			p := chain.ParseInt(sub_blk.Number)
-			if p != i.storage.GetFinalizationData().PbftCount+1 {
+			finalized_period := i.storage.GetFinalizationData().PbftCount
+			if p != finalized_period+1 {
 				err := i.sync()
 				if err != nil {
 					return err
 				}
+				continue
+			}
+			if p < finalized_period {
+				log.WithFields(log.Fields{"finalized": finalized_period, "received": p}).Warn("Received block number is lower than finalized. Node was reset?")
 				continue
 			}
 			// We need to get block from API one more time because chain isn't returning transactions in this subscription object
