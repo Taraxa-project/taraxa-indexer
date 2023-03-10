@@ -15,5 +15,8 @@ func MakeTask[T any](f func(T) error, param T, err *error) *Task[T] {
 }
 
 func (t *Task[T]) Run() {
-	*t.err = t.f(t.param)
+	exec_err := t.f(t.param)
+	if exec_err != nil {
+		*t.err = exec_err
+	}
 }

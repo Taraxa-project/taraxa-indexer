@@ -56,8 +56,9 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
 	}
 
-	block_with_dags, err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
-	if err != nil {
+	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
+	if pbft_err != nil {
+		err = pbft_err
 		return
 	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
