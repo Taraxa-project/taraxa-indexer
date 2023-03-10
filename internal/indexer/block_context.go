@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -17,20 +16,20 @@ type blockContext struct {
 	storage        *storage.Storage
 	batch          *storage.Batch
 	client         *chain.WsClient
-	pool           pool.Pool
+	tp             pool.Pool
 	blockTimestamp uint64
 	addressStats   map[string]*storage.AddressStats
 	finalized      *storage.FinalizationData
 	statsMutex     sync.RWMutex
 }
 
-func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext {
+func MakeBlockContext(s *storage.Storage, client *chain.WsClient, tp pool.Pool) *blockContext {
 	var bc blockContext
 	bc.storage = s
 	bc.batch = s.NewBatch()
 	bc.client = client
 	// pool limit is limit of concurrent ws requests to the node
-	bc.pool = pool.New(uint(10 * runtime.NumCPU()))
+	bc.tp = tp
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
 
@@ -51,10 +50,10 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	bc.finalized.TrxCount += trx_count
 	bc.blockTimestamp = block.Timestamp
 
-	bc.pool.Go(func() { bc.updateValidatorStats(block) })
+	bc.tp.Go(func() { bc.updateValidatorStats(block) })
 
 	for _, trx_hash := range *transactions {
-		bc.pool.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
+		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
 	}
 
 	block_with_dags, err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
@@ -65,10 +64,10 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	bc.finalized.DagCount += dags_count
 
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		bc.pool.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
+		bc.tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
 	}
 
-	bc.pool.Wait()
+	bc.tp.Wait()
 	if err != nil {
 		return
 	}
