@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -29,7 +30,7 @@ func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext 
 	bc.batch = s.NewBatch()
 	bc.client = client
 	// pool limit is limit of concurrent ws requests to the node
-	bc.pool = pool.New(200)
+	bc.pool = pool.New(uint(10 * runtime.NumCPU()))
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
 
@@ -44,7 +45,7 @@ func (bc *blockContext) commit(period uint64) {
 
 func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
 	block := raw.ToModel()
-	transactions := &raw.Transactions
+	transactions := raw.Transactions
 
 	trx_count = block.TransactionCount
 	bc.finalized.TrxCount += trx_count
@@ -52,22 +53,19 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 
 	bc.pool.Go(func() { bc.updateValidatorStats(block) })
 
-	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
-	if pbft_err != nil {
+	for _, trx_hash := range *transactions {
+		bc.pool.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
+	}
+
+	block_with_dags, err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
+	if err != nil {
 		return
 	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
 	bc.finalized.DagCount += dags_count
 
-	for _, trx_hash := range *transactions {
-		bc.pool.Go(func() {
-			err = bc.processTransaction(trx_hash)
-		})
-	}
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		bc.pool.Go(func() {
-			err = bc.processDag(dag_hash)
-		})
+		bc.pool.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
 	}
 
 	bc.pool.Wait()

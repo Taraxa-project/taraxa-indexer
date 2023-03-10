@@ -12,6 +12,8 @@ type Indexer struct {
 	retry_time time.Duration
 	client     *chain.WsClient
 	storage    *storage.Storage
+
+	consistency_check_available bool
 }
 
 func MakeAndRun(url string, storage *storage.Storage) {
@@ -35,6 +37,11 @@ func NewIndexer(url string, storage *storage.Storage) (i *Indexer) {
 			err = i.init()
 		}
 		if err == nil {
+			_, stats_err := i.client.GetChainStats()
+			i.consistency_check_available = stats_err == nil
+			if !i.consistency_check_available {
+				log.WithError(stats_err).Warn("Method for consistency check isn't available")
+			}
 			break
 		}
 		log.WithError(err).Error("Can't connect to chain")
@@ -116,12 +123,13 @@ func (i *Indexer) run() error {
 	if err != nil {
 		return err
 	}
+
 	for {
 		select {
 		case err := <-sub.Err():
 			return err
-		case sub_blk := <-ch:
-			p := chain.ParseInt(sub_blk.Number)
+		case blk := <-ch:
+			p := chain.ParseInt(blk.Number)
 			finalized_period := i.storage.GetFinalizationData().PbftCount
 			if p != finalized_period+1 {
 				err := i.sync()
@@ -134,16 +142,33 @@ func (i *Indexer) run() error {
 				log.WithFields(log.Fields{"finalized": finalized_period, "received": p}).Warn("Received block number is lower than finalized. Node was reset?")
 				continue
 			}
-			// We need to get block from API one more time because chain isn't returning transactions in this subscription object
-			blk, err := i.client.GetBlockByNumber(p)
+			// We need to get block from API one more time if we doesn't have it in object from subscription
+			if blk.Transactions == nil {
+				blk, err = i.client.GetBlockByNumber(p)
+				if err != nil {
+					return err
+				}
+			}
+
+			bc := MakeBlockContext(i.storage, i.client)
+			dc, tc, err := bc.process(blk)
 			if err != nil {
 				return err
 			}
-			dc, tc, err := MakeBlockContext(i.storage, i.client).process(blk)
-			if err != nil {
-				return err
+
+			// perform consistency check on blocks from subscription
+			if i.consistency_check_available {
+				i.consistencyCheck(bc.finalized)
 			}
+
 			log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Info("Block processed")
 		}
+	}
+}
+
+func (i *Indexer) consistencyCheck(finalized *storage.FinalizationData) {
+	remote_stats, stats_err := i.client.GetChainStats()
+	if stats_err == nil {
+		finalized.Check(remote_stats)
 	}
 }
