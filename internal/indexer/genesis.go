@@ -5,6 +5,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
+	"github.com/spiretechnology/go-pool"
 )
 
 type Genesis struct {
@@ -14,13 +15,13 @@ type Genesis struct {
 	hash    string
 }
 
-func MakeGenesis(s *storage.Storage, c *chain.WsClient, genesisHash storage.GenesisHash) (*Genesis, error) {
+func MakeGenesis(s *storage.Storage, c *chain.WsClient, tp pool.Pool, genesisHash storage.GenesisHash) (*Genesis, error) {
 	var genesis Genesis
 	var err error
 	genesis.storage = s
 	genesis.genesis, err = c.GetGenesis()
 	genesis.hash = string(genesisHash)
-	genesis.bc = MakeBlockContext(s, c)
+	genesis.bc = MakeBlockContext(s, c, tp)
 
 	return &genesis, err
 }

@@ -6,8 +6,6 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // WsClient is a struct that connects to a Taraxa node.
@@ -24,15 +22,6 @@ func NewWsClient(url string) (*WsClient, error) {
 		return nil, err
 	}
 	return &WsClient{rpc: client, ctx: ctx}, nil
-}
-
-// Call calls an RPC method on the chain
-func (client *WsClient) Call(method string, args ...interface{}) (res map[string]interface{}) {
-	err := client.rpc.Call(&res, method, args...)
-	if err != nil {
-		log.WithError(err).Fatal("Call failed")
-	}
-	return
 }
 
 func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
