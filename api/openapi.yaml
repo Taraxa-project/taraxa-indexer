@@ -276,6 +276,7 @@ components:
       required:
         - author
         - hash
+        - pbftHash
         - number
         - transactionCount
         - timestamp
@@ -283,6 +284,8 @@ components:
         author: 
           $ref: "#/components/schemas/Address"
         hash:
+          $ref: "#/components/schemas/Hash"
+        pbftHash:
           $ref: "#/components/schemas/Hash"
         number:
           $ref: "#/components/schemas/Counter"
