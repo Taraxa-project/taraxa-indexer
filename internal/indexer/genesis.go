@@ -5,6 +5,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
+	"github.com/spiretechnology/go-pool"
 )
 
 type Genesis struct {
@@ -14,14 +15,15 @@ type Genesis struct {
 	hash    string
 }
 
-func MakeGenesis(s *storage.Storage, c *chain.WsClient, genesisHash storage.GenesisHash) *Genesis {
+func MakeGenesis(s *storage.Storage, c *chain.WsClient, tp pool.Pool, genesisHash storage.GenesisHash) (*Genesis, error) {
 	var genesis Genesis
+	var err error
 	genesis.storage = s
-	genesis.genesis = c.GetGenesis()
+	genesis.genesis, err = c.GetGenesis()
 	genesis.hash = string(genesisHash)
-	genesis.bc = MakeBlockContext(s, c)
+	genesis.bc = MakeBlockContext(s, c, tp)
 
-	return &genesis
+	return &genesis, err
 }
 
 func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
@@ -38,6 +40,12 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
 
 func (g *Genesis) process() {
 	for addr, value := range g.genesis.InitialBalances {
+		trx := g.makeInitBalanceTrx(addr, value)
+		g.bc.SaveTransaction(trx)
+	}
+
+	// TODO[45]: Old genesis structure. Remove
+	for addr, value := range g.genesis.FinalChain.State.GenesisBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)
 	}

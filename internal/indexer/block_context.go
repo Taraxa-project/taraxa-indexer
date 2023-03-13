@@ -9,24 +9,27 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
+	"github.com/spiretechnology/go-pool"
 )
 
 type blockContext struct {
 	storage        *storage.Storage
 	batch          *storage.Batch
 	client         *chain.WsClient
-	wg             sync.WaitGroup
+	tp             pool.Pool
 	blockTimestamp uint64
 	addressStats   map[string]*storage.AddressStats
 	finalized      *storage.FinalizationData
 	statsMutex     sync.RWMutex
 }
 
-func MakeBlockContext(s *storage.Storage, client *chain.WsClient) *blockContext {
+func MakeBlockContext(s *storage.Storage, client *chain.WsClient, tp pool.Pool) *blockContext {
 	var bc blockContext
 	bc.storage = s
 	bc.batch = s.NewBatch()
 	bc.client = client
+	// pool limit is limit of concurrent ws requests to the node
+	bc.tp = tp
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
 
@@ -39,31 +42,37 @@ func (bc *blockContext) commit(period uint64) {
 	bc.batch.CommitBatch()
 }
 
-func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64) {
+func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
 	block := raw.ToModel()
-	transactions := &raw.Transactions
+	transactions := raw.Transactions
 
 	trx_count = block.TransactionCount
 	bc.finalized.TrxCount += trx_count
 	bc.blockTimestamp = block.Timestamp
 
-	bc.wg.Add(1)
-	go bc.updateValidatorStats(block)
+	bc.tp.Go(func() { bc.updateValidatorStats(block) })
 
 	for _, trx_hash := range *transactions {
-		bc.wg.Add(1)
-		go bc.processTransaction(trx_hash)
+		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
 	}
 
-	block_with_dags := bc.client.GetPbftBlockWithDagBlocks(block.Number)
+	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
+	block.PbftHash = block_with_dags.BlockHash
+	if pbft_err != nil {
+		err = pbft_err
+		return
+	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
 	bc.finalized.DagCount += dags_count
+
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		bc.wg.Add(1)
-		go bc.processDag(dag_hash)
+		bc.tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
 	}
 
-	bc.wg.Wait()
+	bc.tp.Wait()
+	if err != nil {
+		return
+	}
 
 	bc.finalized.PbftCount++
 	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft(block.Timestamp)
@@ -79,10 +88,14 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64)
 	return
 }
 
-func (bc *blockContext) processTransaction(hash string) {
-	trx := bc.client.GetTransactionByHash(hash)
+func (bc *blockContext) processTransaction(hash string) error {
+	trx, err := bc.client.GetTransactionByHash(hash)
+	if err != nil {
+		return err
+	}
+
 	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.blockTimestamp))
-	bc.wg.Done()
+	return nil
 }
 
 func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
@@ -91,16 +104,18 @@ func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 	weekStats := bc.storage.GetWeekStats(year, week)
 	weekStats.AddPbftBlock(block)
 	bc.batch.UpdateWeekStats(weekStats)
-	bc.wg.Done()
 }
 
-func (bc *blockContext) processDag(hash string) {
-	dag := bc.client.GetDagBlockByHash(hash).ToModel()
-
-	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Debug("Saving DAG block")
+func (bc *blockContext) processDag(hash string) error {
+	raw_dag, err := bc.client.GetDagBlockByHash(hash)
+	if err != nil {
+		return err
+	}
+	dag := raw_dag.ToModel()
+	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
 	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
 	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
-	bc.wg.Done()
+	return nil
 }
 
 func (bc *blockContext) addAddressStatsToBatch() {
@@ -124,7 +139,7 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 }
 
 func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Debug("Saving transaction")
+	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
 	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
 

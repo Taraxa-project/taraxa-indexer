@@ -189,6 +189,7 @@ components:
       type: integer
       format: uint64
       example: 1676682705
+      nullable: true
       # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
       x-oapi-codegen-extra-tags:
         rlp: "nil"
@@ -275,6 +276,7 @@ components:
       required:
         - author
         - hash
+        - pbftHash
         - number
         - transactionCount
         - timestamp
@@ -282,6 +284,8 @@ components:
         author: 
           $ref: "#/components/schemas/Address"
         hash:
+          $ref: "#/components/schemas/Hash"
+        pbftHash:
           $ref: "#/components/schemas/Hash"
         number:
           $ref: "#/components/schemas/Counter"
@@ -302,6 +306,9 @@ components:
         - pbftCount
         - dagsCount
         - transactionsCount
+        - lastPbftTimestamp
+        - lastDagTimestamp
+        - lastTransactionTimestamp
       properties:
         pbftCount:
           $ref: "#/components/schemas/Counter"
@@ -383,7 +390,7 @@ components:
         year:
           type: integer
           format: int32
-          minimum: 2023
+          minimum: 2022
           default: 2023
     AddressFilter:
       $ref: "#/components/schemas/Address"

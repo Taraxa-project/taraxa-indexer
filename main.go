@@ -75,11 +75,7 @@ func main() {
 	apiHandler := api.NewApiHandler(st)
 	api.RegisterHandlers(e, apiHandler)
 
-	idx, err := indexer.NewIndexer(*blockchain_ws, st)
-	if err != nil {
-		log.WithError(err).Fatal("Can't create indexer")
-	}
-	go idx.Start()
+	go indexer.MakeAndRun(*blockchain_ws, st)
 
 	err = e.Start(":" + strconv.FormatInt(int64(*http_port), 10))
 	log.WithError(err).Fatal("Can't start http server")

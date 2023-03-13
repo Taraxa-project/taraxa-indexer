@@ -25,16 +25,16 @@ func parseBool(v string) bool {
 
 type Block struct {
 	models.Pbft
-	Number       string   `json:"number"`
-	Timestamp    string   `json:"timestamp"`
-	Transactions []string `json:"transactions"`
+	Number       string    `json:"number"`
+	Timestamp    string    `json:"timestamp"`
+	Transactions *[]string `json:"transactions"`
 }
 
 func (b *Block) ToModel() (pbft *models.Pbft) {
 	pbft = &b.Pbft
 	pbft.Timestamp = ParseInt(b.Timestamp)
 	pbft.Number = ParseInt(b.Number)
-	pbft.TransactionCount = uint64(len(b.Transactions))
+	pbft.TransactionCount = uint64(len(*b.Transactions))
 
 	return
 }
@@ -105,4 +105,10 @@ type pbftBlockWithDags struct {
 type GenesisObject struct {
 	DagGenesisBlock dagBlock          `json:"dag_genesis_block"`
 	InitialBalances map[string]string `json:"initial_balances"`
+	// TODO[45]: Old genesis structure. Remove
+	FinalChain struct {
+		State struct {
+			GenesisBalances map[string]string `json:"genesis_balances"`
+		} `json:"state"`
+	} `json:"final_chain"`
 }
