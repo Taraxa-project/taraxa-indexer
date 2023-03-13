@@ -95,7 +95,7 @@ func (i *Indexer) sync() (err error) {
 	if start >= end {
 		return
 	}
-	log.WithFields(log.Fields{"start": start, "end": end}).Info("Syncing: start")
+	log.WithFields(log.Fields{"start": start, "end": end}).Info("Syncing: started")
 	prev := time.Now()
 	for p := uint64(start); p <= end; p++ {
 		blk, b_err := i.client.GetBlockByNumber(p)
@@ -113,6 +113,7 @@ func (i *Indexer) sync() (err error) {
 		}
 		log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}
+	log.WithFields(log.Fields{"period": end}).Info("Syncing: finished")
 	return
 }
 

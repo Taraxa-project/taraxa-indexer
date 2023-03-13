@@ -57,6 +57,7 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	}
 
 	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
+	block.PbftHash = block_with_dags.BlockHash
 	if pbft_err != nil {
 		err = pbft_err
 		return

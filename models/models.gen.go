@@ -61,6 +61,7 @@ type Pbft struct {
 	Author           Address   `json:"author"`
 	Hash             Hash      `json:"hash"`
 	Number           Counter   `json:"number"`
+	PbftHash         Hash      `json:"pbftHash"`
 	Timestamp        Timestamp `json:"timestamp"`
 	TransactionCount Counter   `json:"transactionCount"`
 }
