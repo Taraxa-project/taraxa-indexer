@@ -22,12 +22,12 @@ var (
 		Help: "The total number of RPC calls to taraxa-node",
 	})
 	IndexedBlocksCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "taraxa_indexer_blocks_counter",
+		Name: "taraxa_indexer_blocks_indexed_counter",
 		Help: "Number of indexed blocks by indexer since restart",
 	})
 	IndexedBlocksTotal = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "taraxa_indexer_blocks_total",
-		Help: "Number of indexed blocks by indexer since restart",
+		Name: "taraxa_indexer_blocks_indexed_total",
+		Help: "Total number of indexed blocks",
 	})
 )
 
