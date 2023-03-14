@@ -100,6 +100,7 @@ func (i *Indexer) sync() (err error) {
 	}
 	log.WithFields(log.Fields{"start": start, "end": end}).Info("Syncing: started")
 	prev := time.Now()
+	var counter int64
 	for p := uint64(start); p <= end; p++ {
 		blk, b_err := i.client.GetBlockByNumber(p)
 		if b_err != nil {
@@ -115,7 +116,11 @@ func (i *Indexer) sync() (err error) {
 			return process_err
 		}
 
+		counter++
+
+		// prometheus metics
 		metrics.IndexedBlocksCounter.Inc()
+		metrics.AverageBlockProcessingTimeMilisec.Set(float64((time.Since(prev).Milliseconds() / counter)))
 		metrics.IndexedBlocksTotal.Set(float64(chain.ParseInt(blk.Number)))
 		metrics.IndexedDagBlocksTotal.Set(float64(finalizationData.DagCount))
 		metrics.IndexedPbftBlocksTotal.Set(float64(finalizationData.PbftCount))

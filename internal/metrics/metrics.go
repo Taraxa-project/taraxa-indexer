@@ -43,6 +43,10 @@ var (
 		Name: metricPrefix + "_transactions_indexed_total",
 		Help: "Total number of indexed transactions",
 	})
+	AverageBlockProcessingTimeMilisec = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: metricPrefix + "_average_block_processing_time",
+		Help: "Average time of processing block in milisec",
+	})
 )
 
 func RunPrometheusServer() {
