@@ -31,9 +31,17 @@ var (
 		Name: metricPrefix + "_blocks_indexed_total",
 		Help: "Total number of indexed blocks",
 	})
-	IndexedPeriodsTotal = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: metricPrefix + "_periods_indexed_total",
-		Help: "Total number of indexed periods",
+	IndexedDagBlocksTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: metricPrefix + "_dag_blocks_indexed_total",
+		Help: "Total number of indexed DAG blocks",
+	})
+	IndexedPbftBlocksTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: metricPrefix + "_pbft_blocks_indexed_total",
+		Help: "Total number of indexed PBFT blocks",
+	})
+	IndexedTransactionsTotal = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: metricPrefix + "_transactions_indexed_total",
+		Help: "Total number of indexed transactions",
 	})
 )
 

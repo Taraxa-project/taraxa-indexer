@@ -89,7 +89,8 @@ func (i *Indexer) init() error {
 
 func (i *Indexer) sync() (err error) {
 	// start processing blocks from the next one
-	start := i.storage.GetFinalizationData().PbftCount + 1
+	finalizationData := i.storage.GetFinalizationData()
+	start := finalizationData.PbftCount + 1
 	end, p_err := i.client.GetLatestPeriod()
 	if p_err != nil {
 		return p_err
@@ -115,7 +116,11 @@ func (i *Indexer) sync() (err error) {
 		}
 
 		metrics.IndexedBlocksCounter.Inc()
-		metrics.IndexedBlocksTotal.Set(float64(p))
+		metrics.IndexedBlocksTotal.Set(float64(chain.ParseInt(blk.Number)))
+		metrics.IndexedDagBlocksTotal.Set(float64(finalizationData.DagCount))
+		metrics.IndexedPbftBlocksTotal.Set(float64(finalizationData.PbftCount))
+		metrics.IndexedTransactionsTotal.Set(float64(finalizationData.TrxCount))
+
 		log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}
 	log.WithFields(log.Fields{"period": end}).Info("Syncing: finished")
