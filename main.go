@@ -14,6 +14,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
+	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
@@ -76,6 +77,9 @@ func main() {
 	api.RegisterHandlers(e, apiHandler)
 
 	go indexer.MakeAndRun(*blockchain_ws, st)
+
+	// start a http server for prometheus on a separate go routine
+	go metrics.RunPrometheusServer()
 
 	err = e.Start(":" + strconv.FormatInt(int64(*http_port), 10))
 	log.WithError(err).Fatal("Can't start http server")

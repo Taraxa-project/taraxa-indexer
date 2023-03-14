@@ -4,6 +4,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	log "github.com/sirupsen/logrus"
@@ -111,6 +113,9 @@ func (i *Indexer) sync() (err error) {
 		if process_err != nil {
 			return process_err
 		}
+
+		metrics.IndexedBlocksCounter.Inc()
+		metrics.IndexedBlocksTotal.Set(float64(p))
 		log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}
 	log.WithFields(log.Fields{"period": end}).Info("Syncing: finished")

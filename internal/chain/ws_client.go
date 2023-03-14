@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -27,6 +29,7 @@ func NewWsClient(url string) (*WsClient, error) {
 func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
 	blk = new(Block)
 	err = client.rpc.Call(blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 

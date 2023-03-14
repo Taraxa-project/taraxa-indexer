@@ -7,7 +7,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
 	github.com/ethereum/go-ethereum v1.11.2
 	github.com/getkin/kin-openapi v0.112.0
-	github.com/labstack/echo/v4 v4.10.1
+	github.com/labstack/echo/v4 v4.10.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spiretechnology/go-pool v1.0.0
 	github.com/stretchr/testify v1.8.2
@@ -43,6 +43,7 @@ require (
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/labstack/echo-contrib v0.14.1
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
