@@ -178,11 +178,11 @@ func getPrefixKey(prefix, author string) []byte {
 	return []byte(fmt.Sprintf("%s%s", prefix, author))
 }
 
-func getWeekKey(prefix string, year, week int) []byte {
+func getWeekKey(prefix string, year, week int32) []byte {
 	return []byte(fmt.Sprintf("%s%d%02d", prefix, year, week))
 }
 
-func (s *Storage) GetWeekStats(year, week int) WeekStats {
+func (s *Storage) GetWeekStats(year, week int32) WeekStats {
 	ptr := MakeEmptyWeekStats()
 	ptr.key = []byte(getWeekKey(getPrefix(ptr), year, week))
 	err := s.getFromDB(ptr, ptr.key)

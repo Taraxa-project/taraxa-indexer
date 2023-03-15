@@ -69,6 +69,13 @@ type Pbft struct {
 // PbftsPaginatedResponse defines model for PbftsPaginatedResponse.
 type PbftsPaginatedResponse = PaginatedResponse
 
+// Period defines model for Period.
+type Period struct {
+	EndDate   Timestamp `json:"endDate"`
+	HasNext   bool      `json:"hasNext"`
+	StartDate Timestamp `json:"startDate"`
+}
+
 // StatsResponse defines model for StatsResponse.
 type StatsResponse struct {
 	DagsCount                Counter        `json:"dagsCount"`
@@ -114,10 +121,19 @@ type Validator struct {
 // ValidatorsPaginatedResponse defines model for ValidatorsPaginatedResponse.
 type ValidatorsPaginatedResponse = PaginatedResponse
 
-// WeekFilter defines model for WeekFilter.
-type WeekFilter struct {
-	Week int32 `json:"week"`
-	Year int32 `json:"year"`
+// Week defines model for Week.
+type Week struct {
+	Week *int32 `json:"week"`
+	Year *int32 `json:"year"`
+}
+
+// WeekResponse defines model for WeekResponse.
+type WeekResponse struct {
+	EndDate   Timestamp `json:"endDate"`
+	HasNext   bool      `json:"hasNext"`
+	StartDate Timestamp `json:"startDate"`
+	Week      *int32    `json:"week"`
+	Year      *int32    `json:"year"`
 }
 
 // AddressParam defines model for addressParam.
@@ -127,7 +143,7 @@ type AddressParam = AddressFilter
 type PaginationParam = PaginationFilter
 
 // WeekParam defines model for weekParam.
-type WeekParam = WeekFilter
+type WeekParam = Week
 
 // GetAddressDagsParams defines parameters for GetAddressDags.
 type GetAddressDagsParams struct {

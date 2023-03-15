@@ -201,6 +201,35 @@ components:
       type: integer
       format: uint64
       example: 1676682705
+    Week:
+      type: object
+      properties:
+        week:
+          type: integer
+          format: int32
+          minimum: 1
+          default: 1
+          nullable: true
+        year:
+          type: integer
+          format: int32
+          minimum: 2022
+          default: 2023
+          nullable: true
+    Period:
+      type: object
+      required:
+        - startDate
+        - endDate
+        - hasNext
+      properties:
+        startDate:
+          $ref: "#/components/schemas/Timestamp"
+        endDate:
+          $ref: "#/components/schemas/Timestamp"
+        hasNext:
+          type: boolean
+          default: true
     Validator:
       type: object
       required:
@@ -304,6 +333,11 @@ components:
           $ref: "#/components/schemas/Counter"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
+    WeekResponse:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/Week"
+        - $ref: "#/components/schemas/Period"
     CountResponse:
       type: object
       required:
@@ -343,7 +377,6 @@ components:
       properties:
         total:
           $ref: "#/components/schemas/Counter"
-          example: 1
         start:
           $ref: "#/components/schemas/Counter"
         end:
@@ -360,6 +393,9 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/Validator"
+        week:
+          $ref: "#/components/schemas/WeekResponse"
+
     TransactionsPaginatedResponse:
       allOf:
         - $ref: "#/components/schemas/PaginatedResponse"
@@ -387,22 +423,6 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/Pbft"
-    WeekFilter:
-      type: object
-      required:
-        - week
-        - year
-      properties:
-        week:
-          type: integer
-          format: int32
-          minimum: 1
-          default: 1
-        year:
-          type: integer
-          format: int32
-          minimum: 2022
-          default: 2023
     AddressFilter:
       $ref: "#/components/schemas/Address"
     PaginationFilter:
@@ -445,4 +465,4 @@ components:
       description: |
         Week to filter by
       schema:
-        $ref: "#/components/schemas/WeekFilter"
+        $ref: "#/components/schemas/Week"
