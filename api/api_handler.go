@@ -4,11 +4,12 @@ package api
 
 import (
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/labstack/echo/v4"
+	"github.com/nleeper/goment"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -67,12 +68,28 @@ func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams)
 	stats := a.storage.GetWeekStats(year, week)
 	ret, pagination := stats.GetPaginated(getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
 
+	date, _ := goment.New()
+	date.SetISOWeek(int(week))
+	date.SetISOWeekYear(int(year))
+
+	tn, _ := goment.New()
+
+	w := WeekResponse{
+		Week:      &week,
+		Year:      &year,
+		StartDate: uint64(date.StartOf("week").ToTime().Unix()),
+		EndDate:   uint64(date.EndOf("week").ToTime().Unix()),
+		HasNext:   tn.ISOWeekYear() != int(year) || tn.ISOWeek() != int(week),
+	}
+
 	response := struct {
-		DagsPaginatedResponse
-		Data []Validator `json:"data"`
+		ValidatorsPaginatedResponse
+		Data []Validator  `json:"data"`
+		Week WeekResponse `json:"week"`
 	}{
-		DagsPaginatedResponse: *pagination,
-		Data:                  ret,
+		ValidatorsPaginatedResponse: *pagination,
+		Data:                        ret,
+		Week:                        w,
 	}
 
 	return ctx.JSON(http.StatusOK, response)
@@ -91,6 +108,7 @@ func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTo
 
 // GetValidator returns info about the validator for the selected week
 func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params GetValidatorParams) error {
+	address = strings.ToLower(address)
 	log.WithField("address", address).WithField("params", params).Debug("GetValidator")
 
 	year, week := getYearWeek(params.Week)
@@ -118,12 +136,11 @@ func getPaginationStart(param *uint64) uint64 {
 	return *param
 }
 
-func getYearWeek(week *WeekFilter) (int, int) {
-	if week == nil {
-		tn := time.Now()
-		year, week := tn.ISOWeek()
-		return year, week
+func getYearWeek(w *WeekParam) (int32, int32) {
+	if w == nil || w.Week == nil || w.Year == nil {
+		tn, _ := goment.New()
+		return int32(tn.ISOWeekYear()), int32(tn.ISOWeek())
 	}
 
-	return int(week.Year), int(week.Week)
+	return int32(*w.Year), int32(*w.Week)
 }

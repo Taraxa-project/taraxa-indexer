@@ -4,9 +4,9 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/nleeper/goment"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -70,13 +70,12 @@ func TestGetPaginatedWeekStats(t *testing.T) {
 	stor := NewStorage("")
 	defer stor.Close()
 
-	tn := time.Now()
-	year, week := tn.ISOWeek()
-	weekStats := stor.GetWeekStats(year, week)
+	tn, _ := goment.New()
+	weekStats := stor.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
 
 	count := uint64(100)
 	for i := uint64(1); i <= count; i++ {
-		block := models.Pbft{Author: "user" + strconv.FormatUint(i, 10), Hash: "test" + strconv.FormatUint(i, 10), Number: i, Timestamp: uint64(tn.Unix()), TransactionCount: 0}
+		block := models.Pbft{Author: "user" + strconv.FormatUint(i, 10), Hash: "test" + strconv.FormatUint(i, 10), Number: i, Timestamp: uint64(tn.ToUnix()), TransactionCount: 0}
 		weekStats.AddPbftBlock(&block)
 	}
 
