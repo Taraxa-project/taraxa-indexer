@@ -4,6 +4,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
@@ -62,8 +63,8 @@ func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) er
 // GetValidators returns all validators for the selected week and the number of PBFT blocks they produced
 func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams) error {
 	log.WithField("params", params).Debug("GetValidators")
-
-	stats := a.storage.GetWeekStats(int(params.Week.Year), int(params.Week.Week))
+	year, week := getYearWeek(params.Week)
+	stats := a.storage.GetWeekStats(year, week)
 	ret, pagination := stats.GetPaginated(getPaginationStart(params.Pagination.Start), params.Pagination.Limit)
 
 	response := struct {
@@ -80,11 +81,33 @@ func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams)
 // GetValidatorsTotal returns total number of PBFT blocks produced in selected week
 func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTotalParams) error {
 	log.WithField("params", params).Debug("GetValidatorsTotal")
-	stats := a.storage.GetWeekStats(int(params.Filter.Year), int(params.Filter.Week))
+	year, week := getYearWeek(params.Week)
+	stats := a.storage.GetWeekStats(year, week)
 	var count CountResponse
 	count.Total = uint64(stats.Total)
 
 	return ctx.JSON(http.StatusOK, count)
+}
+
+// GetValidator returns info about the validator for the selected week
+func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params GetValidatorParams) error {
+	log.WithField("address", address).WithField("params", params).Debug("GetValidator")
+
+	year, week := getYearWeek(params.Week)
+	stats := a.storage.GetWeekStats(year, week)
+	stats.Sort()
+
+	validator := Validator{Address: address}
+
+	for k, v := range stats.Validators {
+		if v.Address == address {
+			v.Rank = uint64(k + 1)
+			validator = v
+			break
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, validator)
 }
 
 func getPaginationStart(param *uint64) uint64 {
@@ -93,4 +116,14 @@ func getPaginationStart(param *uint64) uint64 {
 	}
 
 	return *param
+}
+
+func getYearWeek(week *WeekFilter) (int, int) {
+	if week == nil {
+		tn := time.Now()
+		year, week := tn.ISOWeek()
+		return year, week
+	}
+
+	return int(week.Year), int(week.Week)
 }
