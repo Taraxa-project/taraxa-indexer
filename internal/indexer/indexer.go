@@ -89,8 +89,7 @@ func (i *Indexer) init() error {
 
 func (i *Indexer) sync() (err error) {
 	// start processing blocks from the next one
-	finalizationData := i.storage.GetFinalizationData()
-	start := finalizationData.PbftCount + 1
+	start := i.storage.GetFinalizationData().PbftCount + 1
 	end, p_err := i.client.GetLatestPeriod()
 	if p_err != nil {
 		return p_err
@@ -99,7 +98,7 @@ func (i *Indexer) sync() (err error) {
 		return
 	}
 	log.WithFields(log.Fields{"start": start, "end": end}).Info("Syncing: started")
-	prev := time.Now()
+	prev, syncStartTime := time.Now(), time.Now()
 	var counter int64
 	for p := uint64(start); p <= end; p++ {
 		blk, b_err := i.client.GetBlockByNumber(p)
@@ -120,11 +119,12 @@ func (i *Indexer) sync() (err error) {
 
 		// prometheus metics
 		metrics.IndexedBlocksCounter.Inc()
-		metrics.AverageBlockProcessingTimeMilisec.Set(float64((time.Since(prev).Milliseconds() / counter)))
+		metrics.AverageBlockProcessingTimeMilisec.Set(float64((time.Since(syncStartTime).Milliseconds() / counter)))
 		metrics.IndexedBlocksTotal.Set(float64(chain.ParseInt(blk.Number)))
-		metrics.IndexedDagBlocksTotal.Set(float64(finalizationData.DagCount))
-		metrics.IndexedPbftBlocksTotal.Set(float64(finalizationData.PbftCount))
-		metrics.IndexedTransactionsTotal.Set(float64(finalizationData.TrxCount))
+
+		metrics.IndexedPbftBlocksTotal.Set(float64(p))
+		metrics.IndexedDagBlocksTotal.Set(float64(dc))
+		metrics.IndexedTransactionsTotal.Set(float64(tc))
 
 		log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}
