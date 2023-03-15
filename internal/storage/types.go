@@ -100,6 +100,12 @@ func MakeEmptyWeekStats() *WeekStats {
 	return data
 }
 
+func (w *WeekStats) Sort() {
+	sort.Slice(w.Validators, func(i, j int) bool {
+		return w.Validators[i].PbftCount > w.Validators[j].PbftCount
+	})
+}
+
 func (w *WeekStats) AddPbftBlock(block *models.Pbft) {
 	w.Total++
 	for k, v := range w.Validators {
@@ -122,11 +128,15 @@ func (w *WeekStats) GetPaginated(from, count uint64) ([]models.Validator, *model
 	}
 	pagination.End = end
 
-	// Sort
-	sort.Slice(w.Validators, func(i, j int) bool {
-		return w.Validators[i].PbftCount > w.Validators[j].PbftCount
-	})
-	return w.Validators[from:end], pagination
+	w.Sort()
+	var validators []models.Validator
+
+	for k, v := range w.Validators[from:end] {
+		v.Rank = uint64(k + 1)
+		validators = append(validators, v)
+	}
+
+	return validators, pagination
 }
 
 type GenesisHash string
