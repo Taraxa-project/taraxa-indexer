@@ -30,20 +30,8 @@ paths:
         Returns all validators for the selected week and the number of PBFT blocks they produced
       operationId: "getValidators"
       parameters:
-        - name: week
-          in: query
-          description: |
-            Week to filter by
-          required: true
-          schema:
-            $ref: "#/components/schemas/WeekFilter"
-        - name: pagination
-          in: query
-          required: true
-          description: |
-            Pagination
-          schema:
-            $ref: "#/components/schemas/PaginationFilter"
+        - $ref: "#/components/parameters/weekParam"
+        - $ref: "#/components/parameters/paginationParam"
       responses:
         "200":
           description: |
@@ -65,13 +53,7 @@ paths:
         Returns total number of PBFT blocks produced in selected week
       operationId: "getValidatorsTotal"
       parameters:
-        - name: filter
-          in: query
-          description: |
-            Week to filter by
-          required: true
-          schema:
-            $ref: "#/components/schemas/WeekFilter"
+        - $ref: "#/components/parameters/weekParam"
       responses:
         "200":
           description: |
@@ -80,6 +62,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CountResponse"
+        default:
+          description: |
+            Unexpected error
+  /validators/{address}:
+    get:
+      tags:
+        - Validators
+      summary: "Returns info about the validator"
+      description: |
+        Returns info about the validator for the selected week
+      operationId: "getValidator"
+      parameters:
+        - $ref: "#/components/parameters/addressParam"
+        - $ref: "#/components/parameters/weekParam"
+      responses:
+        "200":
+          description: |
+            A JSON object with info about validator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Validator"
         default:
           description: |
             Unexpected error
@@ -92,7 +96,7 @@ paths:
         Returns total number of PBFT blocks, DAG blocks and Transactions produced for the selected address
       operationId: "getAddressStats"
       parameters:
-        - $ref: '#/components/parameters/addressParam'
+        - $ref: "#/components/parameters/addressParam"
       responses:
         "200":
           description: |
@@ -113,8 +117,8 @@ paths:
         Returns all transactions from and to the selected address
       operationId: "getAddressTransactions"
       parameters:
-        - $ref: '#/components/parameters/addressParam'
-        - $ref: '#/components/parameters/paginationParam'
+        - $ref: "#/components/parameters/addressParam"
+        - $ref: "#/components/parameters/paginationParam"
       responses:
         "200":
           description: |
@@ -136,8 +140,8 @@ paths:
         Returns all DAG blocks sent by the selected address
       operationId: "getAddressDags"
       parameters:
-        - $ref: '#/components/parameters/addressParam'
-        - $ref: '#/components/parameters/paginationParam'
+        - $ref: "#/components/parameters/addressParam"
+        - $ref: "#/components/parameters/paginationParam"
       responses:
         "200":
           description: |
@@ -159,8 +163,8 @@ paths:
         Returns all PBFT blocks produced by the selected address
       operationId: "getAddressPbfts"
       parameters:
-        - $ref: '#/components/parameters/addressParam'
-        - $ref: '#/components/parameters/paginationParam'
+        - $ref: "#/components/parameters/addressParam"
+        - $ref: "#/components/parameters/paginationParam"
       responses:
         "200":
           description: |
@@ -200,9 +204,16 @@ components:
     Validator:
       type: object
       required:
+        - rank
         - address
         - pbftCount
       properties:
+        rank:
+          type: integer
+          format: uint64
+          example: 1
+          x-oapi-codegen-extra-tags:
+            rlp: "-"
         address:
           $ref: "#/components/schemas/Address"
         pbftCount:
@@ -240,7 +251,7 @@ components:
           $ref: "#/components/schemas/Counter"
         gasPrice:
           $ref: "#/components/schemas/Counter"
-        nonce: 
+        nonce:
           $ref: "#/components/schemas/Counter"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
@@ -261,7 +272,7 @@ components:
         - transactionCount
         - timestamp
       properties:
-        sender: 
+        sender:
           $ref: "#/components/schemas/Address"
         hash:
           $ref: "#/components/schemas/Hash"
@@ -281,7 +292,7 @@ components:
         - transactionCount
         - timestamp
       properties:
-        author: 
+        author:
           $ref: "#/components/schemas/Address"
         hash:
           $ref: "#/components/schemas/Hash"
@@ -427,4 +438,11 @@ components:
         Pagination
       schema:
         $ref: "#/components/schemas/PaginationFilter"
-
+    weekParam:
+      name: week
+      in: query
+      required: false
+      description: |
+        Week to filter by
+      schema:
+        $ref: "#/components/schemas/WeekFilter"

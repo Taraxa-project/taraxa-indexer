@@ -108,6 +108,7 @@ type TransactionsPaginatedResponse = PaginatedResponse
 type Validator struct {
 	Address   Address `json:"address"`
 	PbftCount Counter `json:"pbftCount"`
+	Rank      uint64  `json:"rank" rlp:"-"`
 }
 
 // ValidatorsPaginatedResponse defines model for ValidatorsPaginatedResponse.
@@ -124,6 +125,9 @@ type AddressParam = AddressFilter
 
 // PaginationParam defines model for paginationParam.
 type PaginationParam = PaginationFilter
+
+// WeekParam defines model for weekParam.
+type WeekParam = WeekFilter
 
 // GetAddressDagsParams defines parameters for GetAddressDags.
 type GetAddressDagsParams struct {
@@ -146,14 +150,20 @@ type GetAddressTransactionsParams struct {
 // GetValidatorsParams defines parameters for GetValidators.
 type GetValidatorsParams struct {
 	// Week Week to filter by
-	Week WeekFilter `form:"week" json:"week"`
+	Week *WeekParam `form:"week,omitempty" json:"week,omitempty"`
 
 	// Pagination Pagination
-	Pagination PaginationFilter `form:"pagination" json:"pagination"`
+	Pagination PaginationParam `form:"pagination" json:"pagination"`
 }
 
 // GetValidatorsTotalParams defines parameters for GetValidatorsTotal.
 type GetValidatorsTotalParams struct {
-	// Filter Week to filter by
-	Filter WeekFilter `form:"filter" json:"filter"`
+	// Week Week to filter by
+	Week *WeekParam `form:"week,omitempty" json:"week,omitempty"`
+}
+
+// GetValidatorParams defines parameters for GetValidator.
+type GetValidatorParams struct {
+	// Week Week to filter by
+	Week *WeekParam `form:"week,omitempty" json:"week,omitempty"`
 }
