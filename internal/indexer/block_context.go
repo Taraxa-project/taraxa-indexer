@@ -3,12 +3,12 @@ package indexer
 import (
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/nleeper/goment"
 	log "github.com/sirupsen/logrus"
 	"github.com/spiretechnology/go-pool"
 )
@@ -120,9 +120,8 @@ func (bc *blockContext) processTransaction(hash string) error {
 }
 
 func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
-	tn := time.Unix(int64(block.Timestamp), 0)
-	year, week := tn.ISOWeek()
-	weekStats := bc.storage.GetWeekStats(year, week)
+	tn, _ := goment.Unix(int64(block.Timestamp))
+	weekStats := bc.storage.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
 	weekStats.AddPbftBlock(block)
 	bc.batch.UpdateWeekStats(weekStats)
 }
