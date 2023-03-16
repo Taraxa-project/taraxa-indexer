@@ -3,6 +3,7 @@ package indexer
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
