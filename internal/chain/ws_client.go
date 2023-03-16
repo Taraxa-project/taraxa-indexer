@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -27,6 +29,7 @@ func NewWsClient(url string) (*WsClient, error) {
 func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
 	blk = new(Block)
 	err = client.rpc.Call(blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 
@@ -36,6 +39,7 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	metrics.RpcCallsCounter.Inc()
 	return ParseInt(blk.Number), err
 }
 
@@ -45,42 +49,50 @@ func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction, err
 	if err != nil {
 		return
 	}
+	metrics.RpcCallsCounter.Inc()
 	err = client.AddTransactionReceiptData(trx)
+
 	return
 }
 
 func (client *WsClient) AddTransactionReceiptData(trx *transaction) (err error) {
 	err = client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 
 func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *pbftBlockWithDags, err error) {
 	pbftWithDags = new(pbftBlockWithDags)
 	err = client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 
 func (client *WsClient) GetDagBlockByHash(hash string) (dag *dagBlock, err error) {
 	dag = new(dagBlock)
 	err = client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 
 func (client *WsClient) GetGenesis() (genesis *GenesisObject, err error) {
 	genesis = new(GenesisObject)
 	err = client.rpc.Call(&genesis, "taraxa_getConfig")
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 
 func (client *WsClient) GetChainStats() (ns *storage.FinalizationData, err error) {
 	ns = new(storage.FinalizationData)
 	err = client.rpc.Call(&ns, "taraxa_getChainStats")
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 
 func (client *WsClient) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription, error) {
 	ch := make(chan *Block)
 	sub, err := client.rpc.Subscribe(client.ctx, "eth", ch, "newHeads")
+	metrics.RpcCallsCounter.Inc()
 	return ch, sub, err
 }
 

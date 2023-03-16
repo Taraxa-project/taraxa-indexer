@@ -67,7 +67,6 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return value, closer, nil
 }
 

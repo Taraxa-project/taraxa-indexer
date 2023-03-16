@@ -3,8 +3,10 @@ package indexer
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
@@ -40,9 +42,12 @@ func (bc *blockContext) commit(period uint64) {
 	bc.batch.SaveFinalizedPeriod(bc.finalized)
 	bc.addAddressStatsToBatch()
 	bc.batch.CommitBatch()
+
+	metrics.StorageCommitCounter.Inc()
 }
 
 func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
+	startProcessing := time.Now()
 	block := raw.ToModel()
 	transactions := raw.Transactions
 
@@ -85,6 +90,23 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 		bc.finalized.Check(remote_stats)
 	}
 	bc.commit(block.Number)
+
+	// metrics
+	metrics.BlockProcessingTimeMilisec.Observe(float64(time.Since(startProcessing).Milliseconds()))
+	metrics.IndexedBlocksCounter.Inc()
+
+	metrics.IndexedDagBlocksLastProcessedBlock.Set(float64(dags_count))
+	metrics.IndexedTransactionsLastProcessedBlock.Set(float64(trx_count))
+
+	metrics.IndexedDagBlocks.Add(float64(dags_count))
+	metrics.IndexedTransactions.Add(float64(trx_count))
+
+	metrics.IndexedBlocksTotal.Set(float64(bc.finalized.PbftCount))
+	metrics.IndexedDagsTotal.Set(float64(bc.finalized.DagCount))
+	metrics.IndexedTransactionsTotal.Set(float64(bc.finalized.TrxCount))
+
+	metrics.LastProcessedBlockTimestamp.SetToCurrentTime()
+
 	return
 }
 

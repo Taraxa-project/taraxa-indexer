@@ -7,7 +7,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
 	github.com/ethereum/go-ethereum v1.11.2
 	github.com/getkin/kin-openapi v0.112.0
-	github.com/labstack/echo/v4 v4.10.1
+	github.com/labstack/echo/v4 v4.10.2
 	github.com/nleeper/goment v1.4.4
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spiretechnology/go-pool v1.0.0
@@ -54,7 +54,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.14.0 // indirect
+	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.40.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
