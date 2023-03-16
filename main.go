@@ -23,6 +23,7 @@ import (
 
 var (
 	http_port     *int
+	metrics_port  *int
 	blockchain_ws *string
 	data_dir      *string
 	log_level     *string
@@ -30,6 +31,7 @@ var (
 
 func init() {
 	http_port = flag.Int("http_port", 8080, "port to listen")
+	metrics_port = flag.Int("metrics_port", 2112, "metrics http port")
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
@@ -79,7 +81,7 @@ func main() {
 	go indexer.MakeAndRun(*blockchain_ws, st)
 
 	// start a http server for prometheus on a separate go routine
-	go metrics.RunPrometheusServer()
+	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))
 
 	err = e.Start(":" + strconv.FormatInt(int64(*http_port), 10))
 	log.WithError(err).Fatal("Can't start http server")

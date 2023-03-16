@@ -64,9 +64,9 @@ var (
 	})
 )
 
-func RunPrometheusServer() {
+func RunPrometheusServer(listenAddr string) {
 	http.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(":2112", nil)
+	err := http.ListenAndServe(listenAddr, nil)
 	if err != nil {
 		log.WithError(err).Fatal("Can't start http server")
 	}
