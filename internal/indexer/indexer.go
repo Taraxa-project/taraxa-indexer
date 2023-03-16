@@ -4,8 +4,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
-
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	log "github.com/sirupsen/logrus"
@@ -98,8 +96,7 @@ func (i *Indexer) sync() (err error) {
 		return
 	}
 	log.WithFields(log.Fields{"start": start, "end": end}).Info("Syncing: started")
-	prev, syncStartTime := time.Now(), time.Now()
-	var counter int64
+	prev := time.Now()
 	for p := uint64(start); p <= end; p++ {
 		blk, b_err := i.client.GetBlockByNumber(p)
 		if b_err != nil {
@@ -114,17 +111,6 @@ func (i *Indexer) sync() (err error) {
 		if process_err != nil {
 			return process_err
 		}
-
-		counter++
-
-		// prometheus metics
-		metrics.IndexedBlocksCounter.Inc()
-		metrics.AverageBlockProcessingTimeMilisec.Set(float64((time.Since(syncStartTime).Milliseconds() / counter)))
-		metrics.IndexedBlocksTotal.Set(float64(chain.ParseInt(blk.Number)))
-
-		metrics.IndexedPbftBlocksTotal.Set(float64(p))
-		metrics.IndexedDagBlocksTotal.Set(float64(dc))
-		metrics.IndexedTransactionsTotal.Set(float64(tc))
 
 		log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}

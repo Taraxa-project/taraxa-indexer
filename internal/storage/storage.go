@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/vfs"
@@ -60,7 +59,6 @@ func (s *Storage) Close() error {
 
 func (s *Storage) add(key, value []byte) error {
 	err := s.db.Set(key, value, pebble.NoSync)
-	metrics.StorageAddCounter.Inc()
 	return err
 }
 
@@ -69,8 +67,6 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	metrics.StorageGetCounter.Inc()
-
 	return value, closer, nil
 }
 
