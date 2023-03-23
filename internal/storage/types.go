@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"math/big"
 	"reflect"
 	"sort"
 	"strings"
@@ -9,6 +10,8 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
+
+type TotalSupply = big.Int
 
 type Paginated interface {
 	models.Transaction | models.Dag | models.Pbft

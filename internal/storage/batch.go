@@ -27,17 +27,24 @@ func (b *Batch) CommitBatch() {
 	}
 }
 
-func (b *Batch) SaveFinalizedPeriod(f *FinalizationData) {
-	err := b.addToBatch(f, []byte(getPrefix(f)))
+func (b *Batch) SetTotalSupply(s *TotalSupply) {
+	err := b.addToBatch(s, []byte(getPrefix((*TotalSupply)(s))))
 	if err != nil {
-		log.WithError(err).Fatal("SaveFinalizedPeriod failed")
+		log.WithError(err).Fatal("SetTotalSupply failed")
 	}
 }
 
-func (b *Batch) SaveGenesisHash(h GenesisHash) {
+func (b *Batch) SetFinalizationData(f *FinalizationData) {
+	err := b.addToBatch(f, []byte(getPrefix(f)))
+	if err != nil {
+		log.WithError(err).Fatal("SetFinalizationData failed")
+	}
+}
+
+func (b *Batch) SetGenesisHash(h GenesisHash) {
 	err := b.addToBatch(&h, []byte(getPrefix(&h)))
 	if err != nil {
-		log.WithError(err).Fatal("SaveGenesisHashSaveGenesisHash failed")
+		log.WithError(err).Fatal("SetGenesisHash failed")
 	}
 }
 
