@@ -1,6 +1,8 @@
 package indexer
 
 import (
+	"math/big"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
@@ -39,20 +41,24 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
 }
 
 func (g *Genesis) process() {
+	genesisSupply := big.NewInt(0)
 	for addr, value := range g.genesis.InitialBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)
+		genesisSupply.Add(genesisSupply, parseStringToBigInt(trx.Value))
 	}
 
 	// TODO[45]: Old genesis structure. Remove
 	for addr, value := range g.genesis.FinalChain.State.GenesisBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)
+		genesisSupply.Add(genesisSupply, parseStringToBigInt(trx.Value))
 	}
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
 	g.bc.finalized.TrxCount = 0
-	g.bc.batch.SaveGenesisHash(storage.GenesisHash(g.hash))
+	g.bc.batch.SetGenesisHash(storage.GenesisHash(g.hash))
+	g.bc.batch.SetTotalSupply(genesisSupply)
 	g.bc.commit(0)
 }

@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"math/big"
 	"strings"
 	"sync"
 	"time"
@@ -39,7 +40,7 @@ func MakeBlockContext(s *storage.Storage, client *chain.WsClient, tp pool.Pool) 
 }
 
 func (bc *blockContext) commit(period uint64) {
-	bc.batch.SaveFinalizedPeriod(bc.finalized)
+	bc.batch.SetFinalizationData(bc.finalized)
 	bc.addAddressStatsToBatch()
 	bc.batch.CommitBatch()
 
@@ -54,6 +55,9 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	trx_count = block.TransactionCount
 	bc.finalized.TrxCount += trx_count
 	bc.blockTimestamp = block.Timestamp
+
+	// Add reward minted in this block to TotalSupply
+	bc.addToTotalSupply(raw.TotalReward)
 
 	bc.tp.Go(func() { bc.updateValidatorStats(block) })
 
@@ -108,6 +112,21 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	metrics.LastProcessedBlockTimestamp.SetToCurrentTime()
 
 	return
+}
+
+func parseStringToBigInt(v string) *big.Int {
+	a := big.NewInt(0)
+	a.SetString(v, 0)
+	return a
+}
+
+func (bc *blockContext) addToTotalSupply(amount string) {
+	a := parseStringToBigInt(amount)
+
+	current := bc.storage.GetTotalSupply()
+	current.Add(current, a)
+
+	bc.batch.SetTotalSupply(current)
 }
 
 func (bc *blockContext) processTransaction(hash string) error {

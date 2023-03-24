@@ -28,6 +28,7 @@ type Block struct {
 	Number       string    `json:"number"`
 	Timestamp    string    `json:"timestamp"`
 	Transactions *[]string `json:"transactions"`
+	TotalReward  string    `json:"totalReward"`
 }
 
 func (b *Block) ToModel() (pbft *models.Pbft) {

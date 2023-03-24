@@ -21,6 +21,28 @@ servers:
   - url: https://indexer.devnet.taraxa.io
     description: Devnet network
 paths:
+  /totalSupply:
+    get:
+      tags:
+        - TotalSupply
+      summary: "Returns total supply"
+      description: |
+        Returns total supply
+      operationId: "getTotalSupply"
+      responses:
+        "200":
+          description: |
+            Current total supply as string as value could be pretty big
+          content:
+            application/json:
+              schema:
+                properties:
+                  currentSupply:
+                    type: string
+                    example: "1234567890"
+        default:
+          description: |
+            Unexpected error
   /validators:
     get:
       tags:
