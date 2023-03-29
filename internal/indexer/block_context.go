@@ -59,12 +59,6 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	// Add reward minted in this block to TotalSupply
 	bc.addToTotalSupply(raw.TotalReward)
 
-	bc.tp.Go(func() { bc.updateValidatorStats(block) })
-
-	for _, trx_hash := range *transactions {
-		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
-	}
-
 	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
 	block.PbftHash = block_with_dags.BlockHash
 	if pbft_err != nil {
@@ -73,6 +67,12 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
 	bc.finalized.DagCount += dags_count
+
+	bc.tp.Go(func() { bc.updateValidatorStats(block) })
+
+	for _, trx_hash := range *transactions {
+		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
+	}
 
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
 		bc.tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)

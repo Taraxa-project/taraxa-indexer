@@ -43,6 +43,7 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	return ParseInt(blk.Number), err
 }
 
+// TODO: Optimize this. We are making two requests here, so its pretty slow
 func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction, err error) {
 	trx = new(transaction)
 	err = client.rpc.Call(trx, "eth_getTransactionByHash", hash)
