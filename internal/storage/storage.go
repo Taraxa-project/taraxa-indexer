@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"strings"
 
@@ -67,7 +68,6 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return value, closer, nil
 }
 
@@ -162,6 +162,8 @@ func getPrefix(o interface{}) (ret string) {
 		ret = "g"
 	case *WeekStats:
 		ret = "w"
+	case *TotalSupply:
+		ret = "t"
 	default:
 		log.WithField("type", tt).Fatal("getPrefix: Unexpected type")
 	}
@@ -182,16 +184,6 @@ func getWeekKey(prefix string, year, week int32) []byte {
 	return []byte(fmt.Sprintf("%s%d%02d", prefix, year, week))
 }
 
-func (s *Storage) GetWeekStats(year, week int32) WeekStats {
-	ptr := MakeEmptyWeekStats()
-	ptr.key = []byte(getWeekKey(getPrefix(ptr), year, week))
-	err := s.getFromDB(ptr, ptr.key)
-	if err != nil && err != pebble.ErrNotFound {
-		log.WithError(err).Fatal("GetWeekStats failed")
-	}
-	return *ptr
-}
-
 func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {
 	return s.addToDB(getKey(getPrefix(o), key1, key2), o)
 }
@@ -204,6 +196,25 @@ func (s *Storage) addToDB(key []byte, o interface{}) error {
 
 	err = s.add(key, b)
 	return err
+}
+
+func (s *Storage) GetTotalSupply() *TotalSupply {
+	ptr := big.NewInt(0)
+	err := s.getFromDB(ptr, []byte(getPrefix((*TotalSupply)(ptr))))
+	if err != nil {
+		log.Fatal("GetTotalSupply ", err)
+	}
+	return ptr
+}
+
+func (s *Storage) GetWeekStats(year, week int32) WeekStats {
+	ptr := MakeEmptyWeekStats()
+	ptr.key = []byte(getWeekKey(getPrefix(ptr), year, week))
+	err := s.getFromDB(ptr, ptr.key)
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetWeekStats failed")
+	}
+	return *ptr
 }
 
 func (s *Storage) GetFinalizationData() *FinalizationData {
@@ -241,7 +252,7 @@ func (s *Storage) GetGenesisHash() GenesisHash {
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *AddressStats, *FinalizationData, *GenesisHash, *WeekStats:
+	case *AddressStats, *FinalizationData, *GenesisHash, *WeekStats, *TotalSupply:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err

@@ -128,6 +128,10 @@ func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params
 	return ctx.JSON(http.StatusOK, validator)
 }
 
+func (a *ApiHandler) GetTotalSupply(ctx echo.Context) error {
+	return ctx.JSON(http.StatusOK, a.storage.GetTotalSupply().String())
+}
+
 func getPaginationStart(param *uint64) uint64 {
 	if param == nil {
 		return uint64(0)

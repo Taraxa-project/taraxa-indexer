@@ -1,10 +1,13 @@
 package indexer
 
 import (
+	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
@@ -37,12 +40,15 @@ func MakeBlockContext(s *storage.Storage, client *chain.WsClient, tp pool.Pool) 
 }
 
 func (bc *blockContext) commit(period uint64) {
-	bc.batch.SaveFinalizedPeriod(bc.finalized)
+	bc.batch.SetFinalizationData(bc.finalized)
 	bc.addAddressStatsToBatch()
 	bc.batch.CommitBatch()
+
+	metrics.StorageCommitCounter.Inc()
 }
 
 func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
+	startProcessing := time.Now()
 	block := raw.ToModel()
 	transactions := raw.Transactions
 
@@ -50,11 +56,8 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	bc.finalized.TrxCount += trx_count
 	bc.blockTimestamp = block.Timestamp
 
-	bc.tp.Go(func() { bc.updateValidatorStats(block) })
-
-	for _, trx_hash := range *transactions {
-		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
-	}
+	// Add reward minted in this block to TotalSupply
+	bc.addToTotalSupply(raw.TotalReward)
 
 	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
 	block.PbftHash = block_with_dags.BlockHash
@@ -64,6 +67,12 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
 	bc.finalized.DagCount += dags_count
+
+	bc.tp.Go(func() { bc.updateValidatorStats(block) })
+
+	for _, trx_hash := range *transactions {
+		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
+	}
 
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
 		bc.tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
@@ -85,7 +94,39 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 		bc.finalized.Check(remote_stats)
 	}
 	bc.commit(block.Number)
+
+	// metrics
+	metrics.BlockProcessingTimeMilisec.Observe(float64(time.Since(startProcessing).Milliseconds()))
+	metrics.IndexedBlocksCounter.Inc()
+
+	metrics.IndexedDagBlocksLastProcessedBlock.Set(float64(dags_count))
+	metrics.IndexedTransactionsLastProcessedBlock.Set(float64(trx_count))
+
+	metrics.IndexedDagBlocks.Add(float64(dags_count))
+	metrics.IndexedTransactions.Add(float64(trx_count))
+
+	metrics.IndexedBlocksTotal.Set(float64(bc.finalized.PbftCount))
+	metrics.IndexedDagsTotal.Set(float64(bc.finalized.DagCount))
+	metrics.IndexedTransactionsTotal.Set(float64(bc.finalized.TrxCount))
+
+	metrics.LastProcessedBlockTimestamp.SetToCurrentTime()
+
 	return
+}
+
+func parseStringToBigInt(v string) *big.Int {
+	a := big.NewInt(0)
+	a.SetString(v, 0)
+	return a
+}
+
+func (bc *blockContext) addToTotalSupply(amount string) {
+	a := parseStringToBigInt(amount)
+
+	current := bc.storage.GetTotalSupply()
+	current.Add(current, a)
+
+	bc.batch.SetTotalSupply(current)
 }
 
 func (bc *blockContext) processTransaction(hash string) error {

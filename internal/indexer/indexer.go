@@ -111,6 +111,7 @@ func (i *Indexer) sync() (err error) {
 		if process_err != nil {
 			return process_err
 		}
+
 		log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}
 	log.WithFields(log.Fields{"period": end}).Info("Syncing: finished")
