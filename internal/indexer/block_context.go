@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/spiretechnology/go-pool"
 )
@@ -24,6 +26,7 @@ type blockContext struct {
 	addressStats   map[string]*storage.AddressStats
 	finalized      *storage.FinalizationData
 	statsMutex     sync.RWMutex
+	progress       *progressbar.ProgressBar
 }
 
 func MakeBlockContext(s *storage.Storage, client *chain.WsClient, tp pool.Pool) *blockContext {
@@ -67,7 +70,9 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	}
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
 	bc.finalized.DagCount += dags_count
-
+	if trx_count+dags_count > 1000 {
+		bc.progress = progressbar.Default(int64(trx_count)+int64(dags_count), "Applying block "+fmt.Sprint(block.Number))
+	}
 	bc.tp.Go(func() { bc.updateValidatorStats(block) })
 
 	for _, trx_hash := range *transactions {
@@ -129,6 +134,15 @@ func (bc *blockContext) addToTotalSupply(amount string) {
 	bc.batch.SetTotalSupply(current)
 }
 
+func (bc *blockContext) addToProgress() {
+	if bc.progress != nil {
+		err := bc.progress.Add(1)
+		if err != nil {
+			log.WithError(err).Error("Can't add to progress bar")
+		}
+	}
+}
+
 func (bc *blockContext) processTransaction(hash string) error {
 	trx, err := bc.client.GetTransactionByHash(hash)
 	if err != nil {
@@ -136,6 +150,7 @@ func (bc *blockContext) processTransaction(hash string) error {
 	}
 
 	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.blockTimestamp))
+	bc.addToProgress()
 	return nil
 }
 
@@ -155,6 +170,7 @@ func (bc *blockContext) processDag(hash string) error {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
 	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
 	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
+	bc.addToProgress()
 	return nil
 }
 
