@@ -6,6 +6,7 @@ EXECUTABLE=taraxa-indexer
 help:
 	@echo "This is a helper makefile for taraxa-indexer"
 	@echo "Targets:"
+	@echo "    lint:        run lint"
 	@echo "    generate:    regenerate all api generated files"
 	@echo "    check:       run tests"
 	@echo "    tidy         tidy go mod"
@@ -19,9 +20,6 @@ tools: $(GOBIN)/golangci-lint
 
 lint: tools
 	$(GOBIN)/golangci-lint run ./...
-
-test:
-	go test ./...
 
 generate:
 	go generate ./...
