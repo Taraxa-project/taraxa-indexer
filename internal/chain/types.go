@@ -65,6 +65,7 @@ type transaction struct {
 	Status           string `json:"status"`
 	TransactionIndex string `json:"transactionIndex"`
 	Input            string `json:"input"`
+	ContractAddress  string `json:"contractAddress"`
 }
 
 const emptyInput = "0x"
@@ -90,6 +91,9 @@ func (t *transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transa
 	trx.TransactionIndex = ParseInt(t.TransactionIndex)
 	trx.Status = parseBool(t.Status)
 	trx.Type = t.GetType()
+	if trx.Type == models.ContractCreation {
+		trx.To = t.ContractAddress
+	}
 	trx.Timestamp = timestamp
 
 	return
