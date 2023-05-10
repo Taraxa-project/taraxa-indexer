@@ -55,6 +55,13 @@ func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
 	return a.DagsCount
 }
 
+func (a *AddressStats) AddFeeReward(reward uint64) uint64 {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.FeeRewards += reward
+	return a.DagsCount
+}
+
 func MakeEmptyAddressStats(addr string) *AddressStats {
 	data := new(AddressStats)
 	data.Address = addr

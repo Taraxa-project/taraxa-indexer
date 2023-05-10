@@ -23,9 +23,10 @@ type blockContext struct {
 	client         *chain.WsClient
 	tp             pool.Pool
 	blockTimestamp uint64
-	addressStats   map[string]*storage.AddressStats
+	blockAuthor    string
 	finalized      *storage.FinalizationData
 	statsMutex     sync.RWMutex
+	addressStats   map[string]*storage.AddressStats
 	progress       *progressbar.ProgressBar
 }
 
@@ -50,14 +51,32 @@ func (bc *blockContext) commit(period uint64) {
 	metrics.StorageCommitCounter.Inc()
 }
 
+func (bc *blockContext) saveMetrics(start_processing time.Time, dags_count, trx_count uint64) {
+	// metrics
+	metrics.BlockProcessingTimeMilisec.Observe(float64(time.Since(start_processing).Milliseconds()))
+	metrics.IndexedBlocksCounter.Inc()
+
+	metrics.IndexedDagBlocksLastProcessedBlock.Set(float64(dags_count))
+	metrics.IndexedTransactionsLastProcessedBlock.Set(float64(trx_count))
+
+	metrics.IndexedDagBlocks.Add(float64(dags_count))
+	metrics.IndexedTransactions.Add(float64(trx_count))
+
+	metrics.IndexedBlocksTotal.Set(float64(bc.finalized.PbftCount))
+	metrics.IndexedDagsTotal.Set(float64(bc.finalized.DagCount))
+	metrics.IndexedTransactionsTotal.Set(float64(bc.finalized.TrxCount))
+
+	metrics.LastProcessedBlockTimestamp.SetToCurrentTime()
+}
+
 func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
-	startProcessing := time.Now()
+	start_processing := time.Now()
 	block := raw.ToModel()
 	transactions := raw.Transactions
 
 	trx_count = block.TransactionCount
-	bc.finalized.TrxCount += trx_count
 	bc.blockTimestamp = block.Timestamp
+	bc.blockAuthor = block.Author
 
 	// Add reward minted in this block to TotalSupply
 	bc.addToTotalSupply(raw.TotalReward)
@@ -68,8 +87,13 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 		err = pbft_err
 		return
 	}
+
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
+
+	bc.finalized.TrxCount += trx_count
 	bc.finalized.DagCount += dags_count
+	bc.finalized.PbftCount++
+
 	if trx_count+dags_count > 1000 {
 		bc.progress = progressbar.Default(int64(trx_count)+int64(dags_count), "Applying block "+fmt.Sprint(block.Number))
 	}
@@ -88,7 +112,6 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 		return
 	}
 
-	bc.finalized.PbftCount++
 	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft(block.Timestamp)
 	log.WithFields(log.Fields{"author": block.Author, "hash": block.Hash}).Debug("Saving PBFT block")
 	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
@@ -100,21 +123,7 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	}
 	bc.commit(block.Number)
 
-	// metrics
-	metrics.BlockProcessingTimeMilisec.Observe(float64(time.Since(startProcessing).Milliseconds()))
-	metrics.IndexedBlocksCounter.Inc()
-
-	metrics.IndexedDagBlocksLastProcessedBlock.Set(float64(dags_count))
-	metrics.IndexedTransactionsLastProcessedBlock.Set(float64(trx_count))
-
-	metrics.IndexedDagBlocks.Add(float64(dags_count))
-	metrics.IndexedTransactions.Add(float64(trx_count))
-
-	metrics.IndexedBlocksTotal.Set(float64(bc.finalized.PbftCount))
-	metrics.IndexedDagsTotal.Set(float64(bc.finalized.DagCount))
-	metrics.IndexedTransactionsTotal.Set(float64(bc.finalized.TrxCount))
-
-	metrics.LastProcessedBlockTimestamp.SetToCurrentTime()
+	bc.saveMetrics(start_processing, dags_count, trx_count)
 
 	return
 }
@@ -196,6 +205,10 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 
 func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
+
+	// Add transaction fee reward
+	bc.getAddress(bc.storage, bc.blockAuthor).AddFeeReward(trx.GasUsed * trx.GasPrice)
+
 	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
 	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
 

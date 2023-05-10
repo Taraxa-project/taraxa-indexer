@@ -376,6 +376,7 @@ components:
         - lastPbftTimestamp
         - lastDagTimestamp
         - lastTransactionTimestamp
+        - feeRewards
       properties:
         pbftCount:
           $ref: "#/components/schemas/Counter"
@@ -389,6 +390,8 @@ components:
           $ref: "#/components/schemas/LastTimestamp"
         lastTransactionTimestamp:
           $ref: "#/components/schemas/LastTimestamp"
+        feeRewards:
+          $ref: "#/components/schemas/Counter"
     PaginatedResponse:
       type: object
       required:
