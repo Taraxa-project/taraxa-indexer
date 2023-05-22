@@ -6,7 +6,7 @@ require (
 	github.com/cockroachdb/pebble v0.0.0-20230217215838-f01d8eff3f8b
 	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
 	github.com/ethereum/go-ethereum v1.11.5
-	github.com/getkin/kin-openapi v0.112.0
+	github.com/getkin/kin-openapi v0.117.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/nleeper/goment v1.4.4
 	github.com/schollz/progressbar/v3 v3.13.1
@@ -22,6 +22,7 @@ require github.com/holiman/uint256 v1.2.0 // indirect
 require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
+	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	golang.org/x/term v0.6.0 // indirect
 )
