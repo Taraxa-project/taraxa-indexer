@@ -2,7 +2,9 @@ package metrics
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -70,4 +72,21 @@ func RunPrometheusServer(listenAddr string) {
 	if err != nil {
 		log.WithError(err).Fatal("Can't start http server")
 	}
+}
+
+func Save(start_processing time.Time, dags_count, trx_count uint64, finalized *storage.FinalizationData) {
+	BlockProcessingTimeMilisec.Observe(float64(time.Since(start_processing).Milliseconds()))
+	IndexedBlocksCounter.Inc()
+
+	IndexedDagBlocksLastProcessedBlock.Set(float64(dags_count))
+	IndexedTransactionsLastProcessedBlock.Set(float64(trx_count))
+
+	IndexedDagBlocks.Add(float64(dags_count))
+	IndexedTransactions.Add(float64(trx_count))
+
+	IndexedBlocksTotal.Set(float64(finalized.PbftCount))
+	IndexedDagsTotal.Set(float64(finalized.DagCount))
+	IndexedTransactionsTotal.Set(float64(finalized.TrxCount))
+
+	LastProcessedBlockTimestamp.SetToCurrentTime()
 }

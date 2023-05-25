@@ -9,8 +9,7 @@ require (
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/nleeper/goment v1.4.4
-	github.com/schollz/progressbar/v3 v3.13.1
-	github.com/sirupsen/logrus v1.9.2
+	github.com/sirupsen/logrus v1.9.0
 	github.com/spiretechnology/go-pool v1.0.0
 	github.com/stretchr/testify v1.8.3
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -18,13 +17,6 @@ require (
 )
 
 require github.com/holiman/uint256 v1.2.2-0.20230321075855-87b91420868c // indirect
-
-require (
-	github.com/mattn/go-runewidth v0.0.14 // indirect
-	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
-	golang.org/x/term v0.6.0 // indirect
-)
 
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect

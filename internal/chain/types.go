@@ -110,10 +110,4 @@ type pbftBlockWithDags struct {
 type GenesisObject struct {
 	DagGenesisBlock dagBlock          `json:"dag_genesis_block"`
 	InitialBalances map[string]string `json:"initial_balances"`
-	// TODO[45]: Old genesis structure. Remove
-	FinalChain struct {
-		State struct {
-			GenesisBalances map[string]string `json:"genesis_balances"`
-		} `json:"state"`
-	} `json:"final_chain"`
 }
