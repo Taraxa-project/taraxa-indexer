@@ -2,21 +2,29 @@ package chain
 
 import (
 	"log"
+	"runtime/debug"
 	"strconv"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
-func ParseInt(s string) uint64 {
+func ParseInt(s string) (v uint64) {
+	if len(s) == 0 {
+		return
+	}
 	v, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
+		debug.PrintStack()
 		log.Fatal(s, "ParseInt ", err)
 	}
 	return v
 }
 
-func parseBool(v string) bool {
-	i, err := strconv.ParseUint(v, 0, 64)
+func parseBool(s string) (v bool) {
+	if len(s) == 0 {
+		return
+	}
+	i, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
 		log.Fatal("parseBool ", v)
 	}
@@ -40,14 +48,14 @@ func (b *Block) ToModel() (pbft *models.Pbft) {
 	return
 }
 
-type dagBlock struct {
+type DagBlock struct {
 	models.Dag
 	Level        string   `json:"level"`
 	Timestamp    string   `json:"timestamp"`
 	Transactions []string `json:"transactions"`
 }
 
-func (b *dagBlock) ToModel() (dag *models.Dag) {
+func (b *DagBlock) ToModel() (dag *models.Dag) {
 	dag = &b.Dag
 	dag.Timestamp = ParseInt(b.Timestamp)
 	dag.Level = ParseInt(b.Level)
@@ -56,7 +64,7 @@ func (b *dagBlock) ToModel() (dag *models.Dag) {
 	return
 }
 
-type transaction struct {
+type Transaction struct {
 	models.Transaction
 	BlockNumber      string `json:"blockNumber"`
 	Nonce            string `json:"nonce"`
@@ -71,18 +79,18 @@ type transaction struct {
 const emptyInput = "0x"
 const emptyReceiver = ""
 
-func (t *transaction) GetType() models.TransactionType {
-	if t.To == emptyReceiver {
+func GetTransactionType(to, input string) models.TransactionType {
+	if to == emptyReceiver {
 		return models.ContractCreation
 	}
-	if t.Input != emptyInput {
+	if input != emptyInput {
 		return models.ContractCall
 	}
 
 	return models.Transfer
 }
 
-func (t *transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transaction) {
+func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transaction) {
 	trx = &t.Transaction
 	trx.BlockNumber = ParseInt(t.BlockNumber)
 	trx.Nonce = ParseInt(t.Nonce)
@@ -90,7 +98,7 @@ func (t *transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transa
 	trx.GasUsed = ParseInt(t.GasUsed)
 	trx.TransactionIndex = ParseInt(t.TransactionIndex)
 	trx.Status = parseBool(t.Status)
-	trx.Type = t.GetType()
+	trx.Type = GetTransactionType(trx.To, t.Input)
 	if trx.Type == models.ContractCreation {
 		trx.To = t.ContractAddress
 	}
@@ -99,7 +107,7 @@ func (t *transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transa
 	return
 }
 
-type pbftBlockWithDags struct {
+type PbftBlockWithDags struct {
 	BlockHash string `json:"block_hash"`
 	Period    uint64 `json:"period"`
 	Schedule  struct {
@@ -108,6 +116,32 @@ type pbftBlockWithDags struct {
 }
 
 type GenesisObject struct {
-	DagGenesisBlock dagBlock          `json:"dag_genesis_block"`
+	DagGenesisBlock DagBlock          `json:"dag_genesis_block"`
 	InitialBalances map[string]string `json:"initial_balances"`
+}
+
+type TransactionTrace struct {
+	Trace []TraceEntry `json:"trace"`
+}
+
+type TraceEntryResult struct {
+	Output  string `json:"output"`
+	GasUsed string `json:"gasUsed"`
+}
+
+type TraceEntry struct {
+	Action       Action           `json:"action"`
+	Subtraces    uint16           `json:"subtraces"`
+	TraceAddress []uint16         `json:"stateDiff"`
+	Type         string           `json:"type"`
+	Result       TraceEntryResult `json:"result"`
+}
+
+type Action struct {
+	CallType string `json:"callType"`
+	From     string `json:"from"`
+	Gas      string `json:"gas"`
+	Input    string `json:"input"`
+	To       string `json:"to"`
+	Value    string `json:"value"`
 }
