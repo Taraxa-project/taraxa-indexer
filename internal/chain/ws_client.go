@@ -43,34 +43,43 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	return ParseInt(blk.Number), err
 }
 
-// TODO: Optimize this. We are making two requests here, so its pretty slow
-func (client *WsClient) GetTransactionByHash(hash string) (trx *transaction, err error) {
-	trx = new(transaction)
-	err = client.rpc.Call(trx, "eth_getTransactionByHash", hash)
-	if err != nil {
+func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {
+	l_err := client.rpc.Call(&traces, "trace_replayBlockTransactions", fmt.Sprintf("0x%x", number), []string{"trace"})
+	defer metrics.RpcCallsCounter.Inc()
+	if l_err != nil {
 		return
 	}
-	metrics.RpcCallsCounter.Inc()
-	err = client.AddTransactionReceiptData(trx)
 
 	return
 }
 
-func (client *WsClient) AddTransactionReceiptData(trx *transaction) (err error) {
+// TODO: Optimize this. We are making two requests here, so its pretty slow
+func (client *WsClient) GetTransactionByHash(hash string) (trx Transaction, err error) {
+	err = client.rpc.Call(&trx, "eth_getTransactionByHash", hash)
+	if err != nil {
+		return
+	}
+	metrics.RpcCallsCounter.Inc()
+	err = client.addTransactionReceiptData(&trx)
+
+	return
+}
+
+func (client *WsClient) addTransactionReceiptData(trx *Transaction) (err error) {
 	err = client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *pbftBlockWithDags, err error) {
-	pbftWithDags = new(pbftBlockWithDags)
+func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *PbftBlockWithDags, err error) {
+	pbftWithDags = new(PbftBlockWithDags)
 	err = client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetDagBlockByHash(hash string) (dag *dagBlock, err error) {
-	dag = new(dagBlock)
+func (client *WsClient) GetDagBlockByHash(hash string) (dag *DagBlock, err error) {
+	dag = new(DagBlock)
 	err = client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	metrics.RpcCallsCounter.Inc()
 	return

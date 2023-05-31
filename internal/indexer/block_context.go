@@ -17,7 +17,7 @@ import (
 type blockContext struct {
 	storage      *storage.Storage
 	batch        *storage.Batch
-	client       *chain.WsClient
+	client       chain.Client
 	block        *models.Pbft
 	finalized    *storage.FinalizationData
 	tp           pool.Pool
@@ -25,7 +25,7 @@ type blockContext struct {
 	addressStats map[string]*storage.AddressStats
 }
 
-func MakeBlockContext(s *storage.Storage, client *chain.WsClient, tp pool.Pool) *blockContext {
+func MakeBlockContext(s *storage.Storage, client chain.Client, tp pool.Pool) *blockContext {
 	var bc blockContext
 	bc.storage = s
 	bc.batch = s.NewBatch()
@@ -129,39 +129,6 @@ func (bc *blockContext) processDag(hash string) error {
 	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
 	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
 	return nil
-}
-
-func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
-	for _, trx_hash := range *trxHashes {
-		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
-	}
-	return
-}
-
-func (bc *blockContext) processTransaction(hash string) error {
-	trx, err := bc.client.GetTransactionByHash(hash)
-	if err != nil {
-		return err
-	}
-
-	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.block.Timestamp))
-	return nil
-}
-
-func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
-
-	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
-	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
-
-	bc.batch.AddToBatch(trx, trx.From, from_index)
-	bc.batch.AddToBatch(trx, trx.To, to_index)
-}
-
-func (bc *blockContext) addAddressStatsToBatch() {
-	for _, stats := range bc.addressStats {
-		bc.batch.AddToBatch(stats, stats.Address, 0)
-	}
 }
 
 func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.AddressStats {
