@@ -50,7 +50,7 @@ func makeInternal(trx *models.Transaction, entry chain.TraceEntry) (internal mod
 	internal.To = entry.Action.To
 	internal.Value = entry.Action.Value
 	internal.GasUsed = chain.ParseInt(entry.Result.GasUsed)
-	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input)
+	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
 	internal.BlockNumber = 0
 
 	return internal

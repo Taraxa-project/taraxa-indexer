@@ -79,15 +79,19 @@ type Transaction struct {
 const emptyInput = "0x"
 const emptyReceiver = ""
 
-func GetTransactionType(to, input string) models.TransactionType {
-	if to == emptyReceiver {
-		return models.ContractCreation
-	}
-	if input != emptyInput {
-		return models.ContractCall
+func GetTransactionType(to, input string, internal bool) models.TransactionType {
+	trx_type := 0
+	// add offset if transaction is internal
+	if internal {
+		trx_type = 3
 	}
 
-	return models.Transfer
+	if to == emptyReceiver {
+		trx_type += int(models.ContractCreation)
+	} else if input != emptyInput {
+		trx_type += int(models.ContractCall)
+	}
+	return models.TransactionType(trx_type)
 }
 
 func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transaction) {
@@ -98,7 +102,7 @@ func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transa
 	trx.GasUsed = ParseInt(t.GasUsed)
 	trx.TransactionIndex = ParseInt(t.TransactionIndex)
 	trx.Status = parseBool(t.Status)
-	trx.Type = GetTransactionType(trx.To, t.Input)
+	trx.Type = GetTransactionType(trx.To, t.Input, false)
 	if trx.Type == models.ContractCreation {
 		trx.To = t.ContractAddress
 	}

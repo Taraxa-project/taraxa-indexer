@@ -5,9 +5,12 @@ package models
 
 // Defines values for TransactionType.
 const (
-	ContractCall     TransactionType = 1
-	ContractCreation TransactionType = 2
-	Transfer         TransactionType = 0
+	ContractCall             TransactionType = 1
+	ContractCreation         TransactionType = 2
+	InternalContractCall     TransactionType = 4
+	InternalContractCreation TransactionType = 5
+	InternalTransfer         TransactionType = 3
+	Transfer                 TransactionType = 0
 )
 
 // Address defines model for Address.
