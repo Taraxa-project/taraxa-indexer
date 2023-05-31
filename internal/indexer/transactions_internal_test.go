@@ -273,6 +273,7 @@ func TestTraceParsing(t *testing.T) {
 			continue
 		}
 		internal := int_trx.Data[i-1]
+		assert.Equal(t, models.InternalTransfer, internal.Type)
 		assert.Equal(t, internal.Hash, trx.Hash)
 		assert.Equal(t, internal.From, trace.Action.From)
 		assert.Equal(t, internal.To, trace.Action.To)

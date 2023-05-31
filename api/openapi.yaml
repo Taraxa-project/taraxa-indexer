@@ -334,8 +334,8 @@ components:
         type:
           type: integer
           format: uint8
-          enum: [0, 1, 2]
-          x-enum-varnames: [transfer, contract_call, contract_creation]
+          enum: [0, 1, 2, 3, 4, 5]
+          x-enum-varnames: [transfer, contract_call, contract_creation, internal_transfer, internal_contract_call, internal_contract_creation]
     Dag:
       type: object
       required:
