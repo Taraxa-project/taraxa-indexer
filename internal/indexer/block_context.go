@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -20,18 +21,20 @@ type blockContext struct {
 	client       chain.Client
 	block        *models.Pbft
 	finalized    *storage.FinalizationData
-	tp           pool.Pool
 	statsMutex   sync.RWMutex
 	addressStats map[string]*storage.AddressStats
 }
 
-func MakeBlockContext(s *storage.Storage, client chain.Client, tp pool.Pool) *blockContext {
+// isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
+func makeThreadPool() pool.Pool {
+	return pool.New(uint(runtime.NumCPU()))
+}
+
+func MakeBlockContext(s *storage.Storage, client chain.Client) *blockContext {
 	var bc blockContext
 	bc.storage = s
 	bc.batch = s.NewBatch()
 	bc.client = client
-	// pool limit is limit of concurrent ws requests to the node
-	bc.tp = tp
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
 
@@ -52,22 +55,18 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 
 	start_processing := time.Now()
 	bc.block = raw.ToModel()
-	bc.tp.Go(func() { bc.updateValidatorStats(bc.block) })
+
+	tp := makeThreadPool()
+	tp.Go(func() { bc.updateValidatorStats(bc.block) })
+	tp.Go(func() { dags_count, err = bc.processDags() })
+	tp.Go(func() { err = bc.processTransactions(raw.Transactions) })
+	tp.Wait()
+
+	if err != nil {
+		return
+	}
 
 	trx_count = bc.block.TransactionCount
-
-	dags_count, err = bc.processDags()
-	if err != nil {
-		return
-	}
-
-	err = bc.processTransactions(raw.Transactions)
-
-	bc.tp.Wait()
-	if err != nil {
-		return
-	}
-
 	bc.finalized.TrxCount += trx_count
 	bc.finalized.DagCount += dags_count
 	bc.finalized.PbftCount++
@@ -105,6 +104,19 @@ func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 }
 
 func (bc *blockContext) processDags() (dags_count uint64, err error) {
+	dag_blocks, err := bc.client.GetPeriodDagBlocks(bc.block.Number)
+	if err != nil {
+		log.WithError(err).Debug("GetPeriodDagBlocks error")
+		return bc.processDagsOld()
+	}
+	dags_count = uint64(len(dag_blocks))
+	for _, dag := range dag_blocks {
+		bc.saveDag(dag.ToModel())
+	}
+	return
+}
+
+func (bc *blockContext) processDagsOld() (dags_count uint64, err error) {
 	block_with_dags, err := bc.client.GetPbftBlockWithDagBlocks(bc.block.Number)
 	if err != nil {
 		return
@@ -112,10 +124,11 @@ func (bc *blockContext) processDags() (dags_count uint64, err error) {
 	bc.block.PbftHash = block_with_dags.BlockHash
 
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
-
+	tp := makeThreadPool()
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		bc.tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
+		tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
 	}
+	tp.Wait()
 	return
 }
 
@@ -124,11 +137,14 @@ func (bc *blockContext) processDag(hash string) error {
 	if err != nil {
 		return err
 	}
-	dag := raw_dag.ToModel()
+	bc.saveDag(raw_dag.ToModel())
+	return nil
+}
+
+func (bc *blockContext) saveDag(dag *models.Dag) {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
 	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
 	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
-	return nil
 }
 
 func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.AddressStats {
