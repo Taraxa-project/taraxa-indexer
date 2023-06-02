@@ -1,20 +1,17 @@
 package indexer
 
 import (
-	"runtime"
 	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	log "github.com/sirupsen/logrus"
-	"github.com/spiretechnology/go-pool"
 )
 
 type Indexer struct {
 	retry_time                  time.Duration
 	client                      *chain.WsClient
 	storage                     *storage.Storage
-	tp                          pool.Pool
 	consistency_check_available bool
 }
 
@@ -33,7 +30,6 @@ func NewIndexer(url string, storage *storage.Storage) (i *Indexer) {
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
 	i.storage = storage
-	i.tp = pool.New(uint(10 * runtime.NumCPU()))
 	for {
 		i.client, err = chain.NewWsClient(url)
 		if err == nil {
@@ -76,7 +72,7 @@ func (i *Indexer) init() error {
 		return nil
 	}
 
-	genesis, err := MakeGenesis(i.storage, i.client, i.tp, remote_hash)
+	genesis, err := MakeGenesis(i.storage, i.client, remote_hash)
 	if err != nil {
 		return err
 	}
@@ -107,7 +103,7 @@ func (i *Indexer) sync() (err error) {
 			prev = time.Now()
 		}
 
-		dc, tc, process_err := MakeBlockContext(i.storage, i.client, i.tp).process(blk)
+		dc, tc, process_err := MakeBlockContext(i.storage, i.client).process(blk)
 		if process_err != nil {
 			return process_err
 		}
@@ -155,7 +151,7 @@ func (i *Indexer) run() error {
 				}
 			}
 
-			bc := MakeBlockContext(i.storage, i.client, i.tp)
+			bc := MakeBlockContext(i.storage, i.client)
 			dc, tc, err := bc.process(blk)
 			if err != nil {
 				return err

@@ -14,6 +14,8 @@ type ClientMock struct {
 	BlockTransactions map[uint64][]string
 }
 
+var ErrNotImplemented = fmt.Errorf("Not implemented")
+
 func MakeMockClient() *ClientMock {
 	m := new(ClientMock)
 	m.Traces = make(map[string][]TransactionTrace)
@@ -23,11 +25,11 @@ func MakeMockClient() *ClientMock {
 }
 
 func (c *ClientMock) GetBlockByNumber(number uint64) (blk *Block, err error) {
-	return
+	return nil, ErrNotImplemented
 }
 
 func (c *ClientMock) GetLatestPeriod() (p uint64, e error) {
-	return
+	return 0, ErrNotImplemented
 }
 
 func (c *ClientMock) TraceBlockTransactions(num uint64) (traces []TransactionTrace, err error) {
@@ -42,20 +44,28 @@ func (c *ClientMock) GetTransactionByHash(hash string) (trx Transaction, err err
 	return c.Transactions[hash], nil
 }
 
+func (c *ClientMock) GetPeriodTransactions(p uint64) (trx []Transaction, err error) {
+	return nil, ErrNotImplemented
+}
+
 func (c *ClientMock) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *PbftBlockWithDags, err error) {
-	return
+	return nil, ErrNotImplemented
 }
 
 func (c *ClientMock) GetDagBlockByHash(hash string) (dag *DagBlock, err error) {
-	return
+	return nil, ErrNotImplemented
+}
+
+func (c *ClientMock) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
+	return nil, ErrNotImplemented
 }
 
 func (c *ClientMock) GetGenesis() (genesis *GenesisObject, err error) {
-	return
+	return nil, ErrNotImplemented
 }
 
 func (c *ClientMock) GetChainStats() (ns *storage.FinalizationData, err error) {
-	return
+	return nil, ErrNotImplemented
 }
 
 func (c *ClientMock) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription, error) {

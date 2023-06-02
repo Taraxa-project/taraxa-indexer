@@ -1,20 +1,17 @@
 package indexer
 
 import (
-	"runtime"
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
-	"github.com/spiretechnology/go-pool"
 	"github.com/stretchr/testify/assert"
 )
 
 func MakeTestBlockContext(mc *chain.ClientMock, blockNumber uint64) *blockContext {
 	st := storage.NewStorage("")
-	tp := pool.New(uint(runtime.NumCPU()))
-	bc := MakeBlockContext(st, mc, tp)
+	bc := MakeBlockContext(st, mc)
 	bc.block = &models.Pbft{}
 	bc.block.Number = blockNumber
 	bc.block.TransactionCount = 1
