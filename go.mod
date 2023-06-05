@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/cockroachdb/pebble v0.0.0-20230217215838-f01d8eff3f8b
 	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
-	github.com/ethereum/go-ethereum v1.11.6
+	github.com/ethereum/go-ethereum v1.12.0
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/nleeper/goment v1.4.4
@@ -77,7 +77,7 @@ require (
 	golang.org/x/exp v0.0.0-20230213192124-5e25df0256eb // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
