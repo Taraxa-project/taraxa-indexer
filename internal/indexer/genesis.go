@@ -47,18 +47,17 @@ func (g *Genesis) process() {
 		g.bc.SaveTransaction(trx)
 		genesisSupply.Add(genesisSupply, parseStringToBigInt(trx.Value))
 	}
-
-	// TODO[45]: Old genesis structure. Remove
-	for addr, value := range g.genesis.FinalChain.State.GenesisBalances {
-		trx := g.makeInitBalanceTrx(addr, value)
-		g.bc.SaveTransaction(trx)
-		genesisSupply.Add(genesisSupply, parseStringToBigInt(trx.Value))
-	}
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
 	g.bc.finalized.TrxCount = 0
 	g.bc.batch.SetGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.batch.SetTotalSupply(genesisSupply)
-	g.bc.commit(0)
+	g.bc.commit()
+}
+
+func parseStringToBigInt(v string) *big.Int {
+	a := big.NewInt(0)
+	a.SetString(v, 0)
+	return a
 }

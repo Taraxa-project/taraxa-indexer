@@ -164,8 +164,10 @@ func getPrefix(o interface{}) (ret string) {
 		ret = "w"
 	case *TotalSupply:
 		ret = "t"
+	case *models.InternalTransactionsResponse:
+		ret = "i"
 	default:
-		log.WithField("type", tt).Fatal("getPrefix: Unexpected type")
+		log.WithFields(log.Fields{"type": tt, "value": o}).Fatal("getPrefix: Unexpected type")
 	}
 	return
 }
@@ -250,9 +252,18 @@ func (s *Storage) GetGenesisHash() GenesisHash {
 	return *ptr
 }
 
+func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactionsResponse {
+	ptr := new(models.InternalTransactionsResponse)
+	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetInternalTransactions failed")
+	}
+	return *ptr
+}
+
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *AddressStats, *FinalizationData, *GenesisHash, *WeekStats, *TotalSupply:
+	case *AddressStats, *FinalizationData, *GenesisHash, *WeekStats, *TotalSupply, *models.InternalTransactionsResponse:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err

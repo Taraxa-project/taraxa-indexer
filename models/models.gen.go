@@ -5,9 +5,12 @@ package models
 
 // Defines values for TransactionType.
 const (
-	ContractCall     TransactionType = 1
-	ContractCreation TransactionType = 2
-	Transfer         TransactionType = 0
+	ContractCall             TransactionType = 1
+	ContractCreation         TransactionType = 2
+	InternalContractCall     TransactionType = 4
+	InternalContractCreation TransactionType = 5
+	InternalTransfer         TransactionType = 3
+	Transfer                 TransactionType = 0
 )
 
 // Address defines model for Address.
@@ -38,6 +41,11 @@ type DagsPaginatedResponse = PaginatedResponse
 
 // Hash defines model for Hash.
 type Hash = string
+
+// InternalTransactionsResponse defines model for InternalTransactionsResponse.
+type InternalTransactionsResponse struct {
+	Data []Transaction `json:"data"`
+}
 
 // LastTimestamp defines model for LastTimestamp.
 type LastTimestamp = uint64
@@ -138,6 +146,9 @@ type WeekResponse struct {
 
 // AddressParam defines model for addressParam.
 type AddressParam = AddressFilter
+
+// HashParam defines model for hashParam.
+type HashParam = Hash
 
 // PaginationParam defines model for paginationParam.
 type PaginationParam = PaginationFilter

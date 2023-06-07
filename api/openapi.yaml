@@ -199,6 +199,28 @@ paths:
         default:
           description: |
             Unexpected error
+  /transaction/{hash}/internal_transactions:
+    get:
+      tags:
+        - Hash
+      summary: "Returns internal transactions"
+      description: |
+        Returns all internal transactions of transaction with specified hash 
+      operationId: "getInternalTransactions"
+      parameters:
+        - $ref: "#/components/parameters/hashParam"
+      responses:
+        "200":
+          description: |
+            A JSON object containing a list of all internal transactions of transaction with specified hash 
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/InternalTransactionsResponse"
+        default:
+          description: |
+            Unexpected error
 components:
   schemas:
     Address:
@@ -312,8 +334,8 @@ components:
         type:
           type: integer
           format: uint8
-          enum: [0, 1, 2]
-          x-enum-varnames: [transfer, contract_call, contract_creation]
+          enum: [0, 1, 2, 3, 4, 5]
+          x-enum-varnames: [transfer, contract_call, contract_creation, internal_transfer, internal_contract_call, internal_contract_creation]
     Dag:
       type: object
       required:
@@ -417,7 +439,6 @@ components:
               - $ref: "#/components/schemas/Validator"
         week:
           $ref: "#/components/schemas/WeekResponse"
-
     TransactionsPaginatedResponse:
       allOf:
         - $ref: "#/components/schemas/PaginatedResponse"
@@ -445,6 +466,15 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/Pbft"
+    InternalTransactionsResponse:
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Transaction"
     AddressFilter:
       $ref: "#/components/schemas/Address"
     PaginationFilter:
@@ -488,3 +518,11 @@ components:
         Week to filter by
       schema:
         $ref: "#/components/schemas/Week"
+    hashParam:
+      name: hash
+      in: path
+      required: true
+      description: |
+        Hash of the item(transaction) to get data for
+      schema:
+        $ref: "#/components/schemas/Hash"
