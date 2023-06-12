@@ -3,7 +3,6 @@ package storage
 import (
 	"math/big"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 
@@ -61,7 +60,7 @@ func MakeEmptyAddressStats(addr string) *AddressStats {
 	return data
 }
 
-func (a *AddressStats) isEqual(b *AddressStats) bool {
+func (a *AddressStats) IsEqual(b *AddressStats) bool {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	b.mutex.Lock()
@@ -90,56 +89,6 @@ func (local *FinalizationData) Check(remote *FinalizationData) {
 	if local.TrxCount != remote.TrxCount {
 		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Transactions consistency check failed ")
 	}
-}
-
-type WeekStats struct {
-	Validators []models.Validator
-	Total      uint32
-	key        []byte `rlp:"-"`
-}
-
-func MakeEmptyWeekStats() *WeekStats {
-	data := new(WeekStats)
-	return data
-}
-
-func (w *WeekStats) Sort() {
-	sort.Slice(w.Validators, func(i, j int) bool {
-		return w.Validators[i].PbftCount > w.Validators[j].PbftCount
-	})
-}
-
-func (w *WeekStats) AddPbftBlock(block *models.Pbft) {
-	w.Total++
-	for k, v := range w.Validators {
-		if v.Address == block.Author {
-			w.Validators[k].PbftCount++
-			return
-		}
-	}
-	w.Validators = append(w.Validators, models.Validator{Address: block.Author, PbftCount: 1})
-}
-
-func (w *WeekStats) GetPaginated(from, count uint64) ([]models.Validator, *models.PaginatedResponse) {
-	pagination := new(models.PaginatedResponse)
-	pagination.Total = uint64(len(w.Validators))
-	pagination.Start = from
-	end := from + count
-	pagination.HasNext = (end < pagination.Total)
-	if end > pagination.Total {
-		end = pagination.Total
-	}
-	pagination.End = end
-
-	w.Sort()
-	var validators []models.Validator
-
-	for k, v := range w.Validators[from:end] {
-		v.Rank = uint64(k + 1)
-		validators = append(validators, v)
-	}
-
-	return validators, pagination
 }
 
 type GenesisHash string

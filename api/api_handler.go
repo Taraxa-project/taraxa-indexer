@@ -14,10 +14,10 @@ import (
 )
 
 type ApiHandler struct {
-	storage *storage.Storage
+	storage storage.Storage
 }
 
-func NewApiHandler(s *storage.Storage) *ApiHandler {
+func NewApiHandler(s storage.Storage) *ApiHandler {
 	return &ApiHandler{s}
 }
 
