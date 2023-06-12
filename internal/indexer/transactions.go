@@ -8,10 +8,12 @@ import (
 
 func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	var traces []chain.TransactionTrace
-	bc.tp.Go(MakeTaskWithResult(bc.client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
-	err, transactions := bc.getTransactions(trxHashes)
+	var transactions []chain.Transaction
 
-	bc.tp.Wait()
+	tp := makeThreadPool()
+	tp.Go(MakeTaskWithResult(bc.client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
+	tp.Go(MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
+	tp.Wait()
 
 	internal_transactions := new(models.InternalTransactionsResponse)
 	for i, trx := range transactions {
@@ -30,17 +32,27 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
 		}
 	}
+	return
+}
+
+func (bc *blockContext) getTransactions(trxHashes *[]string) (trxs []chain.Transaction, err error) {
+	trxs, err = bc.client.GetPeriodTransactions(bc.block.Number)
+	if err != nil {
+		log.WithError(err).Debug("GetPeriodTransactions error")
+		return bc.getTransactionsOld(trxHashes)
+	}
 
 	return
 }
 
-func (bc *blockContext) getTransactions(trxHashes *[]string) (err error, trxs []chain.Transaction) {
+func (bc *blockContext) getTransactionsOld(trxHashes *[]string) (trxs []chain.Transaction, err error) {
 	trxs = make([]chain.Transaction, len(*trxHashes))
 
+	tp := makeThreadPool()
 	for i, trx_hash := range *trxHashes {
-		bc.tp.Go(MakeTaskWithResult(bc.client.GetTransactionByHash, trx_hash, &trxs[i], &err).Run)
+		tp.Go(MakeTaskWithResult(bc.client.GetTransactionByHash, trx_hash, &trxs[i], &err).Run)
 	}
-
+	tp.Wait()
 	return
 }
 

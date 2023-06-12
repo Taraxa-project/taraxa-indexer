@@ -36,10 +36,10 @@ func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) 
 func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	blk := new(Block)
 	err := client.rpc.Call(blk, "eth_getBlockByNumber", "latest", false)
+	metrics.RpcCallsCounter.Inc()
 	if err != nil {
 		return 0, err
 	}
-	metrics.RpcCallsCounter.Inc()
 	return ParseInt(blk.Number), err
 }
 
@@ -56,10 +56,10 @@ func (client *WsClient) TraceBlockTransactions(number uint64) (traces []Transact
 // TODO: Optimize this. We are making two requests here, so its pretty slow
 func (client *WsClient) GetTransactionByHash(hash string) (trx Transaction, err error) {
 	err = client.rpc.Call(&trx, "eth_getTransactionByHash", hash)
+	metrics.RpcCallsCounter.Inc()
 	if err != nil {
 		return
 	}
-	metrics.RpcCallsCounter.Inc()
 	err = client.addTransactionReceiptData(&trx)
 
 	return
@@ -67,6 +67,12 @@ func (client *WsClient) GetTransactionByHash(hash string) (trx Transaction, err 
 
 func (client *WsClient) addTransactionReceiptData(trx *Transaction) (err error) {
 	err = client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
+func (client *WsClient) GetPeriodTransactions(number uint64) (trxs []Transaction, err error) {
+	err = client.rpc.Call(&trxs, "taraxa_getPeriodTransactionsWithReceipts", fmt.Sprintf("0x%x", number))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
@@ -81,6 +87,12 @@ func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *
 func (client *WsClient) GetDagBlockByHash(hash string) (dag *DagBlock, err error) {
 	dag = new(DagBlock)
 	err = client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
+func (client *WsClient) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
+	err = client.rpc.Call(&dags, "taraxa_getPeriodDagBlocks", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
