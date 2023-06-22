@@ -3,7 +3,9 @@ package chain
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 
+	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -70,6 +72,14 @@ func (c *ClientMock) GetChainStats() (ns *storage.FinalizationData, err error) {
 	return nil, ErrNotImplemented
 }
 
+func (c *ClientMock) GetPreviousBlockCertVotes(period uint64) (vr *VotesResponse, err error) {
+	return nil, ErrNotImplemented
+}
+
+func (c *ClientMock) GetValidatorsAtBlock(*big.Int) (validators []dpos_interface.DposInterfaceValidatorData, err error) {
+	return nil, ErrNotImplemented
+}
+
 func (c *ClientMock) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription, error) {
 	return nil, nil, nil
 }
@@ -81,7 +91,7 @@ func (c *ClientMock) AddTransactionFromJson(trx_json string) {
 	var trx Transaction
 	err := json.Unmarshal([]byte(trx_json), &trx)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("ClientMock.AddTransactionFromJson", err)
 	}
 
 	tm := trx.ToModelWithTimestamp(1)
@@ -104,7 +114,7 @@ func (c *ClientMock) AddTracesFromJson(hash, traces_json string) {
 	var traces []TransactionTrace
 	err := json.Unmarshal([]byte(traces_json), &traces)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("ClientMock.AddTracesFromJson", err)
 	}
 
 	c.Traces[hash] = traces

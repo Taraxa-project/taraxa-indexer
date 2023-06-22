@@ -92,3 +92,7 @@ func (local *FinalizationData) Check(remote *FinalizationData) {
 }
 
 type GenesisHash string
+
+type Yield struct {
+	Yield *big.Int `json:"yield"`
+}

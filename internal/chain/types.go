@@ -8,14 +8,26 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
-func ParseInt(s string) (v uint64) {
+func ParseUInt(s string) (v uint64) {
 	if len(s) == 0 {
 		return
 	}
 	v, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
 		debug.PrintStack()
-		log.Fatal(s, "ParseInt ", err)
+		log.Fatal(s, "ParseUInt ", err)
+	}
+	return v
+}
+
+func ParseInt(s string) (v int64) {
+	if len(s) == 0 {
+		return
+	}
+	v, err := strconv.ParseInt(s, 0, 64)
+	if err != nil {
+		debug.PrintStack()
+		log.Fatal(s, "ParseUInt ", err)
 	}
 	return v
 }
@@ -41,8 +53,8 @@ type Block struct {
 
 func (b *Block) ToModel() (pbft *models.Pbft) {
 	pbft = &b.Pbft
-	pbft.Timestamp = ParseInt(b.Timestamp)
-	pbft.Number = ParseInt(b.Number)
+	pbft.Timestamp = ParseUInt(b.Timestamp)
+	pbft.Number = ParseUInt(b.Number)
 	pbft.TransactionCount = uint64(len(*b.Transactions))
 
 	return
@@ -57,8 +69,8 @@ type DagBlock struct {
 
 func (b *DagBlock) ToModel() (dag *models.Dag) {
 	dag = &b.Dag
-	dag.Timestamp = ParseInt(b.Timestamp)
-	dag.Level = ParseInt(b.Level)
+	dag.Timestamp = ParseUInt(b.Timestamp)
+	dag.Level = ParseUInt(b.Level)
 	dag.TransactionCount = uint64(len(b.Transactions))
 
 	return
@@ -107,11 +119,11 @@ func GetTransactionType(to, input string, internal bool) models.TransactionType 
 
 func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transaction) {
 	trx = &t.Transaction
-	trx.BlockNumber = ParseInt(t.BlockNumber)
-	trx.Nonce = ParseInt(t.Nonce)
-	trx.GasPrice = ParseInt(t.GasPrice)
-	trx.GasUsed = ParseInt(t.GasUsed)
-	trx.TransactionIndex = ParseInt(t.TransactionIndex)
+	trx.BlockNumber = ParseUInt(t.BlockNumber)
+	trx.Nonce = ParseUInt(t.Nonce)
+	trx.GasPrice = ParseUInt(t.GasPrice)
+	trx.GasUsed = ParseUInt(t.GasUsed)
+	trx.TransactionIndex = ParseUInt(t.TransactionIndex)
 	trx.Status = parseBool(t.Status)
 	trx.Type = GetTransactionType(trx.To, t.Input, false)
 	if trx.Type == models.ContractCreation {
@@ -146,11 +158,6 @@ type PbftBlockWithDags struct {
 	} `json:"schedule"`
 }
 
-type GenesisObject struct {
-	DagGenesisBlock DagBlock          `json:"dag_genesis_block"`
-	InitialBalances map[string]string `json:"initial_balances"`
-}
-
 type TransactionTrace struct {
 	Trace []TraceEntry `json:"trace"`
 }
@@ -175,4 +182,14 @@ type Action struct {
 	Input    string `json:"input"`
 	To       string `json:"to"`
 	Value    string `json:"value"`
+}
+
+type VotesResponse struct {
+	PeriodTotalVotesCount int64  `json:"total_votes_count,omitempty"`
+	Votes                 []Vote `json:"votes,omitempty"`
+}
+
+type Vote struct {
+	Voter  string `json:"voter"`
+	Weight string `json:"weight"`
 }

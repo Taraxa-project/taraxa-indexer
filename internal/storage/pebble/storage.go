@@ -78,7 +78,6 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 }
 
 func getPrefix(o interface{}) (ret string) {
-
 	switch tt := o.(type) {
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
@@ -100,7 +99,9 @@ func getPrefix(o interface{}) (ret string) {
 		ret = "ts"
 	case *models.InternalTransactionsResponse:
 		ret = "i"
-	// hack if we aren't passing original type directly to this method, but passing interface from other one
+	case *storage.Yield:
+		ret = "y"
+	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
 		ret = getPrefix(*o.(*interface{}))
 	default:

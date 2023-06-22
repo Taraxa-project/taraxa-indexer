@@ -3,27 +3,62 @@ package chain
 import (
 	"context"
 	"fmt"
+	"math/big"
 
+	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client"
+	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	log "github.com/sirupsen/logrus"
 )
+
+var dposContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000FE")
 
 // WsClient is a struct that connects to a Taraxa node.
 type WsClient struct {
-	rpc *rpc.Client
-	ctx context.Context
+	rpc     *rpc.Client
+	ctx     context.Context
+	dpos    *dpos_contract_client.DposContractClient
+	ChainId *big.Int
 }
 
 // NewWsClient creates a new instance of the WsClient struct.
 func NewWsClient(url string) (*WsClient, error) {
 	ctx := context.Background()
-	client, err := rpc.DialWebsocket(ctx, url, "")
+	ws, err := rpc.DialWebsocket(ctx, url, "")
 	if err != nil {
 		return nil, err
 	}
-	return &WsClient{rpc: client, ctx: ctx}, nil
+	client := &WsClient{rpc: ws, ctx: ctx}
+	client.GetChainId()
+
+	ethclient := ethclient.NewClient(client.rpc)
+	client.dpos, err = dpos_contract_client.NewDposContractClient(ethclient, dposContractAddress, client.ChainId)
+	if err != nil {
+		log.WithError(err).Fatal("Can't create dpos client")
+	}
+
+	return client, nil
+}
+
+func (client *WsClient) GetChainId() *big.Int {
+	if client.ChainId != nil {
+		return client.ChainId
+	}
+
+	var str string
+	err := client.rpc.Call(&str, "eth_chainId")
+	if err != nil {
+		log.WithError(err).Panic("GetChainId error")
+	}
+	metrics.RpcCallsCounter.Inc()
+	client.ChainId = big.NewInt(0)
+	client.ChainId.SetString(str, 0)
+	return client.ChainId
 }
 
 func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
@@ -40,7 +75,7 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return ParseInt(blk.Number), err
+	return ParseUInt(blk.Number), err
 }
 
 func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {
@@ -95,7 +130,7 @@ func (client *WsClient) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err 
 
 func (client *WsClient) GetGenesis() (genesis *GenesisObject, err error) {
 	genesis = new(GenesisObject)
-	err = client.rpc.Call(&genesis, "taraxa_getConfig")
+	err = client.rpc.Call(genesis, "taraxa_getConfig")
 	metrics.RpcCallsCounter.Inc()
 	return
 }
@@ -105,6 +140,16 @@ func (client *WsClient) GetChainStats() (ns *storage.FinalizationData, err error
 	err = client.rpc.Call(&ns, "taraxa_getChainStats")
 	metrics.RpcCallsCounter.Inc()
 	return
+}
+
+func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr *VotesResponse, err error) {
+	err = client.rpc.Call(&vr, "taraxa_getPreviousBlockCertVotes", fmt.Sprintf("0x%x", period))
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
+func (client *WsClient) GetValidatorsAtBlock(block_num *big.Int) (validators []dpos_interface.DposInterfaceValidatorData, err error) {
+	return client.dpos.GetValidatorsAtBlock(block_num)
 }
 
 func (client *WsClient) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription, error) {
