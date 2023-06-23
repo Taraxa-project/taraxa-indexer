@@ -8,14 +8,13 @@ A service that scrapes transactions, PBFT and DAG blocks from the Taraxa chains 
 
 The indexer needs to watch for new data from the node and save it at least as fast as the node produces more data. For this we can use language-specific threads or parallel processing.
 
-
 ### Able to serve data fast
 
 The API component needs to serve data in a fast and consistent way regardless of if the current queried address has 1 or 1M transactions. We’re not optimizing for disk space here so we can save a transaction twice, for example, once for the sender and once for the receiver. We need to also have an aggregate for each address that contains the number of DAG and PBFT blocks that it created and the number of total transactions that the address was mentioned in. These will be late used by the ecosystem apps to construct the pagination.
 
 ### Be consistent at any point in time
 
-This means that we can’t see transactions from a block that wasn’t yet saved. This can be achieved multiple ways. For example using batch writes to the db to save all transactions, DAG blocks in period and PBFT block in a transactional way. Another safeguard we can add here is to delete the last saved PBFT block on startup in case the application crashes unexpectedly during its scraping. 
+This means that we can’t see transactions from a block that wasn’t yet saved. This can be achieved multiple ways. For example using batch writes to the db to save all transactions, DAG blocks in period and PBFT block in a transactional way. Another safeguard we can add here is to delete the last saved PBFT block on startup in case the application crashes unexpectedly during its scraping.
 
 ### Local database, local node
 
@@ -36,7 +35,7 @@ The API routes, requests and responses will be automatically generated from the 
 
 The API has two main groups of endpoints:
 
-1. Address  - Where we have endpoints that return all the transactions, DAG and PBFT blocks, along with their total counts, where the address was mentioned.
+1. Address - Where we have endpoints that return all the transactions, DAG and PBFT blocks, along with their total counts, where the address was mentioned.
 2. Validators - This is an aggregate over the PBFT-producing validator nodes filtered by year-week.
 
 ### Scraper
@@ -79,8 +78,8 @@ We should only store what we need. No need to save the full transaction data, fo
 1. Account - Used for pagination. Has 3 integers that need to be incremented when an account creates a PBFT block, sends a DAG block or send or receives a transaction.
 2. Transaction
 3. DAG
-4. PBFT 
-5. Validator - Represents a validator (address) and how many PBFT blocks they produces in a specific week. 
+4. PBFT
+5. Validator - Represents a validator (address) and how many PBFT blocks they produces in a specific week.
 
 ### A proposition for implementing the storage
 
@@ -111,7 +110,7 @@ tx:0x00000000000000000000000000000000000000fe:2000:5
 ## Other things to consider / Problems we've had in the past
 
 1. The byte values of `0xf001937650bb4f62b57521824b2c20f5b91bea05` and `0xF001937650bb4f62b57521824B2c20f5b91bEa05` are not equal. We need to checksum the addresses both before inserting them into the database and when receiving them from a user.
-Same for hashes but in that case we can just make them lowercase.
+   Same for hashes but in that case we can just make them lowercase.
 
 2. The indexer somehow disconnects from the websocket endpoint or it just doesn't receive data anymore. Hopefully, by using the go-ethereum client, we won't have this problem anymore but we should find a way to reconnect if this happens.
 

@@ -39,6 +39,16 @@ type Dag struct {
 // DagsPaginatedResponse defines model for DagsPaginatedResponse.
 type DagsPaginatedResponse = PaginatedResponse
 
+// EventLog defines model for EventLog.
+type EventLog struct {
+	Address          Address  `json:"address"`
+	Data             string   `json:"data"`
+	Removed          bool     `json:"removed"`
+	Topics           []string `json:"topics"`
+	TransactionHash  Hash     `json:"transactionHash"`
+	TransactionIndex Counter  `json:"transactionIndex"`
+}
+
 // Hash defines model for Hash.
 type Hash = string
 
@@ -104,6 +114,7 @@ type Transaction struct {
 	GasPrice         Counter         `json:"gasPrice"`
 	GasUsed          Counter         `json:"gasUsed"`
 	Hash             Hash            `json:"hash"`
+	Logs             []EventLog      `json:"logs"`
 	Nonce            Counter         `json:"nonce"`
 	Status           bool            `json:"status"`
 	Timestamp        Timestamp       `json:"timestamp"`
