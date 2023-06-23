@@ -247,7 +247,6 @@ components:
   schemas:
     Address:
       type: string
-      format: common.Address
       example: "0x0000000000000000000000000000000000000000"
     Hash:
       type: string

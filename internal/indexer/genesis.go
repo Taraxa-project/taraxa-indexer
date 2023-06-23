@@ -12,24 +12,23 @@ import (
 
 type Genesis struct {
 	storage storage.Storage
-	genesis *chain.GenesisObject
-	bc      *blockContext
+	genesis chain.GenesisObject
+	bc      blockContext
 	hash    string
 }
 
-func MakeGenesis(s storage.Storage, c *chain.WsClient, gen_obj *chain.GenesisObject, genesisHash storage.GenesisHash) (*Genesis, error) {
+func MakeGenesis(s storage.Storage, c *chain.WsClient, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) (*Genesis, error) {
 	var genesis Genesis
 	var err error
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
-	genesis.bc = MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()})
+	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()})
 
 	return &genesis, err
 }
 
-func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
-	var trx models.Transaction
+func (g *Genesis) makeInitBalanceTrx(addr, value string) (trx models.Transaction) {
 	trx.Hash = "GENESIS_" + addr
 	trx.From = "GENESIS"
 	trx.To = addr
@@ -37,7 +36,7 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
 	trx.BlockNumber = 0
 	trx.Timestamp = chain.ParseUInt(g.genesis.DagGenesisBlock.Timestamp)
 	trx.Status = true
-	return &trx
+	return
 }
 
 func (g *Genesis) process() {

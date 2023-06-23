@@ -77,7 +77,7 @@ type FinalizationData struct {
 	PbftCount uint64 `json:"pbft_period"`
 }
 
-func (local *FinalizationData) Check(remote *FinalizationData) {
+func (local *FinalizationData) Check(remote FinalizationData) {
 	// Perform this check only if we are getting data for the same block from node
 	if local.PbftCount != remote.PbftCount {
 		return

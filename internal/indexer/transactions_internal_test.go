@@ -255,7 +255,7 @@ func TestTraceParsing(t *testing.T) {
 	assert.Equal(t, trx_count, len(transactions_trace))
 	assert.Equal(t, trx_count+internal_count, len(transactions_trace[0].Trace))
 
-	err := bc.processTransactions(&[]string{trx.Hash})
+	err := bc.processTransactions([]string{trx.Hash})
 	assert.Equal(t, err, nil)
 	bc.commit()
 

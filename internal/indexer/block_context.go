@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
@@ -22,8 +23,8 @@ type blockContext struct {
 	Config       *common.Config
 	Client       chain.Client
 	block        *models.Pbft
-	dags         []*chain.DagBlock
-	transactions []*models.Transaction
+	dags         []chain.DagBlock
+	transactions []models.Transaction
 	finalized    *storage.FinalizationData
 	statsMutex   sync.RWMutex
 	addressStats map[string]*storage.AddressStats
@@ -49,7 +50,7 @@ func (bc *blockContext) commit() {
 	metrics.StorageCommitCounter.Inc()
 }
 
-func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
+func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, err error) {
 	start_processing := time.Now()
 	bc.block = raw.ToModel()
 
@@ -58,18 +59,21 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	tp.Go(func() { err = bc.processDags() })
 	tp.Go(func() { err = bc.processTransactions(raw.Transactions) })
 
-	vr := new(chain.VotesResponse)
-	tp.Go(common.MakeTaskWithResult(bc.Client.GetPreviousBlockCertVotes, bc.block.Number, &vr, &err).Run)
+	votes := new(chain.VotesResponse)
+	tp.Go(common.MakeTaskWithResult(bc.Client.GetPreviousBlockCertVotes, bc.block.Number, votes, &err).Run)
+
+	validators := make([]dpos_interface.DposInterfaceValidatorData, 0)
+	tp.Go(common.MakeTaskWithResult(bc.Client.GetValidatorsAtBlock, bc.block.Number, &validators, &err).Run)
 
 	tp.Wait()
 	if err != nil {
 		return
 	}
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Client, bc.block.Number, bc.block.Author)
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
 	total_minted := common.ParseStringToBigInt(raw.TotalReward)
 	if total_minted.Cmp(big.NewInt(0)) == 1 {
-		r.Process(total_minted, bc.dags, bc.transactions, vr)
+		r.Process(total_minted, bc.dags, bc.transactions, *votes, validators)
 	}
 
 	dags_count = uint64(len(bc.dags))
@@ -107,9 +111,9 @@ func (bc *blockContext) processDags() (err error) {
 		log.WithError(err).Debug("GetPeriodDagBlocks error")
 		return bc.processDagsOld()
 	}
-	bc.dags = make([]*chain.DagBlock, len(dag_blocks))
+	bc.dags = make([]chain.DagBlock, len(dag_blocks))
 	for i, dag := range dag_blocks {
-		bc.dags[i] = &dag
+		bc.dags[i] = dag
 		bc.saveDag(dag.ToModel())
 	}
 	return
@@ -130,10 +134,10 @@ func (bc *blockContext) processDagsOld() (err error) {
 	return
 }
 
-func (bc *blockContext) processDag(hash string) (dag *chain.DagBlock, err error) {
+func (bc *blockContext) processDag(hash string) (dag chain.DagBlock, err error) {
 	dag, err = bc.Client.GetDagBlockByHash(hash)
 	if err != nil {
-		return nil, err
+		return chain.DagBlock{}, err
 	}
 	bc.saveDag(dag.ToModel())
 	return

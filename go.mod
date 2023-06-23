@@ -3,6 +3,7 @@ module github.com/Taraxa-project/taraxa-indexer
 go 1.19
 
 require (
+	github.com/Taraxa-project/taraxa-go-client v0.0.3
 	github.com/cockroachdb/pebble v0.0.0-20230217215838-f01d8eff3f8b
 	github.com/deepmap/oapi-codegen v1.13.0
 	github.com/ethereum/go-ethereum v1.12.0
@@ -17,7 +18,6 @@ require (
 )
 
 require (
-	github.com/Taraxa-project/taraxa-go-client v0.0.3 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect

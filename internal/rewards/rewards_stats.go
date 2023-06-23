@@ -1,7 +1,6 @@
 package rewards
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -31,7 +30,7 @@ type stats struct {
 	ValidatorStats   map[string]validatorStats
 }
 
-func getPeriodTransactionsMap(trxs []*models.Transaction) map[string]bool {
+func getPeriodTransactionsMap(trxs []models.Transaction) map[string]bool {
 	period_transactions := make(map[string]bool, 0)
 	for _, t := range trxs {
 		period_transactions[t.Hash] = true
@@ -40,14 +39,7 @@ func getPeriodTransactionsMap(trxs []*models.Transaction) map[string]bool {
 	return period_transactions
 }
 
-func makeStats(dags []*chain.DagBlock, votes *chain.VotesResponse, trxs []*models.Transaction, committee_size int64) (s *stats) {
-	fmt.Println("makeStats", len(dags), len(votes.Votes), len(trxs))
-	// for _, d := range dags {
-	// 	fmt.Println("dag_block", d.Sender, d.Transactions)
-	// }
-	// for _, t := range trxs {
-	// 	fmt.Println("trx", t.Hash)
-	// }
+func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.Transaction, committee_size int64) (s *stats) {
 	s = new(stats)
 	s.ValidatorStats = make(map[string]validatorStats)
 	s.MaxVotesWeight = Min(votes.PeriodTotalVotesCount, committee_size)

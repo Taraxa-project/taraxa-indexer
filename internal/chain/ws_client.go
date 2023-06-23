@@ -61,9 +61,8 @@ func (client *WsClient) GetChainId() *big.Int {
 	return client.ChainId
 }
 
-func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
-	blk = new(Block)
-	err = client.rpc.Call(blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
+func (client *WsClient) GetBlockByNumber(number uint64) (blk Block, err error) {
+	err = client.rpc.Call(&blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
 	metrics.RpcCallsCounter.Inc()
 	return
 }
@@ -108,15 +107,13 @@ func (client *WsClient) GetPeriodTransactions(number uint64) (trxs []Transaction
 	return
 }
 
-func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *PbftBlockWithDags, err error) {
-	pbftWithDags = new(PbftBlockWithDags)
+func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags PbftBlockWithDags, err error) {
 	err = client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetDagBlockByHash(hash string) (dag *DagBlock, err error) {
-	dag = new(DagBlock)
+func (client *WsClient) GetDagBlockByHash(hash string) (dag DagBlock, err error) {
 	err = client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	metrics.RpcCallsCounter.Inc()
 	return
@@ -128,32 +125,30 @@ func (client *WsClient) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err 
 	return
 }
 
-func (client *WsClient) GetGenesis() (genesis *GenesisObject, err error) {
-	genesis = new(GenesisObject)
-	err = client.rpc.Call(genesis, "taraxa_getConfig")
+func (client *WsClient) GetGenesis() (genesis GenesisObject, err error) {
+	err = client.rpc.Call(&genesis, "taraxa_getConfig")
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetChainStats() (ns *storage.FinalizationData, err error) {
-	ns = new(storage.FinalizationData)
-	err = client.rpc.Call(&ns, "taraxa_getChainStats")
+func (client *WsClient) GetChainStats() (fd storage.FinalizationData, err error) {
+	err = client.rpc.Call(&fd, "taraxa_getChainStats")
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr *VotesResponse, err error) {
+func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error) {
 	err = client.rpc.Call(&vr, "taraxa_getPreviousBlockCertVotes", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetValidatorsAtBlock(block_num *big.Int) (validators []dpos_interface.DposInterfaceValidatorData, err error) {
-	return client.dpos.GetValidatorsAtBlock(block_num)
+func (client *WsClient) GetValidatorsAtBlock(block_num uint64) (validators []dpos_interface.DposInterfaceValidatorData, err error) {
+	return client.dpos.GetValidatorsAtBlock(big.NewInt(0).SetUint64(block_num))
 }
 
-func (client *WsClient) SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription, error) {
-	ch := make(chan *Block)
+func (client *WsClient) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {
+	ch := make(chan Block)
 	sub, err := client.rpc.Subscribe(client.ctx, "eth", ch, "newHeads")
 	metrics.RpcCallsCounter.Inc()
 	return ch, sub, err

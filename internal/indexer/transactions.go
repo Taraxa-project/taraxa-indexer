@@ -1,15 +1,13 @@
 package indexer
 
 import (
-	"fmt"
-
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
 
-func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
+func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 	var traces []chain.TransactionTrace
 	var transactions []chain.Transaction
 
@@ -18,16 +16,14 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	tp.Go(common.MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
 	tp.Wait()
 
-	if err != nil {
+	if err != nil || len(traces) != len(transactions) || len(trxHashes) != len(transactions) {
 		return
 	}
 
 	internal_transactions := new(models.InternalTransactionsResponse)
-	bc.transactions = make([]*models.Transaction, len(transactions))
-
-	for t_idx, trx := range transactions {
-		fmt.Println("processTransactions", t_idx, trx.Hash)
-		bc.transactions[t_idx] = trx.ToModelWithTimestamp(bc.block.Timestamp)
+	bc.transactions = make([]models.Transaction, len(transactions))
+	for t_idx := 0; t_idx < len(transactions); t_idx++ {
+		bc.transactions[t_idx] = transactions[t_idx].ToModelWithTimestamp(bc.block.Timestamp)
 		bc.SaveTransaction(bc.transactions[t_idx])
 		trace := traces[t_idx]
 		if len(trace.Trace) <= 1 {
@@ -38,59 +34,51 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 				continue
 			}
 			internal := makeInternal(bc.transactions[t_idx], entry)
-			internal_transactions.Data = append(internal_transactions.Data, *internal)
+			internal_transactions.Data = append(internal_transactions.Data, internal)
+			bc.SaveTransaction(internal)
 		}
 		logs := models.TransactionLogsResponse{
-			Data: trx.ExtractLogs(),
+			Data: transactions[t_idx].ExtractLogs(),
 		}
-		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
+		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
+		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
 	}
-	bc.Batch.AddToBatchSingleKey(internal_transactions, "internal_transactions")
 	return
 }
 
-func (bc *blockContext) getTransactions(trxHashes *[]string) (trxs []chain.Transaction, err error) {
+func (bc *blockContext) getTransactions(trxHashes []string) (trxs []chain.Transaction, err error) {
 	trxs, err = bc.Client.GetPeriodTransactions(bc.block.Number)
-	// fmt.Println("[")
-	// for _, trx := range trxs {
-	// 	fmt.Println("\"", trx.Hash, "\",")
-	// }
-	// fmt.Println("]")
 	if err != nil {
 		log.WithError(err).Debug("GetPeriodTransactions error")
 		return bc.getTransactionsOld(trxHashes)
 	}
-	fmt.Println("getTransactions")
 
 	return
 }
 
-func (bc *blockContext) getTransactionsOld(trxHashes *[]string) (trxs []chain.Transaction, err error) {
-	fmt.Println("getTransactionsOld")
-	trxs = make([]chain.Transaction, len(*trxHashes))
+func (bc *blockContext) getTransactionsOld(trxHashes []string) (trxs []chain.Transaction, err error) {
+	trxs = make([]chain.Transaction, len(trxHashes))
 
 	tp := common.MakeThreadPool()
-	for i, trx_hash := range *trxHashes {
+	for i, trx_hash := range trxHashes {
 		tp.Go(common.MakeTaskWithResult(bc.Client.GetTransactionByHash, trx_hash, &trxs[i], &err).Run)
 	}
 	tp.Wait()
 	return
 }
 
-func makeInternal(trx *models.Transaction, entry chain.TraceEntry) (internal *models.Transaction) {
-	internal = new(models.Transaction)
-	*internal = *trx
+func makeInternal(trx models.Transaction, entry chain.TraceEntry) (internal models.Transaction) {
+	internal = trx
 	internal.From = entry.Action.From
 	internal.To = entry.Action.To
 	internal.Value = entry.Action.Value
 	internal.GasUsed = chain.ParseUInt(entry.Result.GasUsed)
 	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
 	internal.BlockNumber = 0
-
-	return internal
+	return
 }
 
-func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
+func (bc *blockContext) SaveTransaction(trx models.Transaction) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 
 	from_index := bc.getAddress(bc.Storage, trx.From).AddTransaction(trx.Timestamp)

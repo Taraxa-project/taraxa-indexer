@@ -45,17 +45,17 @@ func parseBool(s string) (v bool) {
 
 type Block struct {
 	models.Pbft
-	Number       string    `json:"number"`
-	Timestamp    string    `json:"timestamp"`
-	Transactions *[]string `json:"transactions"`
-	TotalReward  string    `json:"totalReward"`
+	Number       string   `json:"number"`
+	Timestamp    string   `json:"timestamp"`
+	Transactions []string `json:"transactions"`
+	TotalReward  string   `json:"totalReward"`
 }
 
 func (b *Block) ToModel() (pbft *models.Pbft) {
 	pbft = &b.Pbft
 	pbft.Timestamp = ParseUInt(b.Timestamp)
 	pbft.Number = ParseUInt(b.Number)
-	pbft.TransactionCount = uint64(len(*b.Transactions))
+	pbft.TransactionCount = uint64(len(b.Transactions))
 
 	return
 }
@@ -117,8 +117,8 @@ func GetTransactionType(to, input string, internal bool) models.TransactionType 
 	return models.TransactionType(trx_type)
 }
 
-func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transaction) {
-	trx = &t.Transaction
+func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transaction) {
+	trx = t.Transaction
 	trx.BlockNumber = ParseUInt(t.BlockNumber)
 	trx.Nonce = ParseUInt(t.Nonce)
 	trx.GasPrice = ParseUInt(t.GasPrice)
@@ -139,11 +139,11 @@ func (t *Transaction) ExtractLogs() (logs []models.EventLog) {
 		eLog := models.EventLog{
 			Address:          log.Address,
 			Data:             log.Data,
-			LogIndex:         ParseInt(log.LogIndex),
+			LogIndex:         ParseUInt(log.LogIndex),
 			Removed:          log.Removed,
 			Topics:           log.Topics,
 			TransactionHash:  log.TransactionHash,
-			TransactionIndex: ParseInt(log.TransactionIndex),
+			TransactionIndex: ParseUInt(log.TransactionIndex),
 		}
 		logs = append(logs, eLog)
 	}

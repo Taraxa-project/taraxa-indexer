@@ -81,25 +81,25 @@ func getPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
-	case *models.Transaction:
+	case *models.Transaction, models.Transaction:
 		ret = "t"
-	case *models.Pbft:
+	case *models.Pbft, models.Pbft:
 		ret = "p"
-	case *models.Dag:
+	case *models.Dag, models.Dag:
 		ret = "d"
-	case *storage.AddressStats:
+	case *storage.AddressStats, storage.AddressStats:
 		ret = "s"
-	case *storage.FinalizationData:
+	case *storage.FinalizationData, storage.FinalizationData:
 		ret = "f"
-	case *storage.GenesisHash:
+	case *storage.GenesisHash, storage.GenesisHash:
 		ret = "g"
-	case *storage.WeekStats:
+	case *storage.WeekStats, storage.WeekStats:
 		ret = "w"
-	case *storage.TotalSupply:
+	case *storage.TotalSupply, storage.TotalSupply:
 		ret = "ts"
-	case *models.InternalTransactionsResponse:
+	case *models.InternalTransactionsResponse, models.InternalTransactionsResponse:
 		ret = "i"
-	case *storage.Yield:
+	case *storage.Yield, storage.Yield:
 		ret = "y"
 	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
@@ -246,21 +246,16 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 }
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
-	switch tt := o.(type) {
-	case *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse:
-		value, closer, err := s.get(key)
-		if err != nil {
-			return err
-		}
-		err = rlp.DecodeBytes(value, o)
-		if err != nil {
-			return err
-		}
-		if err := closer.Close(); err != nil {
-			return err
-		}
-	default:
-		log.WithField("type", tt).Fatal("getFromDB: Unexpected type")
+	value, closer, err := s.get(key)
+	if err != nil {
+		return err
+	}
+	err = rlp.DecodeBytes(value, o)
+	if err != nil {
+		return err
+	}
+	if err := closer.Close(); err != nil {
+		return err
 	}
 	return nil
 }

@@ -14,26 +14,25 @@ import (
 
 type AddressCount map[string]int
 
-func makeTransactions(count int) (trxs []*models.Transaction) {
+func makeTransactions(count int) (trxs []models.Transaction) {
 	for i := 0; i < count; i++ {
-		trxs = append(trxs, &models.Transaction{Hash: fmt.Sprintf("0x%x", i)})
+		trxs = append(trxs, models.Transaction{Hash: fmt.Sprintf("0x%x", i)})
 	}
 	return
 }
 
-func makeDags(ac AddressCount) (dags []*chain.DagBlock) {
+func makeDags(ac AddressCount) (dags []chain.DagBlock) {
 	total_count := 0
 	for addr, c := range ac {
 		for i := 0; i < c; i++ {
-			dags = append(dags, &chain.DagBlock{Dag: models.Dag{Sender: addr, Hash: fmt.Sprintf("0x%x", total_count)}, Transactions: []string{fmt.Sprintf("0x%x", total_count)}})
+			dags = append(dags, chain.DagBlock{Dag: models.Dag{Sender: addr, Hash: fmt.Sprintf("0x%x", total_count)}, Transactions: []string{fmt.Sprintf("0x%x", total_count)}})
 			total_count++
 		}
 	}
 	return
 }
 
-func makeVotes(ac AddressCount) (votes *chain.VotesResponse) {
-	votes = new(chain.VotesResponse)
+func makeVotes(ac AddressCount) (votes chain.VotesResponse) {
 	votes.Votes = make([]chain.Vote, 0)
 	total_weight := int64(0)
 	for addr, weight := range ac {
@@ -94,10 +93,9 @@ func TestCalculateTotalRewards(t *testing.T) {
 func TestRewards(t *testing.T) {
 	config := makeTestConfig()
 
-	mc := chain.MakeMockClient()
 	st := pebble.NewStorage("")
 
-	r := MakeRewards(st, st.NewBatch(), config, mc, 1, "0x4")
+	r := MakeRewards(st, st.NewBatch(), config, 1, "0x4")
 
 	trxs := makeTransactions(5)
 	dags := makeDags(AddressCount{"0x1": 1, "0x2": 2, "0x3": 2})
@@ -133,9 +131,8 @@ func TestRewardsWithNodeData(t *testing.T) {
 	validator2_addr := "0x2"
 	validator4_addr := "0x4"
 	validator5_addr := "0x5"
-	mc := chain.MakeMockClient()
 	st := pebble.NewStorage("")
-	r := MakeRewards(st, st.NewBatch(), config, mc, 1, "0x3")
+	r := MakeRewards(st, st.NewBatch(), config, 1, "0x3")
 	total_stake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
 	{
 		rewardsStats := stats{}
@@ -150,7 +147,6 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 		// Expected block reward
 		totalRewards := calculateTotalRewards(r.Config.Chain, total_stake)
-		fmt.Println("votes", totalRewards.votes, "dags", totalRewards.dags, "bonus", totalRewards.bonus)
 		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
 		// We have 1 out of 2 bonus votes, so block author should get half of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(totalRewards.bonus, big.NewInt(2)), rewards[r.blockAuthor])
