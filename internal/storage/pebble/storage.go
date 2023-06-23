@@ -80,6 +80,8 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 func getPrefix(o interface{}) (ret string) {
 
 	switch tt := o.(type) {
+	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
+		ret = "e"
 	case *models.Transaction:
 		ret = "t"
 	case *models.Pbft:
@@ -235,7 +237,7 @@ func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactio
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse:
+	case *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err
