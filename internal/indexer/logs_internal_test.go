@@ -4,20 +4,8 @@ import (
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
 )
-
-func MakeTestBlockContextLogs(mc *chain.ClientMock, blockNumber uint64) *blockContext {
-	st := storage.NewStorage("")
-	bc := MakeBlockContext(st, mc)
-	bc.block = &models.Pbft{}
-	bc.block.Number = blockNumber
-	bc.block.TransactionCount = 1
-
-	return bc
-}
 
 func TestLogsParsing(t *testing.T) {
 	transaction_hash := "0x689811a0705b89add2cd02d8a713bbd43c31c5afc123aeaca264494b375d6968"

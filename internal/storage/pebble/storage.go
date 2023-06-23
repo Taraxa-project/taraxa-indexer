@@ -235,6 +235,15 @@ func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactio
 	return *ptr
 }
 
+func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse {
+	ptr := new(models.TransactionLogsResponse)
+	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetTransactionLogs failed")
+	}
+	return *ptr
+}
+
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
 	case *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse:
