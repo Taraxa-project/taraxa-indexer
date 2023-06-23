@@ -221,6 +221,28 @@ paths:
         default:
           description: |
             Unexpected error
+  /transaction/{hash}/logs:
+    get:
+      tags:
+        - Hash
+      summary: "Returns event logs of transaction"
+      description: |
+        Returns all logs of the transaction with specified hash 
+      operationId: "getTransactionLogs"
+      parameters:
+        - $ref: "#/components/parameters/hashParam"
+      responses:
+        "200":
+          description: |
+            A JSON object array containing a list of all evetn lgos of the transaction with specified hash 
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/TransactionLogsResponse"
+        default:
+          description: |
+            Unexpected error
 components:
   schemas:
     Address:
@@ -504,6 +526,15 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/Transaction"
+    TransactionLogsResponse:
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/EventLog"
     AddressFilter:
       $ref: "#/components/schemas/Address"
     PaginationFilter:

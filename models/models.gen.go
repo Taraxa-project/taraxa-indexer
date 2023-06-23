@@ -127,6 +127,11 @@ type Transaction struct {
 // TransactionType defines model for Transaction.Type.
 type TransactionType uint8
 
+// TransactionLogsResponse defines model for TransactionLogsResponse.
+type TransactionLogsResponse struct {
+	Data []EventLog `json:"data"`
+}
+
 // TransactionsPaginatedResponse defines model for TransactionsPaginatedResponse.
 type TransactionsPaginatedResponse = PaginatedResponse
 
