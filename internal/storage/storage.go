@@ -148,7 +148,7 @@ func GetObjectsPage[T Paginated](s *Storage, address string, from, count uint64)
 
 func getPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
-	case *models.EventLog, models.EventLog:
+	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
 	case *models.Transaction:
 		ret = "t"

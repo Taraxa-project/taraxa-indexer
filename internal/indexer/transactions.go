@@ -16,7 +16,6 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	tp.Wait()
 
 	internal_transactions := new(models.InternalTransactionsResponse)
-	logs := new(models.TransactionLogsResponse)
 	for i, trx := range transactions {
 		trx_model := trx.ToModelWithTimestamp(bc.block.Timestamp)
 		bc.SaveTransaction(trx_model)
@@ -32,7 +31,9 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 			}
 			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
 		}
-		logs.Data = trx.Logs
+		logs := models.TransactionLogsResponse{
+			Data: trx.Logs,
+		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 	}
 	return
