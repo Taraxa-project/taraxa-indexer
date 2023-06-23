@@ -66,15 +66,15 @@ func (b *DagBlock) ToModel() (dag *models.Dag) {
 
 type Transaction struct {
 	models.Transaction
-	Logs	[]models.EventLog `json:"logs"`  
-	BlockNumber      string `json:"blockNumber"`
-	Nonce            string `json:"nonce"`
-	GasPrice         string `json:"gasPrice"`
-	GasUsed          string `json:"gasUsed"`
-	Status           string `json:"status"`
-	TransactionIndex string `json:"transactionIndex"`
-	Input            string `json:"input"`
-	ContractAddress  string `json:"contractAddress"`
+	Logs             []models.EventLog `json:"logs"`
+	BlockNumber      string            `json:"blockNumber"`
+	Nonce            string            `json:"nonce"`
+	GasPrice         string            `json:"gasPrice"`
+	GasUsed          string            `json:"gasUsed"`
+	Status           string            `json:"status"`
+	TransactionIndex string            `json:"transactionIndex"`
+	Input            string            `json:"input"`
+	ContractAddress  string            `json:"contractAddress"`
 }
 
 const emptyInput = "0x"
