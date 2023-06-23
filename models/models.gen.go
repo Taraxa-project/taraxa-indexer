@@ -114,7 +114,6 @@ type Transaction struct {
 	GasPrice         Counter         `json:"gasPrice"`
 	GasUsed          Counter         `json:"gasUsed"`
 	Hash             Hash            `json:"hash"`
-	Logs             []EventLog      `json:"logs"`
 	Nonce            Counter         `json:"nonce"`
 	Status           bool            `json:"status"`
 	Timestamp        Timestamp       `json:"timestamp"`

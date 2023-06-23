@@ -352,7 +352,6 @@ components:
         - timestamp
         - status
         - type
-        - logs
       properties:
         hash:
           $ref: "#/components/schemas/Hash"
@@ -383,10 +382,6 @@ components:
           format: uint8
           enum: [0, 1, 2, 3, 4, 5]
           x-enum-varnames: [transfer, contract_call, contract_creation, internal_transfer, internal_contract_call, internal_contract_creation]
-        logs:
-          type: array
-          items:
-            $ref: "#/components/schemas/EventLog"
     Dag:
       type: object
       required:
