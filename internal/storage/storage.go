@@ -148,6 +148,8 @@ func GetObjectsPage[T Paginated](s *Storage, address string, from, count uint64)
 
 func getPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
+	case *models.EventLog, models.EventLog:
+		ret = "e"
 	case *models.Transaction:
 		ret = "t"
 	case *models.Pbft:
@@ -272,7 +274,7 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *AddressStats, *FinalizationData, *GenesisHash, *WeekStats, *TotalSupply, *models.InternalTransactionsResponse:
+	case *AddressStats, *FinalizationData, *GenesisHash, *WeekStats, *TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err
