@@ -12,6 +12,7 @@ type ClientMock struct {
 	Traces            map[string][]TransactionTrace
 	Transactions      map[string]Transaction
 	BlockTransactions map[uint64][]string
+	EventLogs         map[string][]EventLog
 }
 
 var ErrNotImplemented = fmt.Errorf("Not implemented")
@@ -21,6 +22,7 @@ func MakeMockClient() *ClientMock {
 	m.Traces = make(map[string][]TransactionTrace)
 	m.Transactions = make(map[string]Transaction)
 	m.BlockTransactions = make(map[uint64][]string)
+	m.EventLogs = make(map[string][]EventLog)
 	return m
 }
 
@@ -42,6 +44,10 @@ func (c *ClientMock) TraceBlockTransactions(num uint64) (traces []TransactionTra
 
 func (c *ClientMock) GetTransactionByHash(hash string) (trx Transaction, err error) {
 	return c.Transactions[hash], nil
+}
+
+func (c *ClientMock) GetTransactionLogsByHash(hash string) (logs []EventLog, err error) {
+	return c.EventLogs[hash], nil
 }
 
 func (c *ClientMock) GetPeriodTransactions(p uint64) (trx []Transaction, err error) {
@@ -84,6 +90,17 @@ func (c *ClientMock) AddTransactionFromJson(trx_json string) {
 
 	tm := trx.ToModelWithTimestamp(1)
 	c.BlockTransactions[tm.BlockNumber] = append(c.BlockTransactions[tm.BlockNumber], trx.Hash)
+	c.Transactions[trx.Hash] = trx
+}
+
+func (c *ClientMock) AddLogsFromJson(trx_json string) {
+	var trx Transaction
+	err := json.Unmarshal([]byte(trx_json), &trx)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	c.EventLogs[trx.Hash] = trx.Logs
 	c.Transactions[trx.Hash] = trx
 }
 

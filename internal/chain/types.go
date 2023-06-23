@@ -64,17 +64,27 @@ func (b *DagBlock) ToModel() (dag *models.Dag) {
 	return
 }
 
+type EventLog struct {
+	Address          string   `json:"address"`
+	Data             string   `json:"data"`
+	LogIndex         string   `json:"logIndex"`
+	Removed          bool     `json:"removed"`
+	Topics           []string `json:"topics"`
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"`
+}
+
 type Transaction struct {
 	models.Transaction
-	Logs             []models.EventLog `json:"logs"`
-	BlockNumber      string            `json:"blockNumber"`
-	Nonce            string            `json:"nonce"`
-	GasPrice         string            `json:"gasPrice"`
-	GasUsed          string            `json:"gasUsed"`
-	Status           string            `json:"status"`
-	TransactionIndex string            `json:"transactionIndex"`
-	Input            string            `json:"input"`
-	ContractAddress  string            `json:"contractAddress"`
+	Logs             []EventLog `json:"logs"`
+	BlockNumber      string     `json:"blockNumber"`
+	Nonce            string     `json:"nonce"`
+	GasPrice         string     `json:"gasPrice"`
+	GasUsed          string     `json:"gasUsed"`
+	Status           string     `json:"status"`
+	TransactionIndex string     `json:"transactionIndex"`
+	Input            string     `json:"input"`
+	ContractAddress  string     `json:"contractAddress"`
 }
 
 const emptyInput = "0x"
@@ -110,6 +120,22 @@ func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transa
 	trx.Timestamp = timestamp
 
 	return
+}
+
+func (t *Transaction) ExtractLogs() (logs []models.EventLog) {
+	for _, log := range t.Logs {
+		eLog := models.EventLog{
+			Address:          log.Address,
+			Data:             log.Data,
+			LogIndex:         ParseInt(log.LogIndex),
+			Removed:          log.Removed,
+			Topics:           log.Topics,
+			TransactionHash:  log.TransactionHash,
+			TransactionIndex: ParseInt(log.TransactionIndex),
+		}
+		logs = append(logs, eLog)
+	}
+	return logs
 }
 
 type PbftBlockWithDags struct {

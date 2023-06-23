@@ -32,7 +32,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
 		}
 		logs := models.TransactionLogsResponse{
-			Data: trx.Logs,
+			Data: trx.ExtractLogs(),
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 	}
