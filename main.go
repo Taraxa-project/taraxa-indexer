@@ -16,6 +16,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
@@ -48,7 +49,7 @@ func init() {
 		Info("Application started")
 }
 
-func setupCloseHandler(st *storage.Storage, fn func()) {
+func setupCloseHandler(st storage.Storage, fn func()) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
@@ -59,7 +60,7 @@ func setupCloseHandler(st *storage.Storage, fn func()) {
 }
 
 func main() {
-	st := storage.NewStorage(filepath.Join(*data_dir, "db"))
+	st := pebble.NewStorage(filepath.Join(*data_dir, "db"))
 	setupCloseHandler(st, func() { st.Close() })
 
 	swagger, err := api.GetSwagger()

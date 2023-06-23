@@ -163,7 +163,7 @@ type TraceEntryResult struct {
 type TraceEntry struct {
 	Action       Action           `json:"action"`
 	Subtraces    uint16           `json:"subtraces"`
-	TraceAddress []uint16         `json:"stateDiff"`
+	TraceAddress []uint16         `json:"traceAddress"`
 	Type         string           `json:"type"`
 	Result       TraceEntryResult `json:"result"`
 }

@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -9,15 +8,15 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
 	log "github.com/sirupsen/logrus"
-	"github.com/spiretechnology/go-pool"
 )
 
 type blockContext struct {
-	storage      *storage.Storage
-	batch        *storage.Batch
+	storage      storage.Storage
+	batch        storage.Batch
 	client       chain.Client
 	block        *models.Pbft
 	finalized    *storage.FinalizationData
@@ -25,12 +24,7 @@ type blockContext struct {
 	addressStats map[string]*storage.AddressStats
 }
 
-// isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
-func makeThreadPool() pool.Pool {
-	return pool.New(uint(runtime.NumCPU()))
-}
-
-func MakeBlockContext(s *storage.Storage, client chain.Client) *blockContext {
+func MakeBlockContext(s storage.Storage, client chain.Client) *blockContext {
 	var bc blockContext
 	bc.storage = s
 	bc.batch = s.NewBatch()
@@ -56,7 +50,7 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	start_processing := time.Now()
 	bc.block = raw.ToModel()
 
-	tp := makeThreadPool()
+	tp := utils.MakeThreadPool()
 	tp.Go(func() { bc.updateValidatorStats(bc.block) })
 	tp.Go(func() { dags_count, err = bc.processDags() })
 	tp.Go(func() { err = bc.processTransactions(raw.Transactions) })
@@ -124,9 +118,9 @@ func (bc *blockContext) processDagsOld() (dags_count uint64, err error) {
 	bc.block.PbftHash = block_with_dags.BlockHash
 
 	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
-	tp := makeThreadPool()
+	tp := utils.MakeThreadPool()
 	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
+		tp.Go(utils.MakeTask(bc.processDag, dag_hash, &err).Run)
 	}
 	tp.Wait()
 	return
@@ -147,7 +141,7 @@ func (bc *blockContext) saveDag(dag *models.Dag) {
 	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
 }
 
-func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.AddressStats {
+func (bc *blockContext) getAddress(s storage.Storage, addr string) *storage.AddressStats {
 	addr = strings.ToLower(addr)
 	bc.statsMutex.Lock()
 	defer bc.statsMutex.Unlock()
