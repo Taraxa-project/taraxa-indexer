@@ -66,6 +66,7 @@ func (b *DagBlock) ToModel() (dag *models.Dag) {
 
 type Transaction struct {
 	models.Transaction
+	Logs	[]models.EventLog `json:"logs"`  
 	BlockNumber      string `json:"blockNumber"`
 	Nonce            string `json:"nonce"`
 	GasPrice         string `json:"gasPrice"`

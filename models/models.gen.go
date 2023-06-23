@@ -43,6 +43,7 @@ type DagsPaginatedResponse = PaginatedResponse
 type EventLog struct {
 	Address          Address  `json:"address"`
 	Data             string   `json:"data"`
+	LogIndex         Counter  `json:"logIndex"`
 	Removed          bool     `json:"removed"`
 	Topics           []string `json:"topics"`
 	TransactionHash  Hash     `json:"transactionHash"`
