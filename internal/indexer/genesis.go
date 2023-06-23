@@ -10,13 +10,13 @@ import (
 )
 
 type Genesis struct {
-	storage *storage.Storage
+	storage storage.Storage
 	genesis *chain.GenesisObject
 	bc      *blockContext
 	hash    string
 }
 
-func MakeGenesis(s *storage.Storage, c *chain.WsClient, genesisHash storage.GenesisHash) (*Genesis, error) {
+func MakeGenesis(s storage.Storage, c *chain.WsClient, genesisHash storage.GenesisHash) (*Genesis, error) {
 	var genesis Genesis
 	var err error
 	genesis.storage = s

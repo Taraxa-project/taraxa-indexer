@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -10,9 +11,9 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	var traces []chain.TransactionTrace
 	var transactions []chain.Transaction
 
-	tp := makeThreadPool()
-	tp.Go(MakeTaskWithResult(bc.client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
-	tp.Go(MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
+	tp := utils.MakeThreadPool()
+	tp.Go(utils.MakeTaskWithResult(bc.client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
+	tp.Go(utils.MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
 	tp.Wait()
 
 	internal_transactions := new(models.InternalTransactionsResponse)
@@ -48,9 +49,9 @@ func (bc *blockContext) getTransactions(trxHashes *[]string) (trxs []chain.Trans
 func (bc *blockContext) getTransactionsOld(trxHashes *[]string) (trxs []chain.Transaction, err error) {
 	trxs = make([]chain.Transaction, len(*trxHashes))
 
-	tp := makeThreadPool()
+	tp := utils.MakeThreadPool()
 	for i, trx_hash := range *trxHashes {
-		tp.Go(MakeTaskWithResult(bc.client.GetTransactionByHash, trx_hash, &trxs[i], &err).Run)
+		tp.Go(utils.MakeTaskWithResult(bc.client.GetTransactionByHash, trx_hash, &trxs[i], &err).Run)
 	}
 	tp.Wait()
 	return

@@ -5,12 +5,13 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func MakeTestBlockContext(mc *chain.ClientMock, blockNumber uint64) *blockContext {
-	st := storage.NewStorage("")
+	st := pebble.NewStorage("")
 	bc := MakeBlockContext(st, mc)
 	bc.block = &models.Pbft{}
 	bc.block.Number = blockNumber

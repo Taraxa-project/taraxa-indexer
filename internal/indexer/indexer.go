@@ -11,11 +11,11 @@ import (
 type Indexer struct {
 	retry_time                  time.Duration
 	client                      *chain.WsClient
-	storage                     *storage.Storage
+	storage                     storage.Storage
 	consistency_check_available bool
 }
 
-func MakeAndRun(url string, storage *storage.Storage) {
+func MakeAndRun(url string, storage storage.Storage) {
 	i := NewIndexer(url, storage)
 	for {
 		err := i.run()
@@ -25,7 +25,7 @@ func MakeAndRun(url string, storage *storage.Storage) {
 	}
 }
 
-func NewIndexer(url string, storage *storage.Storage) (i *Indexer) {
+func NewIndexer(url string, storage storage.Storage) (i *Indexer) {
 	var err error
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
