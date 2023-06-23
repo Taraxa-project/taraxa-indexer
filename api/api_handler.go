@@ -136,6 +136,10 @@ func (a *ApiHandler) GetInternalTransactions(ctx echo.Context, hash HashParam) e
 	return ctx.JSON(http.StatusOK, a.storage.GetInternalTransactions(hash))
 }
 
+func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error {
+	return ctx.JSON(http.StatusOK, a.storage.GetTransactionLogs(hash))
+}
+
 func getPaginationStart(param *uint64) uint64 {
 	if param == nil {
 		return uint64(0)
