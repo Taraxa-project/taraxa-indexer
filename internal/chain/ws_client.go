@@ -65,17 +65,6 @@ func (client *WsClient) GetTransactionByHash(hash string) (trx Transaction, err 
 	return
 }
 
-func (client *WsClient) GetTransactionLogsByHash(hash string) (logs []EventLog, err error) {
-	var trx Transaction
-	err = client.rpc.Call(&trx, "eth_getTransactionReceipt", hash)
-	metrics.RpcCallsCounter.Inc()
-	if err != nil {
-		return
-	}
-	logs = trx.Logs
-	return
-}
-
 func (client *WsClient) addTransactionReceiptData(trx *Transaction) (err error) {
 	err = client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
 	metrics.RpcCallsCounter.Inc()

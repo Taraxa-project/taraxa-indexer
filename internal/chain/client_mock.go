@@ -46,10 +46,6 @@ func (c *ClientMock) GetTransactionByHash(hash string) (trx Transaction, err err
 	return c.Transactions[hash], nil
 }
 
-func (c *ClientMock) GetTransactionLogsByHash(hash string) (logs []EventLog, err error) {
-	return c.EventLogs[hash], nil
-}
-
 func (c *ClientMock) GetPeriodTransactions(p uint64) (trx []Transaction, err error) {
 	return nil, ErrNotImplemented
 }

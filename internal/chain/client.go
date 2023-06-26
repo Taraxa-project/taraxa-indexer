@@ -10,7 +10,6 @@ type Client interface {
 	GetLatestPeriod() (uint64, error)
 	TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error)
 	GetTransactionByHash(hash string) (trx Transaction, err error)
-	GetTransactionLogsByHash(hash string) (logs []EventLog, err error)
 	GetPeriodTransactions(period uint64) (trxs []Transaction, err error)
 	GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags *PbftBlockWithDags, err error)
 	GetDagBlockByHash(hash string) (dag *DagBlock, err error)
