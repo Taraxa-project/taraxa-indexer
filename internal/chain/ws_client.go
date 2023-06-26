@@ -44,12 +44,8 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 }
 
 func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {
-	l_err := client.rpc.Call(&traces, "trace_replayBlockTransactions", fmt.Sprintf("0x%x", number), []string{"trace"})
+	err = client.rpc.Call(&traces, "trace_replayBlockTransactions", fmt.Sprintf("0x%x", number), []string{"trace"})
 	defer metrics.RpcCallsCounter.Inc()
-	if l_err != nil {
-		return
-	}
-
 	return
 }
 

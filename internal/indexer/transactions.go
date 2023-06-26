@@ -16,6 +16,10 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	tp.Go(utils.MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
 	tp.Wait()
 
+	if err != nil {
+		return
+	}
+
 	internal_transactions := new(models.InternalTransactionsResponse)
 	for i, trx := range transactions {
 		trx_model := trx.ToModelWithTimestamp(bc.block.Timestamp)
