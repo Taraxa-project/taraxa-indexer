@@ -59,6 +59,22 @@ func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
 	return a.DagsCount
 }
 
+func (a *Account) AddToBalance(account models.Account) big.Int {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	parsedBalance, okBalance := new(big.Int).SetString(*a.Balance, 10)
+	parsedValue, okValue := new(big.Int).SetString(*account.Balance, 10)
+	if okBalance && okValue {
+		newBalance := parsedBalance.Add(parsedBalance, parsedValue)
+		strValue := newBalance.String()
+		a.Balance = &strValue
+		return *newBalance
+	} else {
+		log.WithField("account", account).Error("Error parsing balance")
+		return *parsedBalance
+	}
+}
+
 func MakeEmptyAddressStats(addr string) *AddressStats {
 	data := new(AddressStats)
 	data.Address = addr
