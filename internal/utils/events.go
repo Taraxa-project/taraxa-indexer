@@ -34,7 +34,7 @@ type CommissionRewardsClaimedEvent struct {
 
 const dposABI = `[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"validator","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RewardsClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"validator","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"CommissionRewardsClaimed","type":"event"}]`
 
-func decodeEvent(log models.EventLog) (interface{}, error) {
+func DecodeEvent(log models.EventLog) (interface{}, error) {
 	// Convert the hex-encoded data to bytes
 	data, err := hex.DecodeString(log.Data)
 	if err != nil {
@@ -68,9 +68,9 @@ func decodeEvent(log models.EventLog) (interface{}, error) {
 	}
 }
 
-func decodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
+func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
 	for _, log := range logs {
-		decoded, err := decodeEvent(log)
+		decoded, err := DecodeEvent(log)
 		if err != nil {
 			return nil, err
 		}
