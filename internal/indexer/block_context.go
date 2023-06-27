@@ -22,7 +22,6 @@ type blockContext struct {
 	finalized    *storage.FinalizationData
 	statsMutex   sync.RWMutex
 	addressStats map[string]*storage.AddressStats
-	accounts     map[string]*storage.Account
 }
 
 func MakeBlockContext(s storage.Storage, client chain.Client) *blockContext {
@@ -31,7 +30,6 @@ func MakeBlockContext(s storage.Storage, client chain.Client) *blockContext {
 	bc.batch = s.NewBatch()
 	bc.client = client
 	bc.addressStats = make(map[string]*storage.AddressStats)
-	bc.accounts = make(map[string]*storage.Account)
 	bc.finalized = s.GetFinalizationData()
 
 	return &bc
@@ -155,18 +153,4 @@ func (bc *blockContext) getAddress(s storage.Storage, addr string) *storage.Addr
 	bc.addressStats[addr] = s.GetAddressStats(addr)
 
 	return bc.addressStats[addr]
-}
-
-func (bc *blockContext) getAccount(s storage.Storage, addr string) *storage.Account {
-	addr = strings.ToLower(addr)
-	bc.statsMutex.Lock()
-	defer bc.statsMutex.Unlock()
-	account := bc.accounts[addr]
-	if account != nil {
-		return account
-	}
-
-	bc.accounts[addr] = s.GetBalance(addr)
-
-	return bc.accounts[addr]
 }
