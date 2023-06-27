@@ -36,6 +36,10 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 			}
 			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
 		}
+		logs := models.TransactionLogsResponse{
+			Data: trx.ExtractLogs(),
+		}
+		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 	}
 	return
 }
@@ -82,6 +86,12 @@ func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
 	bc.batch.AddToBatch(trx, trx.From, from_index)
 	bc.batch.AddToBatch(trx, trx.To, to_index)
 }
+
+// func (bc *blockContext) SaveEventLog(eventLog *models.EventLog) {
+// 	log.WithFields(log.Fields{"address": eventLog.Address, "trnxHash": eventLog.TransactionHash}).Trace("Saving Event Log")
+
+// 	bc.batch.AddToBatch(eventLog, eventLog.TransactionHash)
+// }
 
 func (bc *blockContext) addAddressStatsToBatch() {
 	for _, stats := range bc.addressStats {

@@ -39,6 +39,17 @@ type Dag struct {
 // DagsPaginatedResponse defines model for DagsPaginatedResponse.
 type DagsPaginatedResponse = PaginatedResponse
 
+// EventLog defines model for EventLog.
+type EventLog struct {
+	Address          Address  `json:"address"`
+	Data             string   `json:"data"`
+	LogIndex         Counter  `json:"logIndex"`
+	Removed          bool     `json:"removed"`
+	Topics           []string `json:"topics"`
+	TransactionHash  Hash     `json:"transactionHash"`
+	TransactionIndex Counter  `json:"transactionIndex"`
+}
+
 // Hash defines model for Hash.
 type Hash = string
 
@@ -115,6 +126,11 @@ type Transaction struct {
 
 // TransactionType defines model for Transaction.Type.
 type TransactionType uint8
+
+// TransactionLogsResponse defines model for TransactionLogsResponse.
+type TransactionLogsResponse struct {
+	Data []EventLog `json:"data"`
+}
 
 // TransactionsPaginatedResponse defines model for TransactionsPaginatedResponse.
 type TransactionsPaginatedResponse = PaginatedResponse

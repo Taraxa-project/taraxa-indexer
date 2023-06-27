@@ -18,6 +18,7 @@ type Storage interface {
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash
 	GetInternalTransactions(hash string) models.InternalTransactionsResponse
+	GetTransactionLogs(hash string) models.TransactionLogsResponse
 }
 
 func GetTotal[T Paginated](s Storage, address string) (r uint64) {
