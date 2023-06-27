@@ -204,7 +204,7 @@ func (s *Storage) GetFinalizationData() *storage.FinalizationData {
 	return ptr
 }
 
-func (s *Storage) GetBalance(addr string) *models.Account {
+func (s *Storage) GetBalance(addr string) *storage.Account {
 	ptr := storage.MakeEmptyAccount(addr)
 	err := s.getFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
 	if err != nil && err != pebble.ErrNotFound {

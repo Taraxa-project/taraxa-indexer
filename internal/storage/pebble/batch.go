@@ -31,6 +31,13 @@ func (b *Batch) SetTotalSupply(s *storage.TotalSupply) {
 	}
 }
 
+func (b *Batch) SetBalance(a *storage.Account) {
+	err := b.addToBatch(a, []byte(getPrefix((*storage.Account)(a))))
+	if err != nil {
+		log.WithError(err).Fatal("SetTotalSupply failed")
+	}
+}
+
 func (b *Batch) SetFinalizationData(f *storage.FinalizationData) {
 	err := b.addToBatch(f, []byte(getPrefix(f)))
 	if err != nil {

@@ -95,8 +95,8 @@ func MakeEmptyAddressStats(addr string) *AddressStats {
 	return data
 }
 
-func MakeEmptyAccount(addr string) *models.Account {
-	data := new(models.Account)
+func MakeEmptyAccount(addr string) *Account {
+	data := new(Account)
 	data.Address = &addr
 	return data
 }
