@@ -1,6 +1,8 @@
 package indexer
 
 import (
+	"math/big"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
@@ -31,6 +33,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 					continue
 				}
 				internal := makeInternal(trx_model, entry)
+				tp.Go(utils.MakeTask(bc.updateInternalHolderBalances, internal, &err).Run)
 				internal_transactions.Data = append(internal_transactions.Data, internal)
 				bc.SaveTransaction(&internal)
 			}
@@ -40,6 +43,47 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 			Data: trx.ExtractLogs(),
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
+		tp.Go(utils.MakeTask(bc.updateHolderBalances, trx, &err).Run)
+	}
+	return
+}
+
+func (bc *blockContext) updateHolderBalances(trx chain.Transaction) (err error) {
+
+	logs := trx.ExtractLogs()
+	if len(logs) > 0 {
+		events, err := utils.DecodeRewardsTopics(logs)
+		if err != nil {
+			return err
+		}
+		for _, event := range events {
+			currentBalance := bc.storage.GetBalance(event.Account)
+			currentBalance.AddToBalance(*event.Value)
+			bc.batch.AddToBatchSingleKey(currentBalance, trx.To)
+		}
+	}
+	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
+	if ok && parsedValue.Cmp(big.NewInt(0)) == 1 {
+		fromBalance := bc.storage.GetBalance(trx.From)
+		toBalance := bc.storage.GetBalance(trx.To)
+		fromBalance.SubtractFromBalance(*parsedValue)
+		toBalance.AddToBalance(*parsedValue)
+		bc.batch.AddToBatchSingleKey(fromBalance, trx.From)
+		bc.batch.AddToBatchSingleKey(toBalance, trx.To)
+	}
+	return
+}
+
+func (bc *blockContext) updateInternalHolderBalances(trx models.Transaction) (err error) {
+
+	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
+	if ok && parsedValue.Cmp(big.NewInt(0)) == 1 {
+		fromBalance := bc.storage.GetBalance(trx.From)
+		toBalance := bc.storage.GetBalance(trx.To)
+		fromBalance.SubtractFromBalance(*parsedValue)
+		toBalance.AddToBalance(*parsedValue)
+		bc.batch.AddToBatchSingleKey(fromBalance, trx.From)
+		bc.batch.AddToBatchSingleKey(toBalance, trx.To)
 	}
 	return
 }
