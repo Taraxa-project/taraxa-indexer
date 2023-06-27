@@ -31,8 +31,9 @@ type AddressStats struct {
 }
 
 type Account struct {
-	models.Account
-	mutex sync.RWMutex `rlp:"-"`
+	Address string       `json:"address"`
+	Balance *big.Int     `json:"balance"`
+	mutex   sync.RWMutex `rlp:"-"`
 }
 
 func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
@@ -62,31 +63,25 @@ func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
 func (a *Account) AddToBalance(value big.Int) big.Int {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
-	parsedBalance, okBalance := new(big.Int).SetString(*a.Balance, 10)
-	if okBalance {
-		newBalance := parsedBalance.Add(parsedBalance, &value)
-		strValue := newBalance.String()
-		a.Balance = &strValue
-		return *newBalance
-	} else {
-		log.WithField("account", a.Account).Error("Error parsing balance")
-		return *parsedBalance
+	newBalance := a.Balance.Add(a.Balance, &value)
+	return *newBalance
+}
+
+func (a *Account) ToModel() *models.Account {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	balanceStr := a.Balance.String()
+	return &models.Account{
+		Address: &a.Address,
+		Balance: &balanceStr,
 	}
 }
 
 func (a *Account) SubtractFromBalance(value big.Int) big.Int {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
-	parsedBalance, okBalance := new(big.Int).SetString(*a.Balance, 10)
-	if okBalance {
-		newBalance := parsedBalance.Sub(parsedBalance, &value)
-		strValue := newBalance.String()
-		a.Balance = &strValue
-		return *newBalance
-	} else {
-		log.WithField("account", a.Account).Error("Error parsing balance")
-		return *parsedBalance
-	}
+	newBalance := a.Balance.Sub(a.Balance, &value)
+	return *newBalance
 }
 
 func MakeEmptyAddressStats(addr string) *AddressStats {
@@ -97,7 +92,8 @@ func MakeEmptyAddressStats(addr string) *AddressStats {
 
 func MakeEmptyAccount(addr string) *Account {
 	data := new(Account)
-	data.Address = &addr
+	data.Address = addr
+	data.Balance = big.NewInt(0)
 	return data
 }
 

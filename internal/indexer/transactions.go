@@ -49,41 +49,41 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 }
 
 func (bc *blockContext) updateHolderBalances(trx chain.Transaction) (err error) {
-
 	logs := trx.ExtractLogs()
+
 	if len(logs) > 0 {
 		events, err := utils.DecodeRewardsTopics(logs)
 		if err != nil {
 			return err
 		}
 		for _, event := range events {
-			currentBalance := bc.storage.GetBalance(event.Account)
+			currentBalance := bc.storage.GetAccount(event.Account)
 			currentBalance.AddToBalance(*event.Value)
-			bc.batch.AddToBatchSingleKey(currentBalance, trx.To)
+			bc.batch.AddToBatchSingleKey(currentBalance.ToModel(), trx.To)
 		}
 	}
 	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
 	if ok && parsedValue.Cmp(big.NewInt(0)) == 1 {
-		fromBalance := bc.storage.GetBalance(trx.From)
-		toBalance := bc.storage.GetBalance(trx.To)
+		fromBalance := bc.storage.GetAccount(trx.From)
+		toBalance := bc.storage.GetAccount(trx.To)
 		fromBalance.SubtractFromBalance(*parsedValue)
 		toBalance.AddToBalance(*parsedValue)
-		bc.batch.AddToBatchSingleKey(fromBalance, trx.From)
-		bc.batch.AddToBatchSingleKey(toBalance, trx.To)
+		bc.batch.AddToBatchSingleKey(fromBalance.ToModel(), trx.From)
+		bc.batch.AddToBatchSingleKey(toBalance.ToModel(), trx.To)
 	}
 	return
 }
 
 func (bc *blockContext) updateInternalHolderBalances(trx models.Transaction) (err error) {
-
 	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
+
 	if ok && parsedValue.Cmp(big.NewInt(0)) == 1 {
-		fromBalance := bc.storage.GetBalance(trx.From)
-		toBalance := bc.storage.GetBalance(trx.To)
+		fromBalance := bc.storage.GetAccount(trx.From)
+		toBalance := bc.storage.GetAccount(trx.To)
 		fromBalance.SubtractFromBalance(*parsedValue)
 		toBalance.AddToBalance(*parsedValue)
-		bc.batch.AddToBatchSingleKey(fromBalance, trx.From)
-		bc.batch.AddToBatchSingleKey(toBalance, trx.To)
+		bc.batch.AddToBatchSingleKey(fromBalance.ToModel(), trx.From)
+		bc.batch.AddToBatchSingleKey(toBalance.ToModel(), trx.To)
 	}
 	return
 }

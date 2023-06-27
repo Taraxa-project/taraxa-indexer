@@ -296,8 +296,12 @@ components:
       properties:
         address:
           type: string
+          default: ""
+          nullable: false
         balance:
           type: string
+          default: ""
+          nullable: false
           example: "123"
     Week:
       type: object

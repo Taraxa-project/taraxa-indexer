@@ -70,6 +70,9 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 
 func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
 	for _, log := range logs {
+		if log.Address == "0x00000000000000000000000000000000000000fe" {
+			continue
+		}
 		decoded, err := DecodeEvent(log)
 		if err != nil {
 			return nil, err

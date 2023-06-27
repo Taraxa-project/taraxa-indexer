@@ -204,13 +204,23 @@ func (s *Storage) GetFinalizationData() *storage.FinalizationData {
 	return ptr
 }
 
-func (s *Storage) GetBalance(addr string) *storage.Account {
-	ptr := storage.MakeEmptyAccount(addr)
+func (s *Storage) GetAccount(addr string) *storage.Account {
+	ptr := storage.MakeEmptyAccount(addr).ToModel()
 	err := s.getFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
 	if err != nil && err != pebble.ErrNotFound {
-		log.Fatal("GetAddressStats ", err)
+		log.Fatal("GetAccount ", err)
 	}
-	return ptr
+	parsedBalance, okBalance := new(big.Int).SetString(*ptr.Balance, 10)
+	if okBalance {
+		return &storage.Account{
+			Address: *ptr.Address,
+			Balance: parsedBalance,
+		}
+	} else {
+		log.WithField("account", ptr.Address).Error("Error parsing balance")
+		return nil
+	}
+
 }
 
 func (s *Storage) GetAddressStats(addr string) *storage.AddressStats {
