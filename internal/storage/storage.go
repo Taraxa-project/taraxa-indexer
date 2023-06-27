@@ -15,6 +15,7 @@ type Storage interface {
 	GetWeekStats(year, week int32) WeekStats
 	GetFinalizationData() *FinalizationData
 	GetAddressStats(addr string) *AddressStats
+	GetBalance(adds string) *models.Account
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash
 	GetInternalTransactions(hash string) models.InternalTransactionsResponse

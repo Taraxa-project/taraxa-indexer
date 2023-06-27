@@ -30,6 +30,11 @@ type AddressStats struct {
 	mutex   sync.RWMutex `rlp:"-"`
 }
 
+type Account struct {
+	models.Account
+	mutex sync.RWMutex `rlp:"-"`
+}
+
 func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
@@ -57,6 +62,12 @@ func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
 func MakeEmptyAddressStats(addr string) *AddressStats {
 	data := new(AddressStats)
 	data.Address = addr
+	return data
+}
+
+func MakeEmptyAccount(addr string) *models.Account {
+	data := new(models.Account)
+	data.Address = &addr
 	return data
 }
 
