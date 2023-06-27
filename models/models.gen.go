@@ -13,6 +13,12 @@ const (
 	Transfer                 TransactionType = 0
 )
 
+// Account defines model for Account.
+type Account struct {
+	Address *string `json:"address,omitempty"`
+	Balance *string `json:"balance,omitempty"`
+}
+
 // Address defines model for Address.
 type Address = string
 

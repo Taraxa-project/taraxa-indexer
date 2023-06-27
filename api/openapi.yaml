@@ -21,6 +21,30 @@ servers:
   - url: https://indexer.devnet.taraxa.io
     description: Devnet network
 paths:
+  /holders:
+    get:
+      tags:
+        - Holders
+      summary: "Returns the list of TARA token holders and their balances"
+      description: |
+        Returns the list of TARA token holders and their balances
+      operationId: "getHolders"
+      responses:
+        "200":
+          description: |
+            Currentlist of TARA token holders and their balances as a string- string pair as values could be pretty big
+          content:
+            application/json:
+              schema:
+                properties:
+                  holders:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/Account"
+        default:
+          description: |
+            Unexpected error
   /totalSupply:
     get:
       tags:
@@ -267,6 +291,14 @@ components:
       type: integer
       format: uint64
       example: 1676682705
+    Account:
+      type: object
+      properties:
+        address:
+          type: string
+        balance:
+          type: string
+          example: "123"
     Week:
       type: object
       properties:

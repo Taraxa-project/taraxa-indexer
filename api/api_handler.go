@@ -132,6 +132,10 @@ func (a *ApiHandler) GetTotalSupply(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, a.storage.GetTotalSupply().String())
 }
 
+func (a *ApiHandler) GetHolders(ctx echo.Context) error {
+	return ctx.JSON(http.StatusOK, a.storage.GetTotalSupply().String())
+}
+
 func (a *ApiHandler) GetInternalTransactions(ctx echo.Context, hash HashParam) error {
 	return ctx.JSON(http.StatusOK, a.storage.GetInternalTransactions(hash))
 }
