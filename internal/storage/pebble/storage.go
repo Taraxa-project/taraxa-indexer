@@ -224,13 +224,29 @@ func (s *Storage) GetAccount(addr string) *storage.Account {
 
 }
 
-func (s *Storage) GetAccounts() *map[string]*storage.Account {
-	ptr := make(map[string]*storage.Account)
-	err := s.getFromDB(ptr, getKey(getPrefix(ptr), "0x0", 0))
+func (s *Storage) GetAccounts() *map[string]*models.Account {
+	ptr := make(map[string]*models.Account)
+	err := s.getFromDB(&ptr, getKey(getPrefix(ptr), "0x0", 0))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAccounts ", err)
 	}
 	return &ptr
+}
+
+func (s *Storage) HolderModelsToStorage(ptr *map[string]*models.Account) *map[string]*storage.Account {
+	ret := make(map[string]*storage.Account)
+	for k, v := range *ptr {
+		parsedBalance, okBalance := new(big.Int).SetString(*v.Balance, 10)
+		if okBalance {
+			ret[k] = &storage.Account{
+				Address: *v.Address,
+				Balance: parsedBalance,
+			}
+		} else {
+			log.WithField("account", v.Address).Error("Error parsing balance")
+		}
+	}
+	return &ret
 }
 
 func (s *Storage) GetAddressStats(addr string) *storage.AddressStats {

@@ -184,10 +184,66 @@ func TestHolders(t *testing.T) {
 		t.Error(err)
 	}
 
-	err := st.getFromDB(&holderMap, getKey(getPrefix(holderMap), "0x0", 0))
+	checkHolderMap := make(map[string]*models.Account)
 
-	if err == nil {
+	err := st.getFromDB(&checkHolderMap, getKey(getPrefix(holderMap), "0x0", 0))
+
+	if err != nil {
 		t.Error("Clean DB does not work")
 		os.Remove("/tmp/test")
 	}
+	assert.Equal(t, 1, len(checkHolderMap))
+}
+
+func TestGetPaginatedHolders(t *testing.T) {
+	store := NewStorage("/tmp/test")
+	defer store.Close()
+
+	holders := make(map[string]*models.Account)
+
+	count := uint64(100)
+	for i := uint64(1); i <= count; i++ {
+		address := "0x" + strconv.FormatUint(i, 10)
+		balance := big.NewInt(int64(i)).String()
+		newAccount := models.Account{Address: &address, Balance: &balance}
+		holders[address] = &newAccount
+	}
+	t.Log("Holders length: ", len(holders))
+	batch := store.NewBatch()
+	err := batch.MarshalAndAddToBatchSingleKey(&holders, "0x0")
+	batch.CommitBatch()
+
+	if err != nil {
+		t.Error("Adding to DB does not work", err)
+	}
+
+	if err := store.Clean(); err != nil {
+		t.Error(err)
+	}
+
+	holderMap := make(map[string]*models.Account)
+	error := store.getFromDB(&holderMap, getKey(getPrefix(holderMap), "0x0", 0))
+
+	if err == nil || error == nil {
+		t.Error("Clean DB does not work")
+		os.Remove("/tmp/test")
+	}
+
+	ret, pagination := storage.GetAccountsPage[models.Account](store, 0, uint64(count))
+	assert.False(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(0))
+	assert.Equal(t, pagination.End, uint64(100))
+	assert.Equal(t, count, uint64(len(ret)))
+
+	ret, pagination = storage.GetAccountsPage[models.Account](store, 50, 100)
+	assert.Equal(t, len(ret), 50)
+	assert.False(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(50))
+	assert.Equal(t, pagination.End, uint64(100))
+
+	ret, pagination = storage.GetAccountsPage[models.Account](store, 0, 25)
+	assert.Equal(t, len(ret), 25)
+	assert.True(t, pagination.HasNext)
+	assert.Equal(t, pagination.Start, uint64(0))
+	assert.Equal(t, pagination.End, uint64(25))
 }

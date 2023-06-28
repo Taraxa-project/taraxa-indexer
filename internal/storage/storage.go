@@ -18,7 +18,8 @@ type Storage interface {
 	GetFinalizationData() *FinalizationData
 	GetAddressStats(addr string) *AddressStats
 	GetAccount(addr string) *Account
-	GetAccounts() *map[string]*Account
+	GetAccounts() *map[string]*models.Account
+	HolderModelsToStorage(ptr *map[string]*models.Account) *map[string]*Account
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash
 	GetInternalTransactions(hash string) models.InternalTransactionsResponse
@@ -75,7 +76,8 @@ func GetAccountsPage[T Paginated](s Storage, from, count uint64) (ret []T, pagin
 	pagination = new(models.PaginatedResponse)
 	pagination.Start = from
 	accountMap := s.GetAccounts()
-	pagination.Total = uint64(len(*accountMap))
+	storageAccountMap := s.HolderModelsToStorage(accountMap)
+	pagination.Total = uint64(len(*storageAccountMap))
 	end := from + count
 	pagination.HasNext = (end < pagination.Total)
 	if end > pagination.Total {
@@ -84,7 +86,7 @@ func GetAccountsPage[T Paginated](s Storage, from, count uint64) (ret []T, pagin
 	pagination.End = end
 
 	ret = make([]T, 0, count)
-	for _, account := range *accountMap {
+	for _, account := range *storageAccountMap {
 		if count < from {
 			count++
 			continue

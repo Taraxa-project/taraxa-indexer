@@ -56,7 +56,8 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 }
 
 func (bc *blockContext) readBalanceMap(balance map[string]*storage.Account) (newBalances map[string]*storage.Account, err error) {
-	newBalances = *bc.storage.GetAccounts()
+	dbBalances := *bc.storage.GetAccounts()
+	newBalances = *bc.storage.HolderModelsToStorage(&dbBalances)
 	if newBalances == nil {
 		panic("cannot read balances from storage")
 	}
