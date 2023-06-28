@@ -51,7 +51,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		tp.Wait()
 	}
 	sortBalances(&balances)
-	bc.batch.AddToBatchSingleKey(balances, "0x0")
+	bc.batch.MarshalAndAddToBatchSingleKey(balances, "0x0")
 	return
 }
 
@@ -123,8 +123,6 @@ func (bc *blockContext) updateInternalHolderBalances(trx models.Transaction) (er
 		toBalance := bc.storage.GetAccount(trx.To)
 		fromBalance.SubstractFromBalance(*parsedValue)
 		toBalance.AddToBalance(*parsedValue)
-		bc.batch.AddToBatchSingleKey(fromBalance.ToModel(), trx.From)
-		bc.batch.AddToBatchSingleKey(toBalance.ToModel(), trx.To)
 	}
 	return
 }

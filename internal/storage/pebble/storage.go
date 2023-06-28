@@ -277,7 +277,7 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse, *models.Account:
+	case *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse, *map[string]*models.Account:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err

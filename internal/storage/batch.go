@@ -8,4 +8,5 @@ type Batch interface {
 	UpdateWeekStats(w WeekStats)
 	AddToBatch(o interface{}, key1 string, key2 uint64)
 	AddToBatchSingleKey(o interface{}, key string)
+	MarshalAndAddToBatchSingleKey(o interface{}, key string) error
 }

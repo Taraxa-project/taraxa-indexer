@@ -1,6 +1,7 @@
 package pebble
 
 import (
+	"math/big"
 	"os"
 	"strconv"
 	"testing"
@@ -161,5 +162,32 @@ func TestBatch(t *testing.T) {
 	ret = st.GetAddressStats("test1")
 	if !ret.IsEqual(addr1) {
 		t.Error("Broken DB")
+	}
+}
+
+func TestHolders(t *testing.T) {
+	st := NewStorage("/tmp/test")
+
+	holderMap := make(map[string]*models.Account)
+	holder := storage.MakeEmptyAccount("0x00000")
+	holder.Balance = big.NewInt(100)
+	holderMap[holder.Address] = holder.ToModel()
+
+	defer st.Close()
+	batch := st.NewBatch()
+
+	if err := batch.MarshalAndAddToBatchSingleKey(holderMap, "0x0"); err != nil {
+		t.Error(err)
+	}
+
+	if err := st.Clean(); err != nil {
+		t.Error(err)
+	}
+
+	err := st.getFromDB(&holderMap, getKey(getPrefix(holderMap), "0x0", 0))
+
+	if err == nil {
+		t.Error("Clean DB does not work")
+		os.Remove("/tmp/test")
 	}
 }
