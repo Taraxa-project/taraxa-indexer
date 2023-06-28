@@ -59,7 +59,9 @@ func (bc *blockContext) updateHolderBalances(trx chain.Transaction) (err error) 
 		for _, event := range events {
 			currentBalance := bc.storage.GetAccount(event.Account)
 			currentBalance.AddToBalance(*event.Value)
-			bc.batch.AddToBatchSingleKey(currentBalance.ToModel(), trx.To)
+			if currentBalance.Balance.Cmp(big.NewInt(0)) == 1 {
+				bc.batch.AddToBatchSingleKey(currentBalance.ToModel(), trx.To)
+			}
 		}
 	}
 	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
@@ -68,8 +70,12 @@ func (bc *blockContext) updateHolderBalances(trx chain.Transaction) (err error) 
 		toBalance := bc.storage.GetAccount(trx.To)
 		fromBalance.SubtractFromBalance(*parsedValue)
 		toBalance.AddToBalance(*parsedValue)
-		bc.batch.AddToBatchSingleKey(fromBalance.ToModel(), trx.From)
-		bc.batch.AddToBatchSingleKey(toBalance.ToModel(), trx.To)
+		if fromBalance.Balance.Cmp(big.NewInt(0)) == 1 {
+			bc.batch.AddToBatchSingleKey(fromBalance.ToModel(), trx.From)
+		}
+		if toBalance.Balance.Cmp(big.NewInt(0)) == 1 {
+			bc.batch.AddToBatchSingleKey(toBalance.ToModel(), trx.To)
+		}
 	}
 	return
 }
