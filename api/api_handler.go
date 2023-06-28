@@ -143,12 +143,12 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error 
 }
 
 func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
-	block_num := common.GetYieldIntervalStart(a.storage, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
+	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
 	return ctx.JSON(http.StatusOK, a.storage.GetValidatorYield(address, block_num))
 }
 
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams) error {
-	block_num := common.GetYieldIntervalStart(a.storage, params.BlockNumber, a.config.TotalYieldSavingInterval)
+	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.TotalYieldSavingInterval)
 	return ctx.JSON(http.StatusOK, a.storage.GetTotalYield(block_num))
 }
 

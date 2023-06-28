@@ -98,9 +98,13 @@ func (local *FinalizationData) Check(remote FinalizationData) {
 
 type GenesisHash string
 
+type ValidatorYield struct {
+	Validator string   `json:"validator"`
+	Yield     *big.Int `json:"yield"`
+}
+
 type ValidatorsYield struct {
-	BlockNum uint64              `json:"block_num"`
-	Yields   map[string]*big.Int `json:"yields"`
+	Yields []ValidatorYield `json:"yields"`
 }
 
 type MultipliedYield struct {

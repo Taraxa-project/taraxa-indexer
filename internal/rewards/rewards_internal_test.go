@@ -271,7 +271,7 @@ func TestYieldsCalculation(t *testing.T) {
 
 	perc := float64(0)
 	for _, y := range validators_yield {
-		perc = getYieldForInterval(y, big.NewInt(1), 1)
+		perc = getYieldForInterval(y.Yield, big.NewInt(1), 1)
 	}
 	assert.Equal(t, float64(total_minted)/float64(totalStake.Int64()), perc)
 }

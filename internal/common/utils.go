@@ -24,7 +24,7 @@ func FormatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', 4, 64)
 }
 
-func GetYieldIntervalStart(storage storage.Storage, block_num *uint64, interval uint64) uint64 {
+func GetYieldIntervalEnd(storage storage.Storage, block_num *uint64, interval uint64) uint64 {
 	block := uint64(0)
 	if block_num == nil {
 		block = storage.GetFinalizationData().PbftCount
@@ -32,6 +32,9 @@ func GetYieldIntervalStart(storage storage.Storage, block_num *uint64, interval 
 		block = *block_num
 	}
 
-	block = block - block%interval
+	if block%interval == 0 {
+		return block
+	}
+	block = block - block%interval + interval
 	return block
 }

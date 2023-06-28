@@ -101,7 +101,7 @@ func calculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData)
 	return totalStake
 }
 
-func getValidatorsYield(rewards map[string]*big.Int, totalStake *big.Int, validators []dpos_interface.DposInterfaceValidatorData) map[string]*big.Int {
+func getValidatorsYield(rewards map[string]*big.Int, totalStake *big.Int, validators []dpos_interface.DposInterfaceValidatorData) []storage.ValidatorYield {
 	validators_yield := make(map[string]*big.Int)
 	for _, v := range validators {
 		validator := strings.ToLower(v.Account.Hex())
@@ -111,7 +111,13 @@ func getValidatorsYield(rewards map[string]*big.Int, totalStake *big.Int, valida
 		}
 		validators_yield[validator] = getMultipliedYield(validator_reward, v.Info.TotalStake)
 	}
-	return validators_yield
+	ret := make([]storage.ValidatorYield, len(validators_yield))
+	i := 0
+	for k, v := range validators_yield {
+		ret[i] = storage.ValidatorYield{Validator: k, Yield: v}
+		i++
+	}
+	return ret
 }
 
 func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []models.Transaction, votes chain.VotesResponse, validators []dpos_interface.DposInterfaceValidatorData) {
@@ -124,7 +130,7 @@ func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []m
 		log.WithFields(log.Fields{"total_reward_check": total_reward, "total_minted": total_minted}).Fatal("Total reward check failed")
 	}
 
-	r.batch.AddToBatchSingleKey(storage.ValidatorsYield{Yields: validators_yield, BlockNum: r.blockNum}, storage.FormatIntToKey(r.blockNum))
+	r.batch.AddToBatchSingleKey(storage.ValidatorsYield{Yields: validators_yield}, storage.FormatIntToKey(r.blockNum))
 	r.batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: getMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
 }
 
@@ -156,11 +162,11 @@ func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 	yields := storage.GetIntervalData[storage.ValidatorsYield](r.storage, r.blockNum-r.config.TotalYieldSavingInterval)
 	sum_by_validator := make(map[string]*big.Int)
 	for k, y := range yields {
-		for val, yield := range y.Yields {
-			if sum_by_validator[val] == nil {
-				sum_by_validator[val] = big.NewInt(0)
+		for _, y := range y.Yields {
+			if sum_by_validator[y.Validator] == nil {
+				sum_by_validator[y.Validator] = big.NewInt(0)
 			}
-			sum_by_validator[val].Add(sum_by_validator[val], yield)
+			sum_by_validator[y.Validator].Add(sum_by_validator[y.Validator], y.Yield)
 		}
 		batch.Remove(k)
 	}
