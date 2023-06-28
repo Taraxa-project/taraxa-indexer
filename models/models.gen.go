@@ -59,6 +59,9 @@ type EventLog struct {
 // Hash defines model for Hash.
 type Hash = string
 
+// HoldersPaginatedResponse defines model for HoldersPaginatedResponse.
+type HoldersPaginatedResponse = PaginatedResponse
+
 // InternalTransactionsResponse defines model for InternalTransactionsResponse.
 type InternalTransactionsResponse struct {
 	Data []Transaction `json:"data"`
@@ -192,6 +195,12 @@ type GetAddressPbftsParams struct {
 
 // GetAddressTransactionsParams defines parameters for GetAddressTransactions.
 type GetAddressTransactionsParams struct {
+	// Pagination Pagination
+	Pagination PaginationParam `form:"pagination" json:"pagination"`
+}
+
+// GetHoldersParams defines parameters for GetHolders.
+type GetHoldersParams struct {
 	// Pagination Pagination
 	Pagination PaginationParam `form:"pagination" json:"pagination"`
 }

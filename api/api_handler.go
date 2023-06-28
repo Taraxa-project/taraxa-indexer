@@ -38,6 +38,23 @@ func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilte
 	return response
 }
 
+func GetAccounts[T storage.Paginated](a *ApiHandler, pag *PaginationParam) interface{} {
+	logFields := log.Fields{"type": storage.GetTypeName[T](), "pagination": pag}
+	log.WithFields(logFields).Debug("GetAccounts")
+
+	ret, pagination := storage.GetAccountsPage[T](a.storage, getPaginationStart(pag.Start), pag.Limit)
+
+	response := struct {
+		PaginatedResponse
+		Data []T `json:"data"`
+	}{
+		PaginatedResponse: *pagination,
+		Data:              ret,
+	}
+
+	return response
+}
+
 // GetAddressDags returns all DAG blocks sent by the selected address
 func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
 	return ctx.JSON(http.StatusOK, GetAddressDataPage[Dag](a, address, &params.Pagination))
@@ -132,8 +149,8 @@ func (a *ApiHandler) GetTotalSupply(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, a.storage.GetTotalSupply().String())
 }
 
-func (a *ApiHandler) GetHolders(ctx echo.Context) error {
-	return ctx.JSON(http.StatusOK, a.storage.GetTotalSupply().String())
+func (a *ApiHandler) GetHolders(ctx echo.Context, params GetHoldersParams) error {
+	return ctx.JSON(http.StatusOK, GetAccounts[Account](a, &params.Pagination))
 }
 
 func (a *ApiHandler) GetInternalTransactions(ctx echo.Context, hash HashParam) error {

@@ -29,6 +29,8 @@ paths:
       description: |
         Returns the list of TARA token holders and their balances
       operationId: "getHolders"
+      parameters:
+        - $ref: "#/components/parameters/paginationParam"
       responses:
         "200":
           description: |
@@ -41,7 +43,7 @@ paths:
                     type: array
                     items:
                       allOf:
-                        - $ref: "#/components/schemas/Account"
+                        - $ref: "#/components/schemas/HoldersPaginatedResponse"
         default:
           description: |
             Unexpected error
@@ -560,6 +562,15 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/Transaction"
+    HoldersPaginatedResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResponse"
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Account"
     TransactionLogsResponse:
       required:
         - data
