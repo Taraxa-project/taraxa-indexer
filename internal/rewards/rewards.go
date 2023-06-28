@@ -12,12 +12,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var multiplier = big.NewInt(10 ^ 12)
+var multiplier = big.NewInt(10e12)
+var percentage_multiplier = big.NewInt(10000)
 
 type Rewards struct {
-	Storage storage.Storage
-	Batch   storage.Batch
-	Config  *common.Config
+	storage storage.Storage
+	batch   storage.Batch
+	config  *common.Config
 
 	blockNum    uint64
 	blockAuthor string
@@ -29,57 +30,22 @@ func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Co
 }
 
 func (r *Rewards) addTotalMinted(amount *big.Int) {
-	current := r.Storage.GetTotalSupply()
+	current := r.storage.GetTotalSupply()
 	current.Add(current, amount)
 
-	r.Batch.SetTotalSupply(current)
+	r.batch.SetTotalSupply(current)
 }
 
-func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []models.Transaction, votes chain.VotesResponse, validators []dpos_interface.DposInterfaceValidatorData) {
-	r.addTotalMinted(total_minted)
-
-	totalStake := big.NewInt(0)
-	for _, v := range validators {
-		totalStake.Add(totalStake, v.Info.TotalStake)
-	}
-	rewards := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
-	total_reward_check := big.NewInt(0)
-	for _, v := range validators {
-		validator := strings.ToLower(v.Account.Hex())
-		validator_reward := rewards[validator]
-		if validator_reward == nil {
-			continue
-		}
-		total_reward_check.Add(total_reward_check, validator_reward)
-		r.saveValidatorYield(validator, getMultipliedYield(validator_reward, v.Info.TotalStake))
-
-		totalStake.Add(totalStake, v.Info.TotalStake)
-	}
-	if total_reward_check.Cmp(total_minted) != 0 {
-		log.WithFields(log.Fields{"total_reward_check": total_reward_check, "total_minted": total_minted}).Fatal("Total reward check failed")
-	}
-	r.saveTotalYield(getMultipliedYield(total_minted, totalStake))
-}
-
-func (r *Rewards) saveTotalYield(yield *storage.Yield) {
-	// r.Batch.AddToBatchSingleKey(yield, fmt.Sprint(r.blockNum))
-}
-
-func (r *Rewards) saveValidatorYield(validator string, yield *storage.Yield) {
-	// r.Batch.AddToBatch(yield, validator, r.blockNum)
-}
-
-type ValidatorsRewards map[string]*big.Int
-
-func (r *Rewards) calculateValidatorsRewards(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.Transaction, totalStake *big.Int) ValidatorsRewards {
-	stats := makeStats(dags, votes, trxs, r.Config.Chain.CommitteeSize.Int64())
+func (r *Rewards) calculateValidatorsRewards(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.Transaction, totalStake *big.Int) (map[string]*big.Int, *big.Int) {
+	stats := makeStats(dags, votes, trxs, r.config.Chain.CommitteeSize.Int64())
 	return r.rewardsFromStats(totalStake, stats)
 }
 
-func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards ValidatorsRewards) {
-	rewards = make(ValidatorsRewards)
+func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards map[string]*big.Int, total_reward *big.Int) {
+	rewards = make(map[string]*big.Int)
+	total_reward = big.NewInt(0)
 
-	totalRewards := calculateTotalRewards(r.Config.Chain, totalStake)
+	totalRewards := calculateTotalRewards(r.config.Chain, totalStake)
 	for addr, s := range stats.ValidatorStats {
 		if rewards[addr] == nil {
 			rewards[addr] = big.NewInt(0)
@@ -90,6 +56,7 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards V
 			dag_reward := big.NewInt(0)
 			dag_reward.Mul(big.NewInt(s.dagBlocksCount), totalRewards.dags)
 			dag_reward.Div(dag_reward, big.NewInt(stats.TotalDagCount))
+			total_reward.Add(total_reward, dag_reward)
 			rewards[addr].Add(rewards[addr], dag_reward)
 		}
 
@@ -98,6 +65,7 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards V
 			// total_votes_reward * validator_vote_weight / total_votes_weight
 			vote_reward := big.NewInt(0).Mul(totalRewards.votes, big.NewInt(s.voteWeight))
 			vote_reward.Div(vote_reward, big.NewInt(stats.TotalVotesWeight))
+			total_reward.Add(total_reward, vote_reward)
 			rewards[addr].Add(rewards[addr], vote_reward)
 		}
 	}
@@ -119,15 +87,106 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards V
 		if rewards[r.blockAuthor] == nil {
 			rewards[r.blockAuthor] = big.NewInt(0)
 		}
+		total_reward.Add(total_reward, blockAuthorReward)
 		rewards[r.blockAuthor].Add(rewards[r.blockAuthor], blockAuthorReward)
 	}
 	return
 }
 
-func getMultipliedYield(reward, total *big.Int) *storage.Yield {
+func calculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData) *big.Int {
+	totalStake := big.NewInt(0)
+	for _, v := range validators {
+		totalStake.Add(totalStake, v.Info.TotalStake)
+	}
+	return totalStake
+}
+
+func getValidatorsYield(rewards map[string]*big.Int, totalStake *big.Int, validators []dpos_interface.DposInterfaceValidatorData) map[string]*big.Int {
+	validators_yield := make(map[string]*big.Int)
+	for _, v := range validators {
+		validator := strings.ToLower(v.Account.Hex())
+		validator_reward := rewards[validator]
+		if validator_reward == nil {
+			continue
+		}
+		validators_yield[validator] = getMultipliedYield(validator_reward, v.Info.TotalStake)
+	}
+	return validators_yield
+}
+
+func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []models.Transaction, votes chain.VotesResponse, validators []dpos_interface.DposInterfaceValidatorData) {
+	r.addTotalMinted(total_minted)
+
+	totalStake := calculateTotalStake(validators)
+	rewards, total_reward := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
+	validators_yield := getValidatorsYield(rewards, totalStake, validators)
+	if total_reward.Cmp(total_minted) != 0 {
+		log.WithFields(log.Fields{"total_reward_check": total_reward, "total_minted": total_minted}).Fatal("Total reward check failed")
+	}
+
+	r.batch.AddToBatchSingleKey(storage.ValidatorsYield{Yields: validators_yield, BlockNum: r.blockNum}, storage.FormatIntToKey(r.blockNum))
+	r.batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: getMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
+}
+
+func (r *Rewards) AfterCommit() {
+	b := r.storage.NewBatch()
+	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
+		r.processIntervalYield(b)
+	}
+	if r.blockNum%r.config.ValidatorsYieldSavingInterval == 0 {
+		r.processValidatorsIntervalYield(b)
+	}
+	b.CommitBatch()
+}
+
+func (r *Rewards) processIntervalYield(batch storage.Batch) {
+	yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, r.blockNum-r.config.TotalYieldSavingInterval)
+	sum := big.NewInt(0)
+	for k, y := range yields {
+
+		sum.Add(sum, y.Yield)
+		batch.Remove(k)
+	}
+
+	yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, r.config.TotalYieldSavingInterval)
+	batch.AddToBatchSingleKey(&storage.Yield{Yield: common.FormatFloat(yield)}, storage.FormatIntToKey(r.blockNum))
+}
+
+func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
+	yields := storage.GetIntervalData[storage.ValidatorsYield](r.storage, r.blockNum-r.config.TotalYieldSavingInterval)
+	sum_by_validator := make(map[string]*big.Int)
+	for k, y := range yields {
+		for val, yield := range y.Yields {
+			if sum_by_validator[val] == nil {
+				sum_by_validator[val] = big.NewInt(0)
+			}
+			sum_by_validator[val].Add(sum_by_validator[val], yield)
+		}
+		batch.Remove(k)
+	}
+
+	for val, sum := range sum_by_validator {
+		yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, r.config.ValidatorsYieldSavingInterval)
+		batch.AddToBatch(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
+	}
+}
+
+func getYieldForInterval(yield, blocks_per_year *big.Int, interval uint64) float64 {
+	res := big.NewInt(0)
+	res.Mul(yield, blocks_per_year)
+	res.Div(res, big.NewInt(int64(interval)))
+	res.Mul(res, percentage_multiplier)
+	res.Div(res, multiplier)
+
+	ret := float64(res.Uint64())
+	ret /= float64(percentage_multiplier.Uint64())
+	return ret
+}
+
+func getMultipliedYield(reward, stake *big.Int) *big.Int {
 	r := big.NewInt(0)
 	r.Mul(reward, multiplier)
-	r.Div(r, total)
+	r.Div(r, stake)
 
-	return &storage.Yield{Yield: r}
+	return r
 }

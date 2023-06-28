@@ -5,10 +5,13 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	ce "github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -104,7 +107,7 @@ func TestRewards(t *testing.T) {
 	assert.Equal(t, 3, len(votes.Votes))
 	assert.Equal(t, 5, len(trxs))
 	totalStake := big.NewInt(1000000000000)
-	rewards := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
+	rewards, _ := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
 	assert.Equal(t, 4, len(rewards))
 	// Calculate total reward for the block
 	total_reward := totalStake.Int64() * config.Chain.YieldPercentage.Int64() / 100 / config.Chain.BlocksPerYear.Int64()
@@ -146,8 +149,8 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 8
 
 		// Expected block reward
-		totalRewards := calculateTotalRewards(r.Config.Chain, total_stake)
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		totalRewards := calculateTotalRewards(r.config.Chain, total_stake)
+		rewards, _ := r.rewardsFromStats(total_stake, &rewardsStats)
 		// We have 1 out of 2 bonus votes, so block author should get half of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(totalRewards.bonus, big.NewInt(2)), rewards[r.blockAuthor])
 
@@ -172,8 +175,8 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 13
 
 		// Expected block reward
-		totalRewards := calculateTotalRewards(r.Config.Chain, total_stake)
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		totalRewards := calculateTotalRewards(r.config.Chain, total_stake)
+		rewards, _ := r.rewardsFromStats(total_stake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(totalRewards.bonus, big.NewInt(4)), rewards[r.blockAuthor])
 		assert.Equal(t, big.NewInt(5073566717402), rewards[r.blockAuthor])
@@ -199,7 +202,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 24
 
 		// Expected block reward
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards, _ := r.rewardsFromStats(total_stake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
@@ -227,7 +230,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 		// Expected block reward
 		r.blockAuthor = validator1_addr
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards, _ := r.rewardsFromStats(total_stake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
@@ -237,4 +240,106 @@ func TestRewardsWithNodeData(t *testing.T) {
 		assert.Equal(t, expected_validator_reward, rewards[validator4_addr].Int64())
 		assert.Equal(t, expected_validator_reward, rewards[validator4_addr].Int64())
 	}
+}
+
+func TestYieldsCalculation(t *testing.T) {
+	total_minted := int64(15000000)
+	validators := []dpos_interface.DposInterfaceValidatorData{
+		{Account: ce.HexToAddress("0x1"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress("0x2"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(10000000)}},
+		{Account: ce.HexToAddress("0x3"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(15000000)}},
+		{Account: ce.HexToAddress("0x4"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(20000000)}},
+		{Account: ce.HexToAddress("0x5"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(25000000)}},
+	}
+	totalStake := calculateTotalStake(validators)
+
+	config := common.DefaultConfig()
+	config.Chain.BlocksPerYear = big.NewInt(10)
+
+	rewards := make(map[string]*big.Int)
+
+	total_check := uint64(0)
+	for _, v := range validators {
+		a := v.Account.Hex()
+		rewards[a] = big.NewInt(0).Mul(big.NewInt(int64(total_minted)), v.Info.TotalStake)
+		rewards[a].Div(rewards[a], totalStake)
+		total_check += rewards[a].Uint64()
+	}
+	assert.Equal(t, uint64(total_minted), total_check)
+
+	validators_yield := getValidatorsYield(rewards, totalStake, validators)
+
+	perc := float64(0)
+	for _, y := range validators_yield {
+		perc = getYieldForInterval(y, big.NewInt(1), 1)
+	}
+	assert.Equal(t, float64(total_minted)/float64(totalStake.Int64()), perc)
+}
+
+func TestTotalYieldSaving(t *testing.T) {
+	st := pebble.NewStorage("")
+	config := makeTestConfig()
+	config.TotalYieldSavingInterval = 10
+	config.Chain.BlocksPerYear = big.NewInt(100)
+
+	batch := st.NewBatch()
+	// 10% yield per block
+	multiplied_yield := getMultipliedYield(big.NewInt(10), big.NewInt(1000))
+	for i := 1; i <= 10; i++ {
+		batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
+	}
+	batch.CommitBatch()
+
+	r := MakeRewards(st, st.NewBatch(), config, 10, "0x4")
+	b := st.NewBatch()
+	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
+	{
+		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
+		assert.Equal(t, 10, len(yields))
+	}
+	r.processIntervalYield(b)
+	b.CommitBatch()
+	// check that this data was removed
+	{
+		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
+		assert.Equal(t, 0, len(yields))
+	}
+
+	// 10% yield per block will be equal to 100% for 10 blocks
+	yield := st.GetTotalYield(10)
+	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, config.TotalYieldSavingInterval)), yield.Yield)
+}
+
+func TestValidatorsYieldSaving(t *testing.T) {
+	st := pebble.NewStorage("")
+	config := makeTestConfig()
+	config.TotalYieldSavingInterval = 10
+	config.Chain.BlocksPerYear = big.NewInt(100)
+
+	batch := st.NewBatch()
+	// 10% yield per block
+	multiplied_yield := getMultipliedYield(big.NewInt(10), big.NewInt(1000))
+	for i := 1; i <= 10; i++ {
+		batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
+	}
+	batch.CommitBatch()
+
+	r := MakeRewards(st, st.NewBatch(), config, 10, "0x4")
+	b := st.NewBatch()
+	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
+	{
+		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
+		assert.Equal(t, 10, len(yields))
+	}
+	r.processIntervalYield(b)
+	b.CommitBatch()
+	// check that this data was removed
+	{
+		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
+		assert.Equal(t, 0, len(yields))
+	}
+
+	// 10% yield per block will be equal to 100% for 10 blocks
+	yield := st.GetTotalYield(10)
+	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, config.TotalYieldSavingInterval)), yield.Yield)
 }

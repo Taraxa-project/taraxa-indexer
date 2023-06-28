@@ -3,7 +3,9 @@ package common
 import (
 	"math/big"
 	"runtime"
+	"strconv"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/spiretechnology/go-pool"
 )
 
@@ -16,4 +18,20 @@ func ParseStringToBigInt(v string) *big.Int {
 	a := big.NewInt(0)
 	a.SetString(v, 0)
 	return a
+}
+
+func FormatFloat(f float64) string {
+	return strconv.FormatFloat(f, 'f', 4, 64)
+}
+
+func GetYieldIntervalStart(storage storage.Storage, block_num *uint64, interval uint64) uint64 {
+	block := uint64(0)
+	if block_num == nil {
+		block = storage.GetFinalizationData().PbftCount
+	} else {
+		block = *block_num
+	}
+
+	block = block - block%interval
+	return block
 }

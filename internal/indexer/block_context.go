@@ -92,6 +92,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 		bc.finalized.Check(remote_stats)
 	}
 	bc.commit()
+	r.AfterCommit()
 
 	metrics.Save(start_processing, dags_count, trx_count, bc.finalized)
 

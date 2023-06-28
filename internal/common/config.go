@@ -23,15 +23,15 @@ func DefaultChainConfig() *ChainConfig {
 }
 
 type Config struct {
-	Chain                        *ChainConfig
-	TotalYieldSavingInterval     uint64
-	ValidatorYieldSavingInterval uint64
+	Chain                         *ChainConfig
+	TotalYieldSavingInterval      uint64
+	ValidatorsYieldSavingInterval uint64
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Chain:                        DefaultChainConfig(),
-		TotalYieldSavingInterval:     100,
-		ValidatorYieldSavingInterval: 100,
+		Chain:                         DefaultChainConfig(),
+		TotalYieldSavingInterval:      1000,
+		ValidatorsYieldSavingInterval: 1000,
 	}
 }

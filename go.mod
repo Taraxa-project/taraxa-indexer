@@ -8,6 +8,7 @@ require (
 	github.com/deepmap/oapi-codegen v1.13.0
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/getkin/kin-openapi v0.117.0
+	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/nleeper/goment v1.4.4
 	github.com/sirupsen/logrus v1.9.0

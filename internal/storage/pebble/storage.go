@@ -101,6 +101,10 @@ func getPrefix(o interface{}) (ret string) {
 		ret = "i"
 	case *storage.Yield, storage.Yield:
 		ret = "y"
+	case *storage.ValidatorsYield, storage.ValidatorsYield:
+		ret = "vy"
+	case *storage.MultipliedYield, storage.MultipliedYield:
+		ret = "my"
 	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
 		ret = getPrefix(*o.(*interface{}))
@@ -146,19 +150,26 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-func (s *Storage) ForEach(o interface{}, key_prefix string, start uint64, fn func([]byte) (stop bool)) {
+func (s *Storage) forEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	prefix := getPrefixKey(getPrefix(&o), key_prefix)
 	start_key := getKey(getPrefix(&o), key_prefix, start)
-
 	iter := s.find(prefix)
 	defer iter.Close()
 	iter.SeekGE(start_key)
 
-	for ; iter.Valid(); iter.Prev() {
-		if fn(iter.Value()) {
+	for ; iter.Valid(); navigate(iter) {
+		if fn(iter.Key(), iter.Value()) {
 			break
 		}
 	}
+}
+
+func (s *Storage) ForEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool)) {
+	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Next() })
+}
+
+func (s *Storage) ForEachBackwards(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool)) {
+	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
 }
 
 func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {
@@ -243,6 +254,19 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 		log.WithError(err).Fatal("GetTransactionLogs failed")
 	}
 	return *ptr
+}
+
+func (s *Storage) GetValidatorYield(validator string, block uint64) (res storage.Yield) {
+	err := s.getFromDB(&res, getKey(getPrefix(&res), validator, block))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetValidatorYield failed")
+	}
+	return
+}
+
+func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
+	// total yield is stored under empty address
+	return s.GetValidatorYield("", block)
 }
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {

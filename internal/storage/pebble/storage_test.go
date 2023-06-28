@@ -49,7 +49,7 @@ func TestGetObjects(t *testing.T) {
 		}
 	}
 	ret, pagination := storage.GetObjectsPage[models.Dag](st, sender, 0, uint64(count))
-	assert.Equal(t, uint64(len(ret)), count)
+	assert.Equal(t, count, uint64(len(ret)))
 	assert.False(t, pagination.HasNext)
 	assert.Equal(t, pagination.Start, uint64(0))
 	assert.Equal(t, pagination.End, uint64(100))

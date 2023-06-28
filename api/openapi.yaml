@@ -43,6 +43,28 @@ paths:
         default:
           description: |
             Unexpected error
+  /totalYield:
+    get:
+      tags:
+        - totalYield
+      summary: "Returns total yield"
+      description: |
+        Returns stored total yield value closest to specified block number
+      operationId: "getTotalYield"
+      parameters:
+        - $ref: "#/components/parameters/blockNumParam"
+      responses:
+        "200":
+          description: |
+            Current total yield as string as value could be pretty big
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/YieldResponse"
+        default:
+          description: |
+            Unexpected error
   /validators:
     get:
       tags:
@@ -199,20 +221,43 @@ paths:
         default:
           description: |
             Unexpected error
+  /address/{address}/yield:
+    get:
+      tags:
+        - Address
+      summary: "Returns yield for the address"
+      description: |
+        Returns yield for the address at specified block
+      operationId: "getAddressYield"
+      parameters:
+        - $ref: "#/components/parameters/addressParam"
+        - $ref: "#/components/parameters/blockNumParam"
+      responses:
+        "200":
+          description: |
+            Current total yield as string as value could be pretty big
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/YieldResponse"
+        default:
+          description: |
+            Unexpected error
   /transaction/{hash}/internal_transactions:
     get:
       tags:
         - Hash
       summary: "Returns internal transactions"
       description: |
-        Returns all internal transactions of transaction with specified hash 
+        Returns all internal transactions of transaction with specified hash
       operationId: "getInternalTransactions"
       parameters:
         - $ref: "#/components/parameters/hashParam"
       responses:
         "200":
           description: |
-            A JSON object containing a list of all internal transactions of transaction with specified hash 
+            A JSON object containing a list of all internal transactions of transaction with specified hash
           content:
             application/json:
               schema:
@@ -384,7 +429,15 @@ components:
           type: integer
           format: uint8
           enum: [0, 1, 2, 3, 4, 5]
-          x-enum-varnames: [transfer, contract_call, contract_creation, internal_transfer, internal_contract_call, internal_contract_creation]
+          x-enum-varnames:
+            [
+              transfer,
+              contract_call,
+              contract_creation,
+              internal_transfer,
+              internal_contract_call,
+              internal_contract_creation,
+            ]
     Dag:
       type: object
       required:
@@ -515,6 +568,19 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/Pbft"
+    YieldResponse:
+      required:
+        - yield
+        - fromBlock
+        - toBlock
+      properties:
+        yield:
+          type: string
+          example: "0,1999"
+        fromBlock:
+          $ref: "#/components/schemas/Counter"
+        toBlock:
+          $ref: "#/components/schemas/Counter"
     InternalTransactionsResponse:
       required:
         - data
@@ -584,3 +650,11 @@ components:
         Hash of the item(transaction) to get data for
       schema:
         $ref: "#/components/schemas/Hash"
+    blockNumParam:
+      name: blockNumber
+      in: query
+      required: false
+      description: |
+        Block Number
+      schema:
+        $ref: "#/components/schemas/Counter"

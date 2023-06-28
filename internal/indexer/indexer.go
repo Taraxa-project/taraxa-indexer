@@ -17,8 +17,8 @@ type Indexer struct {
 	consistency_check_available bool
 }
 
-func MakeAndRun(url string, storage storage.Storage) {
-	i := NewIndexer(url, storage)
+func MakeAndRun(url string, s storage.Storage, c *common.Config) {
+	i := NewIndexer(url, s, c)
 	for {
 		err := i.run()
 		f := i.storage.GetFinalizationData()
@@ -27,10 +27,11 @@ func MakeAndRun(url string, storage storage.Storage) {
 	}
 }
 
-func NewIndexer(url string, storage storage.Storage) (i *Indexer) {
+func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer) {
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
-	i.storage = storage
+	i.storage = s
+	i.config = c
 	// connect is retrying to connect every retry_time
 	i.connect(url)
 	return
@@ -81,7 +82,6 @@ func (i *Indexer) init() error {
 	if err != nil {
 		log.WithError(err).Fatal("GetGenesis error")
 	}
-	i.config = new(common.Config)
 	i.config.Chain = chain_genesis.ToChainConfig()
 
 	// Process genesis if db is clean

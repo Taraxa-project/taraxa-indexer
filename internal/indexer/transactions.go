@@ -8,6 +8,9 @@ import (
 )
 
 func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
+	if len(trxHashes) == 0 {
+		return
+	}
 	var traces []chain.TransactionTrace
 	var transactions []chain.Transaction
 
