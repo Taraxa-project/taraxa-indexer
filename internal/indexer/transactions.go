@@ -2,8 +2,10 @@ package indexer
 
 import (
 	"math/big"
+	"sort"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
@@ -12,10 +14,12 @@ import (
 func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	var traces []chain.TransactionTrace
 	var transactions []chain.Transaction
+	var balances map[string]*storage.Account
 
 	tp := utils.MakeThreadPool()
 	tp.Go(utils.MakeTaskWithResult(bc.client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
 	tp.Go(utils.MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
+	tp.Go(utils.MakeTaskWithResult(bc.readBalanceMap, balances, &balances, &err).Run)
 	tp.Wait()
 
 	if err != nil {
@@ -43,12 +47,44 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 			Data: trx.ExtractLogs(),
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
-		tp.Go(utils.MakeTask(bc.updateHolderBalances, trx, &err).Run)
+		tp.Go(utils.MakeTask(bc.updateHolderBalances, chain.AccountParams{Transaction: &trx, BalanceMap: &balances}, &err).Run)
+		tp.Wait()
 	}
+	sortBalances(&balances)
+	bc.batch.AddToBatchSingleKey(balances, "0x0")
 	return
 }
 
-func (bc *blockContext) updateHolderBalances(trx chain.Transaction) (err error) {
+func (bc *blockContext) readBalanceMap(balance map[string]*storage.Account) (newBalances map[string]*storage.Account, err error) {
+	newBalances = *bc.storage.GetAccounts()
+	if newBalances == nil {
+		panic("cannot read balances from storage")
+	}
+	return newBalances, nil
+}
+
+func sortBalances(balances *map[string]*storage.Account) {
+	var accountSlice []*storage.Account
+	for _, account := range *balances {
+		account.Mutex.RLock()
+		accountSlice = append(accountSlice, account)
+		account.Mutex.RUnlock()
+	}
+
+	// Sort the slice based on balances
+	sort.Slice(accountSlice, func(i, j int) bool {
+		return accountSlice[i].Balance.Cmp(accountSlice[j].Balance) < 0
+	})
+
+	// Rebuild the sorted accounts map if necessary
+	unwrappedBalances := *balances
+	for _, account := range accountSlice {
+		unwrappedBalances[account.Address] = account
+	}
+}
+
+func (bc *blockContext) updateHolderBalances(params chain.AccountParams) (err error) {
+	balances, trx := *params.BalanceMap, *params.Transaction
 	logs := trx.ExtractLogs()
 
 	if len(logs) > 0 {
@@ -57,24 +93,23 @@ func (bc *blockContext) updateHolderBalances(trx chain.Transaction) (err error) 
 			return err
 		}
 		for _, event := range events {
-			currentBalance := bc.storage.GetAccount(event.Account)
-			currentBalance.AddToBalance(*event.Value)
-			if currentBalance.Balance.Cmp(big.NewInt(0)) == 1 {
-				bc.batch.AddToBatchSingleKey(currentBalance.ToModel(), trx.To)
+			balances[event.Account].AddToBalance(*event.Value)
+			if balances[event.Account].Balance.Cmp(big.NewInt(0)) != 1 {
+				delete(balances, event.Account)
 			}
 		}
 	}
 	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
 	if ok && parsedValue.Cmp(big.NewInt(0)) == 1 {
-		fromBalance := bc.storage.GetAccount(trx.From)
-		toBalance := bc.storage.GetAccount(trx.To)
-		fromBalance.SubtractFromBalance(*parsedValue)
+		fromBalance := balances[trx.From]
+		toBalance := balances[trx.To]
+		fromBalance.SubstractFromBalance(*parsedValue)
 		toBalance.AddToBalance(*parsedValue)
-		if fromBalance.Balance.Cmp(big.NewInt(0)) == 1 {
-			bc.batch.AddToBatchSingleKey(fromBalance.ToModel(), trx.From)
+		if fromBalance.Balance.Cmp(big.NewInt(0)) != 1 {
+			delete(balances, trx.From)
 		}
-		if toBalance.Balance.Cmp(big.NewInt(0)) == 1 {
-			bc.batch.AddToBatchSingleKey(toBalance.ToModel(), trx.To)
+		if toBalance.Balance.Cmp(big.NewInt(0)) != 1 {
+			delete(balances, trx.To)
 		}
 	}
 	return
@@ -86,7 +121,7 @@ func (bc *blockContext) updateInternalHolderBalances(trx models.Transaction) (er
 	if ok && parsedValue.Cmp(big.NewInt(0)) == 1 {
 		fromBalance := bc.storage.GetAccount(trx.From)
 		toBalance := bc.storage.GetAccount(trx.To)
-		fromBalance.SubtractFromBalance(*parsedValue)
+		fromBalance.SubstractFromBalance(*parsedValue)
 		toBalance.AddToBalance(*parsedValue)
 		bc.batch.AddToBatchSingleKey(fromBalance.ToModel(), trx.From)
 		bc.batch.AddToBatchSingleKey(toBalance.ToModel(), trx.To)
@@ -136,12 +171,6 @@ func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
 	bc.batch.AddToBatch(trx, trx.From, from_index)
 	bc.batch.AddToBatch(trx, trx.To, to_index)
 }
-
-// func (bc *blockContext) SaveEventLog(eventLog *models.EventLog) {
-// 	log.WithFields(log.Fields{"address": eventLog.Address, "trnxHash": eventLog.TransactionHash}).Trace("Saving Event Log")
-
-// 	bc.batch.AddToBatch(eventLog, eventLog.TransactionHash)
-// }
 
 func (bc *blockContext) addAddressStatsToBatch() {
 	for _, stats := range bc.addressStats {

@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"strconv"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
@@ -29,6 +30,11 @@ func parseBool(s string) (v bool) {
 		log.Fatal("parseBool ", v)
 	}
 	return i > 0
+}
+
+type AccountParams struct {
+	Transaction *Transaction                 `json:"transaction"`
+	BalanceMap  *map[string]*storage.Account `json:"balanceMap"`
 }
 
 type Block struct {

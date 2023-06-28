@@ -13,7 +13,7 @@ import (
 type TotalSupply = big.Int
 
 type Paginated interface {
-	models.Transaction | models.Dag | models.Pbft
+	models.Account | models.Transaction | models.Dag | models.Pbft
 }
 
 func GetTypeName[T any]() string {
@@ -33,7 +33,7 @@ type AddressStats struct {
 type Account struct {
 	Address string       `json:"address"`
 	Balance *big.Int     `json:"balance"`
-	mutex   sync.RWMutex `rlp:"-"`
+	Mutex   sync.RWMutex `rlp:"-"`
 }
 
 func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
@@ -61,15 +61,15 @@ func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
 }
 
 func (a *Account) AddToBalance(value big.Int) big.Int {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
+	a.Mutex.Lock()
+	defer a.Mutex.Unlock()
 	newBalance := a.Balance.Add(a.Balance, &value)
 	return *newBalance
 }
 
 func (a *Account) ToModel() *models.Account {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
+	a.Mutex.Lock()
+	defer a.Mutex.Unlock()
 	balanceStr := a.Balance.String()
 	return &models.Account{
 		Address: &a.Address,
@@ -77,9 +77,9 @@ func (a *Account) ToModel() *models.Account {
 	}
 }
 
-func (a *Account) SubtractFromBalance(value big.Int) big.Int {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
+func (a *Account) SubstractFromBalance(value big.Int) big.Int {
+	a.Mutex.Lock()
+	defer a.Mutex.Unlock()
 	newBalance := a.Balance.Sub(a.Balance, &value)
 	return *newBalance
 }

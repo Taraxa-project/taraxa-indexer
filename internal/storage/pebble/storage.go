@@ -80,7 +80,7 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 func getPrefix(o interface{}) (ret string) {
 
 	switch tt := o.(type) {
-	case *models.Account:
+	case *map[string]*models.Account, map[string]*models.Account:
 		ret = "a"
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
@@ -205,22 +205,32 @@ func (s *Storage) GetFinalizationData() *storage.FinalizationData {
 }
 
 func (s *Storage) GetAccount(addr string) *storage.Account {
-	ptr := storage.MakeEmptyAccount(addr).ToModel()
-	err := s.getFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
+	ptr := make(map[string]*models.Account)
+	err := s.getFromDB(ptr, getKey(getPrefix(ptr), "0x0", 0))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAccount ", err)
 	}
-	parsedBalance, okBalance := new(big.Int).SetString(*ptr.Balance, 10)
+	holderEntry := ptr[addr]
+	parsedBalance, okBalance := new(big.Int).SetString(*holderEntry.Balance, 10)
 	if okBalance {
 		return &storage.Account{
-			Address: *ptr.Address,
+			Address: *holderEntry.Address,
 			Balance: parsedBalance,
 		}
 	} else {
-		log.WithField("account", ptr.Address).Error("Error parsing balance")
+		log.WithField("account", holderEntry.Address).Error("Error parsing balance")
 		return nil
 	}
 
+}
+
+func (s *Storage) GetAccounts() *map[string]*storage.Account {
+	ptr := make(map[string]*storage.Account)
+	err := s.getFromDB(ptr, getKey(getPrefix(ptr), "0x0", 0))
+	if err != nil && err != pebble.ErrNotFound {
+		log.Fatal("GetAccounts ", err)
+	}
+	return &ptr
 }
 
 func (s *Storage) GetAddressStats(addr string) *storage.AddressStats {
