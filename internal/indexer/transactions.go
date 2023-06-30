@@ -20,6 +20,8 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		return
 	}
 
+	newAccounts := bc.storage.GetAccounts()
+
 	internal_transactions := new(models.InternalTransactionsResponse)
 	for i, trx := range transactions {
 		trx_model := trx.ToModelWithTimestamp(bc.block.Timestamp)
@@ -32,7 +34,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 				}
 				internal := makeInternal(trx_model, entry)
 
-				UpdateBalancesInternal(bc.storage, internal)
+				UpdateBalancesInternal(&newAccounts, internal)
 
 				internal_transactions.Data = append(internal_transactions.Data, internal)
 				bc.SaveTransaction(&internal)
@@ -44,10 +46,9 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 
-		UpdateBalances(bc.storage, &trx)
+		UpdateBalances(&newAccounts, &trx)
 	}
 
-	newAccounts := bc.storage.GetAccounts()
 	utils.SortByBalanceDescending(&newAccounts)
 	bc.batch.AddToBatchSingleKey(newAccounts, "0x0")
 	return

@@ -66,3 +66,19 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 	})
 	return
 }
+
+func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagination *models.PaginatedResponse) {
+	holders := s.GetAccounts()
+	pagination = new(models.PaginatedResponse)
+	pagination.Start = from
+	pagination.Total = uint64(len(holders))
+	end := from + count
+	pagination.HasNext = (end < pagination.Total)
+	if end > pagination.Total {
+		end = pagination.Total
+	}
+	pagination.End = end
+
+	ret = holders[from:end]
+	return
+}

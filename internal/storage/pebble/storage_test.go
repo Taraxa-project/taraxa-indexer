@@ -163,3 +163,32 @@ func TestBatch(t *testing.T) {
 		t.Error("Broken DB")
 	}
 }
+
+func TestAccountsBatch(t *testing.T) {
+	st := NewStorage("")
+	defer st.Close()
+
+	accounts := []models.Account{
+		{
+			Address: "0x1111111111111111111111111111111111111111",
+			Balance: "100",
+		},
+		{
+			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
+			Balance: "50",
+		},
+	}
+
+	batch := st.NewBatch()
+
+	batch.AddToBatchSingleKey(accounts, "0x0")
+
+	st.addToDBTest(accounts, "0x0", 0)
+
+	ret := st.GetAccounts()
+
+	if len(ret) != len(accounts) {
+		t.Error("Broken DB")
+	}
+
+}
