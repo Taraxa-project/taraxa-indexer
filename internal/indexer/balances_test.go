@@ -103,11 +103,11 @@ func TestUpdateBalances(t *testing.T) {
 	// Validate the updated balances
 	i := utils.FindBalance(&accounts, "0x1111111111111111111111111111111111111111")
 	if i == -1 || accounts[i].Balance != "70" {
-		t.Error("UpdateBalances failed to update 'from' balance correctly")
+		t.Error("UpdateBalances failed to update 'from' balance correctly. Sould be 70 but is ", accounts[i].Balance)
 	}
 
 	j := utils.FindBalance(&accounts, "0x0DC0d841F962759DA25547c686fa440cF6C28C61")
-	if j == -1 || accounts[j].Balance != "80" {
-		t.Error("UpdateBalances failed to update 'to' balance correctly")
+	if j == -1 || accounts[j].Balance != "12079862109893161818" {
+		t.Error("UpdateBalances failed to update 'to' balance correctly. Should be 12079862109893161818 but is ", accounts[j].Balance)
 	}
 }

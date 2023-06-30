@@ -7,6 +7,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 func UpdateBalancesInternal(ptr *[]models.Account, trx models.Transaction) (err error) {
@@ -36,8 +37,6 @@ func UpdateBalancesInternal(ptr *[]models.Account, trx models.Transaction) (err 
 func UpdateBalances(ptr *[]models.Account, trx *chain.Transaction) error {
 	logs := trx.ExtractLogs()
 
-	accounts := *ptr
-
 	if len(logs) > 0 {
 		events, err := utils.DecodeRewardsTopics(logs)
 		if err != nil {
@@ -45,16 +44,27 @@ func UpdateBalances(ptr *[]models.Account, trx *chain.Transaction) error {
 		}
 		for _, event := range events {
 			i := utils.FindBalance(ptr, event.Account)
-			utils.AddToBalance(&accounts[i], *event.Value)
+			if i == -1 {
+				i = utils.RegisterBalance(ptr, event.Account)
+			}
+			newArr := *ptr
+			utils.AddToBalance(&newArr[i], *event.Value)
 		}
 	}
 	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
 	if ok && parsedValue.Cmp(big.NewInt(0)) == 1 {
 		j := utils.FindBalance(ptr, trx.From)
+		if j == -1 {
+			log.Debug("Could not find balance for subtracting", trx.From)
+		}
 		z := utils.FindBalance(ptr, trx.To)
-		utils.SubstractFromBalance(&accounts[j], *parsedValue)
-		utils.AddToBalance(&accounts[z], *parsedValue)
-		if utils.IsZero(accounts[j]) {
+		if z == -1 {
+			z = utils.RegisterBalance(ptr, trx.From)
+		}
+		newArr := *ptr
+		utils.SubstractFromBalance(&newArr[j], *parsedValue)
+		utils.AddToBalance(&newArr[z], *parsedValue)
+		if utils.IsZero(newArr[j]) {
 			utils.RemoveBalance(ptr, trx.From)
 		}
 	}
