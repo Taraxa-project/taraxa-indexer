@@ -21,6 +21,32 @@ servers:
   - url: https://indexer.devnet.taraxa.io
     description: Devnet network
 paths:
+  /holders:
+    get:
+      tags:
+        - Holders
+      summary: "Returns the list of TARA token holders and their balances"
+      description: |
+        Returns the list of TARA token holders and their balances
+      operationId: "getHolders"
+      parameters:
+        - $ref: "#/components/parameters/paginationParam"
+      responses:
+        "200":
+          description: |
+            Currentlist of TARA token holders and their balances as a string- string pair as values could be pretty big
+          content:
+            application/json:
+              schema:
+                properties:
+                  holders:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/HoldersPaginatedResponse"
+        default:
+          description: |
+            Unexpected error
   /totalSupply:
     get:
       tags:
@@ -282,6 +308,17 @@ components:
           minimum: 2022
           default: 2023
           nullable: true
+    Account:
+      type: object
+      required:
+        - address
+        - balance
+      properties:
+        address:
+          $ref: "#/components/schemas/Address"
+        balance:
+          type: string
+          example: "0"
     Period:
       type: object
       required:
@@ -477,6 +514,15 @@ components:
         hasNext:
           type: boolean
           default: true
+    HoldersPaginatedResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResponse"
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Account"
     ValidatorsPaginatedResponse:
       allOf:
         - $ref: "#/components/schemas/PaginatedResponse"

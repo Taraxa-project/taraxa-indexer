@@ -13,6 +13,12 @@ const (
 	Transfer                 TransactionType = 0
 )
 
+// Account defines model for Account.
+type Account struct {
+	Address Address `json:"address"`
+	Balance string  `json:"balance"`
+}
+
 // Address defines model for Address.
 type Address = string
 
@@ -52,6 +58,9 @@ type EventLog struct {
 
 // Hash defines model for Hash.
 type Hash = string
+
+// HoldersPaginatedResponse defines model for HoldersPaginatedResponse.
+type HoldersPaginatedResponse = PaginatedResponse
 
 // InternalTransactionsResponse defines model for InternalTransactionsResponse.
 type InternalTransactionsResponse struct {
@@ -186,6 +195,12 @@ type GetAddressPbftsParams struct {
 
 // GetAddressTransactionsParams defines parameters for GetAddressTransactions.
 type GetAddressTransactionsParams struct {
+	// Pagination Pagination
+	Pagination PaginationParam `form:"pagination" json:"pagination"`
+}
+
+// GetHoldersParams defines parameters for GetHolders.
+type GetHoldersParams struct {
 	// Pagination Pagination
 	Pagination PaginationParam `form:"pagination" json:"pagination"`
 }
