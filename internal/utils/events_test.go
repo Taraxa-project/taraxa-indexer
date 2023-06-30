@@ -10,17 +10,21 @@ import (
 func TestDecodeEvent(t *testing.T) {
 	// Test RewardsClaimedEvent
 	rewardsClaimedTopic := "0x9310ccfcb8de723f578a9e4282ea9f521f05ae40dc08f3068dfad528a65ee3c7" // Example topic for RewardsClaimed event
-	rewardsClaimedData := "0x000000000000000000000000000000000000000000000005d9da3b556bb3aa86"  // Example data for RewardsClaimed event
+	rewardsClaimedData := "0x000000000000000000000000000000000000000000000000095e271c526c181b"  // Example data for RewardsClaimed event
 	rewardsClaimedLog := models.EventLog{
-		Topics: []string{rewardsClaimedTopic},
-		Data:   rewardsClaimedData,
+		Address:          "0x00000000000000000000000000000000000000fe",
+		LogIndex:         0,
+		Removed:          false,
+		Topics:           []string{rewardsClaimedTopic, "0x000000000000000000000000fc43217e71ec0a1cc480f3d210cd07cbde7374ec", "0x000000000000000000000000fc43217e71ec0a1cc480f3d210cd07cbde7374ec"},
+		Data:             rewardsClaimedData,
+		TransactionHash:  "0xecd3243842f3fe4a0e8419a0ac85e4a6098bde7635de53bcad18e57f80cc6463",
+		TransactionIndex: 1,
 	}
 
 	decoded, err := DecodeEvent(rewardsClaimedLog)
 	if err != nil {
 		t.Errorf("Failed to decode RewardsClaimedEvent: %v", err)
 	}
-
 	_, ok := decoded.(*RewardsClaimedEvent)
 	if !ok {
 		t.Errorf("Decoded event is not of type RewardsClaimedEvent")
@@ -28,14 +32,18 @@ func TestDecodeEvent(t *testing.T) {
 
 	// Test CommissionRewardsClaimedEvent
 	commissionRewardsClaimedTopic := "0xf0ec9e0f6add850a1738c5822244e26ffc3d1f14da7537aa240582b25af12ad0" // Example topic for CommissionRewardsClaimed event
-	commissionRewardsClaimedData := "0x000000000000000000000000000000000000000000000000a265be3ed3f04a8e"  // Example data for CommissionRewardsClaimed event
+	commissionRewardsClaimedData := "0x000000000000000000000000000000000000000000000000a7a44a964be1f30a"  // Example data for CommissionRewardsClaimed event
 	commissionRewardsClaimedLog := models.EventLog{
-		Topics: []string{commissionRewardsClaimedTopic},
-		Data:   commissionRewardsClaimedData,
+		Address:          "0x00000000000000000000000000000000000000fe",
+		LogIndex:         0,
+		Removed:          false,
+		Topics:           []string{commissionRewardsClaimedTopic, "0x0000000000000000000000000dc0d841f962759da25547c686fa440cf6c28c61", "0x000000000000000000000000ed4d5f4f3641cbc056e466d15dbe2403e38056f8"},
+		Data:             commissionRewardsClaimedData,
+		TransactionHash:  "0xe667503bfec2ade69c5e03398aa29a88e035931cadd2caf265c0c85345f3f40e",
+		TransactionIndex: 1,
 	}
 
 	decoded, err = DecodeEvent(commissionRewardsClaimedLog)
-	t.Log(decoded)
 	if err != nil {
 		t.Errorf("Failed to decode CommissionRewardsClaimedEvent: %v", err)
 	}
@@ -60,26 +68,27 @@ func TestDecodeRewardsTopics(t *testing.T) {
 	},
 		{
 			Address:  "0x00000000000000000000000000000000000000fe",
-			Data:     "0x0000000000000000000000000000000000000000000000000d5d3801a9b19fb9",
+			Data:     "0x000000000000000000000000000000000000000000000000a7a44a964be1f30a",
 			LogIndex: 0,
 			Removed:  false,
 			Topics: []string{
-				"0x9310ccfcb8de723f578a9e4282ea9f521f05ae40dc08f3068dfad528a65ee3c7",
-				"0x00000000000000000000000021db400dcb1ef3bc3aee4f3d028ec1939b7fadd6",
-				"0x0000000000000000000000004beaf4ce3c239ac7195a1e422725c0465271fb42",
+				"0xf0ec9e0f6add850a1738c5822244e26ffc3d1f14da7537aa240582b25af12ad0",
+				"0x0000000000000000000000000dc0d841f962759da25547c686fa440cf6c28c61",
+				"0x000000000000000000000000ed4d5f4f3641cbc056e466d15dbe2403e38056f8",
 			},
-			TransactionHash:  "0x4942cf9b3340624bb35a92a301afb9b6b97b846515a89ff589d5958c6ad3db61",
-			TransactionIndex: 1,
+			TransactionHash:  "0xe667503bfec2ade69c5e03398aa29a88e035931cadd2caf265c0c85345f3f40e",
+			TransactionIndex: 105,
 		},
 	}
 
 	decodedEvents, err := DecodeRewardsTopics(logs)
+	t.Log(decodedEvents)
 	if err != nil {
 		t.Errorf("Failed to decode rewards topics: %v", err)
 	}
 
 	valueOne, _ := new(big.Int).SetString("107931645057766238854", 10)
-	valueTwo, _ := new(big.Int).SetString("962987475120267193", 10)
+	valueTwo, _ := new(big.Int).SetString("12079862109893161738", 10)
 	expectedEvents := []LogReward{
 		{
 			EventName: "RewardsClaimed",
@@ -89,8 +98,8 @@ func TestDecodeRewardsTopics(t *testing.T) {
 		},
 		{
 			EventName: "CommissionRewardsClaimed",
-			Account:   "0x21DB400dCB1eF3bC3AEe4f3d028ec1939b7FadD6",
-			Validator: "0x4BEAf4ce3c239Ac7195a1e422725c0465271fb42",
+			Account:   "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
+			Validator: "0xEd4d5f4F3641cbC056E466d15DBE2403e38056f8",
 			Value:     valueTwo,
 		},
 	}
