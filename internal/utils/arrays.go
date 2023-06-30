@@ -19,22 +19,38 @@ func SortByBalanceDescending(ptr *[]models.Account) {
 	*ptr = array
 }
 
-func FindBalance(array []models.Account, address string) (*models.Account, int) {
+func FindBalance(ptr *[]models.Account, address string) int {
+	array := *ptr
 	for i, account := range array {
 		if strings.ToLower(account.Address) == strings.ToLower(address) {
-			return &account, i
+			return i
 		}
 	}
 
-	return nil, -1
+	return -1
+}
+
+func RegisterBalance(ptr *[]models.Account, address string) int {
+	array := *ptr
+	newAccount := &models.Account{
+		Address: address,
+		Balance: "0",
+	}
+
+	// Append the new account to the array
+	*ptr = append(array, *newAccount)
+
+	// Get the index of the newly added account
+	index := len(*ptr) - 1
+
+	return index
 }
 
 func RemoveBalance(array *[]models.Account, address string) {
-	_, i := FindBalance(*array, address)
-	unwrapped := *array
+	i := FindBalance(array, address)
 	if i != -1 {
-		newArr := append(unwrapped[:i], unwrapped[i+1:]...)
-		*array = newArr
+		unwrapped := *array
+		*array = append(unwrapped[:i], unwrapped[i+1:]...)
 	}
 }
 
