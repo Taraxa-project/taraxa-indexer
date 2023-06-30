@@ -12,6 +12,7 @@ type Storage interface {
 	ForEach(o interface{}, key_prefix string, start uint64, fn func([]byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
+	GetAccounts() []models.Account
 	GetWeekStats(year, week int32) WeekStats
 	GetFinalizationData() *FinalizationData
 	GetAddressStats(addr string) *AddressStats
