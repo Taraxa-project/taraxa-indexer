@@ -25,7 +25,7 @@ func UpdateBalancesInternal(ptr *[]models.Account, trx models.Transaction) (err 
 			utils.RegisterBalance(ptr, trx.To)
 		}
 		utils.SubstractFromBalance(&accounts[i], *parsedValue)
-		if utils.IsZero(*&accounts[i]) {
+		if utils.IsZero(accounts[i]) {
 			utils.RemoveBalance(ptr, trx.From)
 		}
 		utils.AddToBalance(&accounts[j], *parsedValue)

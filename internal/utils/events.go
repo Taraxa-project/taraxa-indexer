@@ -86,7 +86,7 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 
 func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
 	for _, log := range logs {
-		if strings.ToLower(log.Address) != strings.ToLower("0x00000000000000000000000000000000000000fe") {
+		if strings.EqualFold(log.Address, "0x00000000000000000000000000000000000000fe") {
 			continue
 		}
 		decoded, err := DecodeEvent(log)

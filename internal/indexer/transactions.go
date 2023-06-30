@@ -34,7 +34,11 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 				}
 				internal := makeInternal(trx_model, entry)
 
-				UpdateBalancesInternal(&newAccounts, internal)
+				err := UpdateBalancesInternal(&newAccounts, internal)
+
+				if err != nil {
+					log.WithError(err).WithFields(log.Fields{"from": internal.From, "to": internal.To, "hash": internal.Hash}).Error("UpdateBalancesInternal error")
+				}
 
 				internal_transactions.Data = append(internal_transactions.Data, internal)
 				bc.SaveTransaction(&internal)
@@ -46,7 +50,11 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 
-		UpdateBalances(&newAccounts, &trx)
+		err := UpdateBalances(&newAccounts, &trx)
+
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Error("UpdateBalances error")
+		}
 	}
 
 	utils.SortByBalanceDescending(&newAccounts)

@@ -38,6 +38,20 @@ func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilte
 	return response
 }
 
+func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
+	ret, pagination := storage.GetHoldersPage(a.storage, getPaginationStart(pag.Start), pag.Limit)
+
+	response := struct {
+		PaginatedResponse
+		Data []Account `json:"data"`
+	}{
+		PaginatedResponse: *pagination,
+		Data:              ret,
+	}
+
+	return response
+}
+
 // GetAddressDags returns all DAG blocks sent by the selected address
 func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
 	return ctx.JSON(http.StatusOK, GetAddressDataPage[Dag](a, address, &params.Pagination))
@@ -104,6 +118,12 @@ func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTo
 	count.Total = uint64(stats.Total)
 
 	return ctx.JSON(http.StatusOK, count)
+}
+
+func (a *ApiHandler) GetHolders(ctx echo.Context, params GetHoldersParams) error {
+	log.WithField("params", params).Debug("GetHolders")
+	ret := GetHoldersDataPage(a, &params.Pagination)
+	return ctx.JSON(http.StatusOK, ret)
 }
 
 // GetValidator returns info about the validator for the selected week

@@ -22,7 +22,7 @@ func SortByBalanceDescending(ptr *[]models.Account) {
 func FindBalance(ptr *[]models.Account, address string) int {
 	array := *ptr
 	for i, account := range array {
-		if strings.ToLower(account.Address) == strings.ToLower(address) {
+		if strings.EqualFold(account.Address, address) {
 			return i
 		}
 	}
