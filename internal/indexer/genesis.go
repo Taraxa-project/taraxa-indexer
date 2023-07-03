@@ -5,6 +5,7 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
@@ -41,14 +42,18 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
 
 func (g *Genesis) process() {
 	genesisSupply := big.NewInt(0)
+	accounts := g.storage.GetAccounts()
 	for addr, value := range g.genesis.InitialBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
+		UpdateBalancesInternal(&accounts, *trx)
 		g.bc.SaveTransaction(trx)
 		genesisSupply.Add(genesisSupply, parseStringToBigInt(trx.Value))
 	}
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
+	utils.SortByBalanceDescending(&accounts)
+	g.bc.batch.AddToBatchSingleKey(accounts, "0x0")
 	g.bc.finalized.TrxCount = 0
 	g.bc.batch.SetGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.batch.SetTotalSupply(genesisSupply)
