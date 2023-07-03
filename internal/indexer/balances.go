@@ -11,7 +11,6 @@ import (
 )
 
 func UpdateBalancesInternal(ptr *[]models.Account, trx models.Transaction) (err error) {
-
 	accounts := *ptr
 	parsedValue, ok := new(big.Int).SetString(trx.Value, 10)
 
