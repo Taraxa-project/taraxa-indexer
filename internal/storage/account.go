@@ -14,17 +14,17 @@ type Account struct {
 	Balance *big.Int `json:"balance"`
 }
 
-type Accounts struct {
+type Balances struct {
 	Accounts []Account `json:"accounts"`
 }
 
-func (a *Accounts) SortByBalanceDescending() {
+func (a *Balances) SortByBalanceDescending() {
 	sort.Slice(a.Accounts, func(i, j int) bool {
 		return a.Accounts[i].Balance.Cmp(a.Accounts[j].Balance) == 1
 	})
 }
 
-func (a *Accounts) findIndex(address string) int {
+func (a *Balances) findIndex(address string) int {
 	for i := 0; i < len(a.Accounts); i++ {
 		if strings.EqualFold(a.Accounts[i].Address, address) {
 			return i
@@ -33,7 +33,7 @@ func (a *Accounts) findIndex(address string) int {
 	return -1
 }
 
-func (a *Accounts) FindBalance(address string) *Account {
+func (a *Balances) FindBalance(address string) *Account {
 	i := a.findIndex(address)
 	if i == -1 {
 		return nil
@@ -41,7 +41,7 @@ func (a *Accounts) FindBalance(address string) *Account {
 	return &a.Accounts[i]
 }
 
-func (a *Accounts) RegisterBalance(address string) *Account {
+func (a *Balances) RegisterBalance(address string) *Account {
 	// Append the new account to the array
 	a.Accounts = append(a.Accounts, Account{
 		Address: address,
@@ -51,14 +51,14 @@ func (a *Accounts) RegisterBalance(address string) *Account {
 	return &a.Accounts[len(a.Accounts)-1]
 }
 
-func (a *Accounts) RemoveBalance(address string) {
+func (a *Balances) RemoveBalance(address string) {
 	i := a.findIndex(address)
 	if i != -1 {
 		a.Accounts = append(a.Accounts[:i], a.Accounts[i+1:]...)
 	}
 }
 
-func (a *Accounts) UpdateBalances(from, to, value_str string) {
+func (a *Balances) UpdateBalances(from, to, value_str string) {
 	value, ok := big.NewInt(0).SetString(value_str, 0)
 
 	if ok && value.Cmp(big.NewInt(0)) == 1 {
@@ -79,7 +79,7 @@ func (a *Accounts) UpdateBalances(from, to, value_str string) {
 	}
 }
 
-func (a *Accounts) UpdateEvents(logs []models.EventLog) error {
+func (a *Balances) UpdateEvents(logs []models.EventLog) error {
 	if len(logs) > 0 {
 		rewards_events, err := events.DecodeRewardsTopics(logs)
 		if err != nil {

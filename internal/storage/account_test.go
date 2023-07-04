@@ -3,45 +3,45 @@ package storage
 import (
 	"math/big"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSortByBalanceDescending(t *testing.T) {
 	// Create test data
-	accounts := []Account{
+	accounts := &Balances{Accounts: []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
-	}
+	}}
 
 	// Expected result after sorting
-	expected := []Account{
+	expected := &Balances{Accounts: []Account{
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
-	}
+	}}
 
 	// Sort the accounts
-	SortByBalanceDescending(accounts)
+	accounts.SortByBalanceDescending()
 
 	// Compare the sorted accounts with the expected result
-	if len(accounts) != len(expected) {
-		t.Fatalf("Unexpected length of sorted accounts. Got %d, expected %d", len(accounts), len(expected))
-	}
+	assert.Equal(t, len(expected.Accounts), len(accounts.Accounts), "SortByBalanceDescending failed to sort the accounts correctly")
 
-	for i, acc := range accounts {
-		if acc.Address != expected[i].Address || acc.Balance.Cmp(expected[i].Balance) != 0 {
-			t.Errorf("Mismatch in sorted account at index %d. Got %v, expected %v", i, acc, expected[i])
+	for i, acc := range accounts.Accounts {
+		if acc.Address != expected.Accounts[i].Address || acc.Balance.Cmp(expected.Accounts[i].Balance) != 0 {
+			t.Errorf("Mismatch in sorted account at index %d. Got %v, expected %v", i, acc, expected.Accounts[i])
 		}
 	}
 }
 
 func TestFindBalance(t *testing.T) {
 	// Create test data
-	accounts := []Account{
+	accounts := &Balances{Accounts: []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
-	}
+	}}
 
 	// Test cases
 	tests := []struct {
@@ -56,7 +56,7 @@ func TestFindBalance(t *testing.T) {
 
 	// Run the tests
 	for _, test := range tests {
-		idx := FindBalance(accounts, test.address)
+		idx := accounts.findIndex(test.address)
 		if idx != test.expectedIdx {
 			t.Errorf("Mismatch in FindBalance result for address %s. Got %d, expected %d", test.address, idx, test.expectedIdx)
 		}
@@ -65,10 +65,10 @@ func TestFindBalance(t *testing.T) {
 
 func TestRegisterBalance(t *testing.T) {
 	// Create test data
-	accounts := []Account{
+	accounts := &Balances{Accounts: []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
-	}
+	}}
 
 	// Test cases
 	tests := []struct {
@@ -81,39 +81,39 @@ func TestRegisterBalance(t *testing.T) {
 
 	// Run the tests
 	for _, test := range tests {
-		idx := RegisterBalance(&accounts, test.address)
-		t.Log(accounts)
+		bal := accounts.RegisterBalance(test.address)
+		idx := accounts.findIndex(bal.Address)
 		if idx != test.expectedIdx {
 			t.Errorf("Mismatch in RegisterBalance result for address %s. Got %d, expected %d", test.address, idx, test.expectedIdx)
 		}
 	}
 
 	// Verify that the accounts array has been modified
-	expectedAccounts := []Account{
+	expectedAccounts := &Balances{Accounts: []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(0)},
 		{Address: "0x4444444444444444444444444444444444444444", Balance: big.NewInt(0)},
+	}}
+
+	if len(accounts.Accounts) != len(expectedAccounts.Accounts) {
+		t.Fatalf("Unexpected length of accounts array. Got %d, expected %d", len(accounts.Accounts), len(expectedAccounts.Accounts))
 	}
 
-	if len(accounts) != len(expectedAccounts) {
-		t.Fatalf("Unexpected length of accounts array. Got %d, expected %d", len(accounts), len(expectedAccounts))
-	}
-
-	for i, acc := range accounts {
-		if acc.Address != expectedAccounts[i].Address || acc.Balance.Cmp(expectedAccounts[i].Balance) != 0 {
-			t.Errorf("Mismatch in account at index %d. Got %v, expected %v", i, acc, expectedAccounts[i])
+	for i, acc := range accounts.Accounts {
+		if acc.Address != expectedAccounts.Accounts[i].Address || acc.Balance.Cmp(expectedAccounts.Accounts[i].Balance) != 0 {
+			t.Errorf("Mismatch in account at index %d. Got %v, expected %v", i, acc, expectedAccounts.Accounts[i])
 		}
 	}
 }
 
 func TestRemoveBalance(t *testing.T) {
 	// Create test data
-	accounts := []Account{
+	accounts := &Balances{Accounts: []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
-	}
+	}}
 
 	// Test cases
 	tests := []struct {
@@ -132,66 +132,17 @@ func TestRemoveBalance(t *testing.T) {
 
 	// Run the tests
 	for _, test := range tests {
-		RemoveBalance(&accounts, test.address)
+		accounts.RemoveBalance(test.address)
 
 		// Verify that the accounts array has been modified
-		t.Log(accounts)
-		if len(accounts) != len(test.expectedArray) {
-			t.Fatalf("Unexpected length of accounts array. Got %d, expected %d", len(accounts), len(test.expectedArray))
+		if len(accounts.Accounts) != len(test.expectedArray) {
+			t.Fatalf("Unexpected length of accounts array. Got %d, expected %d", len(accounts.Accounts), len(test.expectedArray))
 		}
 
-		for i, acc := range accounts {
+		for i, acc := range accounts.Accounts {
 			if acc.Address != test.expectedArray[i].Address || acc.Balance.Cmp(test.expectedArray[i].Balance) != 0 {
 				t.Errorf("Mismatch in account at index %d. Got %v, expected %v", i, acc, test.expectedArray[i])
 			}
 		}
-	}
-}
-
-func TestAddToBalance(t *testing.T) {
-	// Create test data
-	account := &Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
-	value := big.NewInt(50)
-
-	// Add to balance
-	ModifyBalance(account, *value)
-
-	// Verify the updated balance
-	expectedBalance := big.NewInt(150)
-	if account.Balance.Cmp(expectedBalance) != 0 {
-		t.Errorf("Mismatch in account balance. Got %s, expected %s", account.Balance.String(), expectedBalance.String())
-	}
-}
-
-func TestSubstractFromBalance(t *testing.T) {
-	// Create test data
-	account := &Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
-	value := big.NewInt(-50)
-
-	// Subtract from balance
-	ModifyBalance(account, *value)
-
-	// Verify the updated balance
-	expectedBalance := big.NewInt(50)
-	if account.Balance.Cmp(expectedBalance) != 0 {
-		t.Errorf("Mismatch in account balance. Got %s, expected %s", account.Balance.String(), expectedBalance.String())
-	}
-}
-
-func TestIsZero(t *testing.T) {
-	// Create test data
-	nonZeroAccount := Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
-	zeroAccount := Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(0)}
-
-	// Test non-zero account
-	result := IsZero(nonZeroAccount)
-	if result {
-		t.Errorf("Unexpected result for non-zero account. Got %t, expected false", result)
-	}
-
-	// Test zero account
-	result = IsZero(zeroAccount)
-	if !result {
-		t.Errorf("Unexpected result for zero account. Got %t, expected true", result)
 	}
 }

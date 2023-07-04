@@ -24,7 +24,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		return
 	}
 
-	accounts := &storage.Accounts{Accounts: bc.storage.GetAccounts()}
+	accounts := &storage.Balances{Accounts: bc.storage.GetAccounts()}
 
 	internal_transactions := new(models.InternalTransactionsResponse)
 	for i, trx := range transactions {
@@ -50,16 +50,22 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 
 		accounts.UpdateBalances(trx.From, trx.To, trx.Value)
-		accounts.UpdateEvents(logs.Data)
+		err := accounts.UpdateEvents(logs.Data)
+		if err != nil {
+			return err
+		}
 	}
 	if bc.block.Number%1000 == 0 {
 		err = bc.checkIndexedBalances(accounts)
+	}
+	for _, balance := range accounts.Accounts {
+		fmt.Printf("%s: %s\n", balance.Address, balance.Balance.String())
 	}
 	bc.batch.SaveAccounts(accounts)
 	return
 }
 
-func (bc *blockContext) checkIndexedBalances(accounts *storage.Accounts) (err error) {
+func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
 	chainBalances := make([]*big.Int, 0, len(accounts.Accounts))
 
 	tp := utils.MakeThreadPool()

@@ -81,7 +81,7 @@ func getPrefix(o interface{}) (ret string) {
 
 	switch tt := o.(type) {
 	case *[]storage.Account, []storage.Account:
-		ret = "a"
+		ret = "b"
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
 	case *models.Transaction:

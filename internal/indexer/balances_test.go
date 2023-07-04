@@ -12,7 +12,7 @@ import (
 
 func TestUpdateBalancesInternal(t *testing.T) {
 	// Prepare test data
-	accounts := &storage.Accounts{Accounts: []storage.Account{
+	accounts := &storage.Balances{Accounts: []storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
 			Balance: big.NewInt(100),
@@ -44,7 +44,7 @@ func TestUpdateBalancesInternal(t *testing.T) {
 
 func TestUpdateBalances(t *testing.T) {
 	// Prepare test data
-	accounts := &storage.Accounts{Accounts: []storage.Account{
+	accounts := &storage.Balances{Accounts: []storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
 			Balance: big.NewInt(100),
@@ -87,7 +87,11 @@ func TestUpdateBalances(t *testing.T) {
 
 	// Invoke the method
 	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
-	accounts.UpdateEvents(trx.ExtractLogs())
+	err := accounts.UpdateEvents(trx.ExtractLogs())
+
+	if err != nil {
+		t.Error("UpdateBalances failed to update balances correctly. Error: ", err)
+	}
 
 	// Validate the updated balances
 	{

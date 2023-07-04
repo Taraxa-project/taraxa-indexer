@@ -169,7 +169,7 @@ func TestAccountsBatch(t *testing.T) {
 	st := NewStorage("")
 	defer st.Close()
 
-	accounts := []storage.Account{
+	accounts := &storage.Balances{Accounts: []storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
 			Balance: big.NewInt(100),
@@ -178,13 +178,13 @@ func TestAccountsBatch(t *testing.T) {
 			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
 			Balance: big.NewInt(50),
 		},
-	}
+	}}
 
 	batch := st.NewBatch()
 
-	batch.AddToBatchSingleKey(accounts, "")
+	batch.SaveAccounts(accounts)
 
-	err := st.addToDBTest(accounts, "", 0)
+	err := st.addToDBTest(accounts.Accounts, "", 0)
 
 	if err != nil {
 		t.Error(err)
@@ -192,7 +192,7 @@ func TestAccountsBatch(t *testing.T) {
 
 	ret := st.GetAccounts()
 
-	if len(ret) != len(accounts) {
+	if len(ret) != len(accounts.Accounts) {
 		t.Error("Broken DB")
 	}
 

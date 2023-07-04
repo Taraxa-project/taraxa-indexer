@@ -41,7 +41,7 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) *models.Transaction {
 
 func (g *Genesis) process() {
 	genesisSupply := big.NewInt(0)
-	accounts := &storage.Accounts{Accounts: g.storage.GetAccounts()}
+	accounts := &storage.Balances{Accounts: g.storage.GetAccounts()}
 	for addr, value := range g.genesis.InitialBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)
