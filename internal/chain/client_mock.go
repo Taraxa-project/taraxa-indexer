@@ -3,6 +3,7 @@ package chain
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -26,8 +27,8 @@ func MakeMockClient() *ClientMock {
 	return m
 }
 
-func (c *ClientMock) GetBalanceFromBlock(address string, blockNumber uint64) (balance string, err error) {
-	return "nil", ErrNotImplemented
+func (c *ClientMock) GetBalanceAtBlock(address string, blockNumber uint64) (balance *big.Int, err error) {
+	return nil, ErrNotImplemented
 }
 
 func (c *ClientMock) GetBlockByNumber(number uint64) (blk *Block, err error) {

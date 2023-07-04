@@ -1,4 +1,4 @@
-package utils
+package events
 
 import (
 	"encoding/hex"
@@ -12,6 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+const DposContractAddress = "0x00000000000000000000000000000000000000fe"
 
 // LogReward ..
 type LogReward struct {
@@ -85,7 +87,7 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 
 func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
 	for _, log := range logs {
-		if !strings.EqualFold(log.Address, "0x00000000000000000000000000000000000000fe") {
+		if !strings.EqualFold(log.Address, DposContractAddress) {
 			continue
 		}
 		decoded, err := DecodeEvent(log)

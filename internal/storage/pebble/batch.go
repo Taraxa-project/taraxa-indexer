@@ -52,6 +52,11 @@ func (b *Batch) UpdateWeekStats(w storage.WeekStats) {
 	}
 }
 
+func (b *Batch) SaveAccounts(a *storage.Accounts) {
+	a.SortByBalanceDescending()
+	b.AddToBatchSingleKey(a.Accounts, "")
+}
+
 func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {
 	err := b.addToBatch(o, getKey(getPrefix(o), key1, key2))
 	if err != nil {

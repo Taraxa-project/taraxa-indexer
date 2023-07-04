@@ -1,4 +1,4 @@
-package utils
+package events
 
 import (
 	"math/big"

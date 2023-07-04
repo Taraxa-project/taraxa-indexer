@@ -1,22 +1,20 @@
-package utils
+package storage
 
 import (
 	"math/big"
 	"testing"
-
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 )
 
 func TestSortByBalanceDescending(t *testing.T) {
 	// Create test data
-	accounts := []storage.Account{
+	accounts := []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 	}
 
 	// Expected result after sorting
-	expected := []storage.Account{
+	expected := []Account{
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
@@ -39,7 +37,7 @@ func TestSortByBalanceDescending(t *testing.T) {
 
 func TestFindBalance(t *testing.T) {
 	// Create test data
-	accounts := []storage.Account{
+	accounts := []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
@@ -67,7 +65,7 @@ func TestFindBalance(t *testing.T) {
 
 func TestRegisterBalance(t *testing.T) {
 	// Create test data
-	accounts := []storage.Account{
+	accounts := []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 	}
@@ -91,7 +89,7 @@ func TestRegisterBalance(t *testing.T) {
 	}
 
 	// Verify that the accounts array has been modified
-	expectedAccounts := []storage.Account{
+	expectedAccounts := []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(0)},
@@ -111,7 +109,7 @@ func TestRegisterBalance(t *testing.T) {
 
 func TestRemoveBalance(t *testing.T) {
 	// Create test data
-	accounts := []storage.Account{
+	accounts := []Account{
 		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
@@ -120,13 +118,13 @@ func TestRemoveBalance(t *testing.T) {
 	// Test cases
 	tests := []struct {
 		address       string
-		expectedArray []storage.Account
+		expectedArray []Account
 	}{
-		{"0x2222222222222222222222222222222222222222", []storage.Account{
+		{"0x2222222222222222222222222222222222222222", []Account{
 			{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 			{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 		}},
-		{"0x4444444444444444444444444444444444444444", []storage.Account{
+		{"0x4444444444444444444444444444444444444444", []Account{
 			{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
 			{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 		}},
@@ -152,7 +150,7 @@ func TestRemoveBalance(t *testing.T) {
 
 func TestAddToBalance(t *testing.T) {
 	// Create test data
-	account := &storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
+	account := &Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
 	value := big.NewInt(50)
 
 	// Add to balance
@@ -167,7 +165,7 @@ func TestAddToBalance(t *testing.T) {
 
 func TestSubstractFromBalance(t *testing.T) {
 	// Create test data
-	account := &storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
+	account := &Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
 	value := big.NewInt(-50)
 
 	// Subtract from balance
@@ -182,8 +180,8 @@ func TestSubstractFromBalance(t *testing.T) {
 
 func TestIsZero(t *testing.T) {
 	// Create test data
-	nonZeroAccount := storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
-	zeroAccount := storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(0)}
+	nonZeroAccount := Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
+	zeroAccount := Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(0)}
 
 	// Test non-zero account
 	result := IsZero(nonZeroAccount)

@@ -1,7 +1,11 @@
 package indexer
 
 import (
+	"fmt"
+	"math/big"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
@@ -20,7 +24,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		return
 	}
 
-	newAccounts := bc.storage.GetAccounts()
+	accounts := &storage.Accounts{Accounts: bc.storage.GetAccounts()}
 
 	internal_transactions := new(models.InternalTransactionsResponse)
 	for i, trx := range transactions {
@@ -33,15 +37,10 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 					continue
 				}
 				internal := makeInternal(trx_model, entry)
-
-				err := UpdateBalancesInternal(&newAccounts, internal)
-
-				if err != nil {
-					log.WithError(err).WithFields(log.Fields{"from": internal.From, "to": internal.To, "hash": internal.Hash}).Error("UpdateBalancesInternal error")
-				}
-
 				internal_transactions.Data = append(internal_transactions.Data, internal)
 				bc.SaveTransaction(&internal)
+
+				accounts.UpdateBalances(internal.From, internal.To, internal.Value)
 			}
 			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
 		}
@@ -50,16 +49,35 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 
-		err := UpdateBalances(&newAccounts, &trx)
+		accounts.UpdateBalances(trx.From, trx.To, trx.Value)
+		accounts.UpdateEvents(logs.Data)
+	}
+	if bc.block.Number%1000 == 0 {
+		err = bc.checkIndexedBalances(accounts)
+	}
+	bc.batch.SaveAccounts(accounts)
+	return
+}
 
-		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Error("UpdateBalances error")
+func (bc *blockContext) checkIndexedBalances(accounts *storage.Accounts) (err error) {
+	chainBalances := make([]*big.Int, 0, len(accounts.Accounts))
+
+	tp := utils.MakeThreadPool()
+	for i, balance := range accounts.Accounts {
+		address := balance.Address
+		idx := i
+		tp.Go(func() {
+			chainBalances[idx], err = bc.client.GetBalanceAtBlock(address, bc.block.Number)
+		})
+	}
+	tp.Wait()
+
+	for i, balance := range accounts.Accounts {
+		if balance.Balance.Cmp(chainBalances[i]) != 0 {
+			return fmt.Errorf("balance of %s is not equal to balance from chain", balance.Address)
 		}
 	}
-
-	utils.SortByBalanceDescending(newAccounts)
-	bc.batch.AddToBatchSingleKey(newAccounts, "")
-	return
+	return nil
 }
 
 func (bc *blockContext) getTransactions(trxHashes *[]string) (trxs []chain.Transaction, err error) {

@@ -92,8 +92,3 @@ func (local *FinalizationData) Check(remote *FinalizationData) {
 }
 
 type GenesisHash string
-
-type Account struct {
-	Address string   `json:"address"`
-	Balance *big.Int `json:"balance"`
-}
