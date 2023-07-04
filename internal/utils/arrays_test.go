@@ -10,16 +10,16 @@ import (
 func TestSortByBalanceDescending(t *testing.T) {
 	// Create test data
 	accounts := []storage.Account{
-		{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-		{Address: "0x2222222222222222222222222222222222222222", Balance: *big.NewInt(50)},
-		{Address: "0x3333333333333333333333333333333333333333", Balance: *big.NewInt(200)},
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
+		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 	}
 
 	// Expected result after sorting
 	expected := []storage.Account{
-		{Address: "0x3333333333333333333333333333333333333333", Balance: *big.NewInt(200)},
-		{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-		{Address: "0x2222222222222222222222222222222222222222", Balance: *big.NewInt(50)},
+		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 	}
 
 	// Sort the accounts
@@ -31,7 +31,7 @@ func TestSortByBalanceDescending(t *testing.T) {
 	}
 
 	for i, acc := range accounts {
-		if acc.Address != expected[i].Address || acc.Balance.Cmp(&expected[i].Balance) != 0 {
+		if acc.Address != expected[i].Address || acc.Balance.Cmp(expected[i].Balance) != 0 {
 			t.Errorf("Mismatch in sorted account at index %d. Got %v, expected %v", i, acc, expected[i])
 		}
 	}
@@ -40,9 +40,9 @@ func TestSortByBalanceDescending(t *testing.T) {
 func TestFindBalance(t *testing.T) {
 	// Create test data
 	accounts := []storage.Account{
-		{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-		{Address: "0x2222222222222222222222222222222222222222", Balance: *big.NewInt(50)},
-		{Address: "0x3333333333333333333333333333333333333333", Balance: *big.NewInt(200)},
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
+		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 	}
 
 	// Test cases
@@ -68,8 +68,8 @@ func TestFindBalance(t *testing.T) {
 func TestRegisterBalance(t *testing.T) {
 	// Create test data
 	accounts := []storage.Account{
-		{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-		{Address: "0x2222222222222222222222222222222222222222", Balance: *big.NewInt(50)},
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
 	}
 
 	// Test cases
@@ -92,10 +92,10 @@ func TestRegisterBalance(t *testing.T) {
 
 	// Verify that the accounts array has been modified
 	expectedAccounts := []storage.Account{
-		{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-		{Address: "0x2222222222222222222222222222222222222222", Balance: *big.NewInt(50)},
-		{Address: "0x3333333333333333333333333333333333333333", Balance: *big.NewInt(0)},
-		{Address: "0x4444444444444444444444444444444444444444", Balance: *big.NewInt(0)},
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
+		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(0)},
+		{Address: "0x4444444444444444444444444444444444444444", Balance: big.NewInt(0)},
 	}
 
 	if len(accounts) != len(expectedAccounts) {
@@ -103,7 +103,7 @@ func TestRegisterBalance(t *testing.T) {
 	}
 
 	for i, acc := range accounts {
-		if acc.Address != expectedAccounts[i].Address || acc.Balance.Cmp(&expectedAccounts[i].Balance) != 0 {
+		if acc.Address != expectedAccounts[i].Address || acc.Balance.Cmp(expectedAccounts[i].Balance) != 0 {
 			t.Errorf("Mismatch in account at index %d. Got %v, expected %v", i, acc, expectedAccounts[i])
 		}
 	}
@@ -112,9 +112,9 @@ func TestRegisterBalance(t *testing.T) {
 func TestRemoveBalance(t *testing.T) {
 	// Create test data
 	accounts := []storage.Account{
-		{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-		{Address: "0x2222222222222222222222222222222222222222", Balance: *big.NewInt(50)},
-		{Address: "0x3333333333333333333333333333333333333333", Balance: *big.NewInt(200)},
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
+		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 	}
 
 	// Test cases
@@ -123,12 +123,12 @@ func TestRemoveBalance(t *testing.T) {
 		expectedArray []storage.Account
 	}{
 		{"0x2222222222222222222222222222222222222222", []storage.Account{
-			{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-			{Address: "0x3333333333333333333333333333333333333333", Balance: *big.NewInt(200)},
+			{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+			{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 		}},
 		{"0x4444444444444444444444444444444444444444", []storage.Account{
-			{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)},
-			{Address: "0x3333333333333333333333333333333333333333", Balance: *big.NewInt(200)},
+			{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+			{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
 		}},
 	}
 
@@ -143,7 +143,7 @@ func TestRemoveBalance(t *testing.T) {
 		}
 
 		for i, acc := range accounts {
-			if acc.Address != test.expectedArray[i].Address || acc.Balance.Cmp(&test.expectedArray[i].Balance) != 0 {
+			if acc.Address != test.expectedArray[i].Address || acc.Balance.Cmp(test.expectedArray[i].Balance) != 0 {
 				t.Errorf("Mismatch in account at index %d. Got %v, expected %v", i, acc, test.expectedArray[i])
 			}
 		}
@@ -152,7 +152,7 @@ func TestRemoveBalance(t *testing.T) {
 
 func TestAddToBalance(t *testing.T) {
 	// Create test data
-	account := &storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)}
+	account := &storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
 	value := big.NewInt(50)
 
 	// Add to balance
@@ -167,7 +167,7 @@ func TestAddToBalance(t *testing.T) {
 
 func TestSubstractFromBalance(t *testing.T) {
 	// Create test data
-	account := &storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)}
+	account := &storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
 	value := big.NewInt(-50)
 
 	// Subtract from balance
@@ -182,8 +182,8 @@ func TestSubstractFromBalance(t *testing.T) {
 
 func TestIsZero(t *testing.T) {
 	// Create test data
-	nonZeroAccount := storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(100)}
-	zeroAccount := storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: *big.NewInt(0)}
+	nonZeroAccount := storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)}
+	zeroAccount := storage.Account{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(0)}
 
 	// Test non-zero account
 	result := IsZero(nonZeroAccount)

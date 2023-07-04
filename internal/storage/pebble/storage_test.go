@@ -172,11 +172,11 @@ func TestAccountsBatch(t *testing.T) {
 	accounts := []storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
-			Balance: *big.NewInt(100),
+			Balance: big.NewInt(100),
 		},
 		{
 			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-			Balance: *big.NewInt(50),
+			Balance: big.NewInt(50),
 		},
 	}
 

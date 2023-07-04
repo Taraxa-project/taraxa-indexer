@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -32,8 +33,6 @@ type CommissionRewardsClaimedEvent struct {
 	Amount    *big.Int
 }
 
-const dposABI = `[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"validator","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RewardsClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"validator","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"CommissionRewardsClaimed","type":"event"},{"inputs":[{"internalType":"address","name":"validator","type":"address"}],"name":"claimCommissionRewards","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"validator","type":"address"}],"name":"claimRewards","outputs":[],"stateMutability":"nonpayable","type":"function"}]`
-
 func DecodeEvent(log models.EventLog) (interface{}, error) {
 	// Convert the hex-encoded data to bytes
 	trimmed := strings.TrimPrefix(log.Data, "0x")
@@ -43,7 +42,7 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 		return nil, err
 	}
 
-	contractABI, error := abi.JSON(strings.NewReader(dposABI))
+	contractABI, error := abi.JSON(strings.NewReader(dpos_interface.DposInterfaceABI))
 	if error != nil {
 		return nil, error
 	}

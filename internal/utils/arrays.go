@@ -11,7 +11,7 @@ import (
 
 func SortByBalanceDescending(array []storage.Account) {
 	sort.Slice(array, func(i, j int) bool {
-		return array[i].Balance.Cmp(&array[j].Balance) == 1
+		return array[i].Balance.Cmp(array[j].Balance) == 1
 	})
 }
 
@@ -29,7 +29,7 @@ func RegisterBalance(ptr *[]storage.Account, address string) int {
 	array := *ptr
 	newAccount := &storage.Account{
 		Address: address,
-		Balance: *big.NewInt(0),
+		Balance: big.NewInt(0),
 	}
 
 	// Append the new account to the array
@@ -50,8 +50,7 @@ func RemoveBalance(array *[]storage.Account, address string) {
 }
 
 func ModifyBalance(acc *storage.Account, value big.Int) {
-	balance := &acc.Balance
-	acc.Balance = *balance.Add(&acc.Balance, &value)
+	acc.Balance = acc.Balance.Add(acc.Balance, &value)
 }
 
 func IsZero(account storage.Account) bool {
