@@ -76,20 +76,28 @@ func UpdateBalances(ptr *[]storage.Account, trx *chain.Transaction) error {
 
 func (bc *blockContext) CheckIndexedBalances() error {
 	balances := bc.storage.GetAccounts()
+	chainBalances := new([]*big.Int)
 
-	for _, balance := range balances {
-		if balance.Balance.Cmp(big.NewInt(0)) == -1 {
-			return fmt.Errorf("balance of %s is negative", balance.Address)
+	tp := utils.MakeThreadPool()
+	tp.Go(func() {
+		for _, balance := range balances {
+			balanceHex, err := bc.client.GetBalanceFromBlock(balance.Address, bc.block.Number)
+			if err != nil {
+				log.WithError(err).Error("could not get balance from chain")
+				return
+			}
+			balanceInt, ok := new(big.Int).SetString(balanceHex, 16)
+			if !ok {
+				log.WithError(err).Error("could not parse balance from chain")
+				return
+			}
+			*chainBalances = append(*chainBalances, balanceInt)
 		}
-		balanceFromChain, err := bc.client.GetBalanceFromBlock(balance.Address, bc.block.Number)
-		if err != nil {
-			return err
-		}
-		balanceInt, ok := new(big.Int).SetString(balanceFromChain, 16)
-		if !ok {
-			return fmt.Errorf("could not parse balance from chain %s", balanceFromChain)
-		}
-		if balance.Balance.Cmp(balanceInt) != 0 {
+	})
+	tp.Wait()
+	unwrapped := *chainBalances
+	for i, balance := range balances {
+		if balance.Balance.Cmp(unwrapped[i]) != 0 {
 			return fmt.Errorf("balance of %s is not equal to balance from chain", balance.Address)
 		}
 	}
