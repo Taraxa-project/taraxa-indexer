@@ -28,7 +28,7 @@ func NewWsClient(url string) (*WsClient, error) {
 
 func (client *WsClient) GetBalanceFromBlock(address string, blockNumber uint64) (balance string, err error) {
 	blkNumberHex := fmt.Sprintf("0x%016X", blockNumber)
-	err = client.rpc.Call(balance, "eth_getBalance", []string{address, blkNumberHex}, false)
+	err = client.rpc.Call(balance, "eth_getBalance", address, blkNumberHex)
 	metrics.RpcCallsCounter.Inc()
 	return
 }
