@@ -55,7 +55,9 @@ func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64,
 	tp.Go(func() { dags_count, err = bc.processDags() })
 	tp.Go(func() { err = bc.processTransactions(raw.Transactions) })
 	tp.Wait()
-
+	if bc.block.Number%1000 == 0 {
+		tp.Go(func() { err = bc.CheckIndexedBalances() })
+	}
 	if err != nil {
 		return
 	}

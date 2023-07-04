@@ -73,3 +73,25 @@ func UpdateBalances(ptr *[]storage.Account, trx *chain.Transaction) error {
 	}
 	return nil
 }
+
+func (bc *blockContext) CheckIndexedBalances() error {
+	balances := bc.storage.GetAccounts()
+
+	for _, balance := range balances {
+		if balance.Balance.Cmp(big.NewInt(0)) == -1 {
+			return fmt.Errorf("balance of %s is negative", balance.Address)
+		}
+		balanceFromChain, err := bc.client.GetBalanceFromBlock(balance.Address, bc.block.Number)
+		if err != nil {
+			return err
+		}
+		balanceInt, ok := new(big.Int).SetString(balanceFromChain, 16)
+		if !ok {
+			return fmt.Errorf("could not parse balance from chain %s", balanceFromChain)
+		}
+		if balance.Balance.Cmp(balanceInt) != 0 {
+			return fmt.Errorf("balance of %s is not equal to balance from chain", balance.Address)
+		}
+	}
+	return nil
+}
