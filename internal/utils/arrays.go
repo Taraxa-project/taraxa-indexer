@@ -6,21 +6,16 @@ import (
 
 	"math/big"
 
-	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 )
 
-func SortByBalanceDescending(ptr *[]models.Account) {
-	array := *ptr
+func SortByBalanceDescending(array []storage.Account) {
 	sort.Slice(array, func(i, j int) bool {
-		firstBalance, _ := new(big.Int).SetString(array[i].Balance, 10)
-		secondBalance, _ := new(big.Int).SetString(array[j].Balance, 10)
-		return firstBalance.Cmp(secondBalance) == 1
+		return array[i].Balance.Cmp(&array[j].Balance) == 1
 	})
-	*ptr = array
 }
 
-func FindBalance(ptr *[]models.Account, address string) int {
-	array := *ptr
+func FindBalance(array []storage.Account, address string) int {
 	for i, account := range array {
 		if strings.EqualFold(account.Address, address) {
 			return i
@@ -30,11 +25,11 @@ func FindBalance(ptr *[]models.Account, address string) int {
 	return -1
 }
 
-func RegisterBalance(ptr *[]models.Account, address string) int {
+func RegisterBalance(ptr *[]storage.Account, address string) int {
 	array := *ptr
-	newAccount := &models.Account{
+	newAccount := &storage.Account{
 		Address: address,
-		Balance: "0",
+		Balance: *big.NewInt(0),
 	}
 
 	// Append the new account to the array
@@ -46,33 +41,19 @@ func RegisterBalance(ptr *[]models.Account, address string) int {
 	return index
 }
 
-func RemoveBalance(array *[]models.Account, address string) {
-	i := FindBalance(array, address)
+func RemoveBalance(array *[]storage.Account, address string) {
+	unwrapped := *array
+	i := FindBalance(unwrapped, address)
 	if i != -1 {
-		unwrapped := *array
 		*array = append(unwrapped[:i], unwrapped[i+1:]...)
 	}
 }
 
-func AddToBalance(acc *models.Account, value big.Int) {
-	balance, _ := new(big.Int).SetString(acc.Balance, 10)
-	balance.Add(balance, &value)
-	acc.Balance = balance.String()
+func ModifyBalance(acc *storage.Account, value big.Int) {
+	balance := &acc.Balance
+	acc.Balance = *balance.Add(&acc.Balance, &value)
 }
 
-func SubstractFromBalance(acc *models.Account, value big.Int) {
-	balance, _ := new(big.Int).SetString(acc.Balance, 10)
-	balance.Sub(balance, &value)
-	acc.Balance = balance.String()
-}
-
-func CompareAccounts(first, second models.Account) int {
-	firstBalance, _ := new(big.Int).SetString(first.Balance, 10)
-	secondBalance, _ := new(big.Int).SetString(second.Balance, 10)
-	return firstBalance.Cmp(secondBalance)
-}
-
-func IsZero(account models.Account) bool {
-	firstBalance, _ := new(big.Int).SetString(account.Balance, 10)
-	return firstBalance.Cmp(big.NewInt(0)) == 0
+func IsZero(account storage.Account) bool {
+	return account.Balance.Cmp(big.NewInt(0)) == 0
 }

@@ -12,7 +12,7 @@ type Storage interface {
 	ForEach(o interface{}, key_prefix string, start uint64, fn func([]byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
-	GetAccounts() []models.Account
+	GetAccounts() []Account
 	GetWeekStats(year, week int32) WeekStats
 	GetFinalizationData() *FinalizationData
 	GetAddressStats(addr string) *AddressStats
@@ -79,6 +79,9 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagina
 	}
 	pagination.End = end
 
-	ret = holders[from:end]
+	slice := holders[from:end]
+	for i := range slice {
+		ret = append(ret, models.Account{Address: slice[i].Address, Balance: slice[i].Balance.String()})
+	}
 	return
 }

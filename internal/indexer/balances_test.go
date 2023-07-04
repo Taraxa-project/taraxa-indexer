@@ -1,23 +1,25 @@
 package indexer
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
 func TestUpdateBalancesInternal(t *testing.T) {
 	// Prepare test data
-	accounts := []models.Account{
+	accounts := []storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
-			Balance: "100",
+			Balance: *big.NewInt(100),
 		},
 		{
 			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-			Balance: "50",
+			Balance: *big.NewInt(50),
 		},
 	}
 	trx := models.Transaction{
@@ -35,29 +37,27 @@ func TestUpdateBalancesInternal(t *testing.T) {
 	}
 
 	// Validate the updated balances
-	i := utils.FindBalance(&accounts, "0x1111111111111111111111111111111111111111")
-	t.Log(accounts[i])
-	if i == -1 || accounts[i].Balance != "80" {
+	i := utils.FindBalance(accounts, "0x1111111111111111111111111111111111111111")
+	if i == -1 || accounts[i].Balance.Cmp(big.NewInt(80)) != 0 {
 		t.Error("UpdateBalancesInternal failed to update 'from' balance correctly")
 	}
 
-	j := utils.FindBalance(&accounts, "0x0DC0d841F962759DA25547c686fa440cF6C28C61")
-	t.Log(accounts[j])
-	if j == -1 || accounts[j].Balance != "70" {
+	j := utils.FindBalance(accounts, "0x0DC0d841F962759DA25547c686fa440cF6C28C61")
+	if j == -1 || accounts[j].Balance.Cmp(big.NewInt(70)) != 0 {
 		t.Error("UpdateBalancesInternal failed to update 'to' balance correctly")
 	}
 }
 
 func TestUpdateBalances(t *testing.T) {
 	// Prepare test data
-	accounts := []models.Account{
+	accounts := []storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
-			Balance: "100",
+			Balance: *big.NewInt(100),
 		},
 		{
 			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-			Balance: "50",
+			Balance: *big.NewInt(50),
 		},
 	}
 	trx := &chain.Transaction{
@@ -101,13 +101,14 @@ func TestUpdateBalances(t *testing.T) {
 	}
 
 	// Validate the updated balances
-	i := utils.FindBalance(&accounts, "0x1111111111111111111111111111111111111111")
-	if i == -1 || accounts[i].Balance != "70" {
-		t.Error("UpdateBalances failed to update 'from' balance correctly. Sould be 70 but is ", accounts[i].Balance)
+	i := utils.FindBalance(accounts, "0x1111111111111111111111111111111111111111")
+	if i == -1 || accounts[i].Balance.Cmp(big.NewInt(70)) != 0 {
+		t.Error("UpdateBalances failed to update 'from' balance correctly. Sould be 70 but is ", accounts[i].Balance.String())
 	}
 
-	j := utils.FindBalance(&accounts, "0x0DC0d841F962759DA25547c686fa440cF6C28C61")
-	if j == -1 || accounts[j].Balance != "12079862109893161818" {
-		t.Error("UpdateBalances failed to update 'to' balance correctly. Should be 12079862109893161818 but is ", accounts[j].Balance)
+	j := utils.FindBalance(accounts, "0x0DC0d841F962759DA25547c686fa440cF6C28C61")
+	bigInt, _ := big.NewInt(0).SetString("12079862109893161818", 10)
+	if j == -1 || accounts[j].Balance.Cmp(bigInt) != 0 {
+		t.Error("UpdateBalances failed to update 'to' balance correctly. Should be 12079862109893161818 but is ", accounts[j].Balance.String())
 	}
 }

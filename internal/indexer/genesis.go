@@ -52,7 +52,7 @@ func (g *Genesis) process() {
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
-	utils.SortByBalanceDescending(&accounts)
+	utils.SortByBalanceDescending(accounts)
 	g.bc.batch.AddToBatchSingleKey(accounts, "0x0")
 	g.bc.finalized.TrxCount = 0
 	g.bc.batch.SetGenesisHash(storage.GenesisHash(g.hash))

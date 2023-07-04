@@ -80,7 +80,7 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 func getPrefix(o interface{}) (ret string) {
 
 	switch tt := o.(type) {
-	case *[]models.Account, []models.Account:
+	case *[]storage.Account, []storage.Account:
 		ret = "a"
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
@@ -185,8 +185,8 @@ func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 	return ptr
 }
 
-func (s *Storage) GetAccounts() []models.Account {
-	ptr := new([]models.Account)
+func (s *Storage) GetAccounts() []storage.Account {
+	ptr := new([]storage.Account)
 	err := s.getFromDB(ptr, getKey(getPrefix(ptr), "0x0", 0))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAccounts failed: ", err)
@@ -257,7 +257,7 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	switch tt := o.(type) {
-	case *[]models.Account, *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse:
+	case *[]storage.Account, *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse:
 		value, closer, err := s.get(key)
 		if err != nil {
 			return err
