@@ -58,7 +58,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	}
 
 	utils.SortByBalanceDescending(newAccounts)
-	bc.batch.AddToBatchSingleKey(newAccounts, "0x0")
+	bc.batch.AddToBatchSingleKey(newAccounts, "")
 	return
 }
 

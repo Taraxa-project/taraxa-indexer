@@ -187,7 +187,7 @@ func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 
 func (s *Storage) GetAccounts() []storage.Account {
 	ptr := new([]storage.Account)
-	err := s.getFromDB(ptr, getKey(getPrefix(ptr), "0x0", 0))
+	err := s.getFromDB(ptr, getKey(getPrefix(ptr), "", 0))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAccounts failed: ", err)
 	}

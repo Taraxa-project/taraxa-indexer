@@ -182,9 +182,9 @@ func TestAccountsBatch(t *testing.T) {
 
 	batch := st.NewBatch()
 
-	batch.AddToBatchSingleKey(accounts, "0x0")
+	batch.AddToBatchSingleKey(accounts, "")
 
-	err := st.addToDBTest(accounts, "0x0", 0)
+	err := st.addToDBTest(accounts, "", 0)
 
 	if err != nil {
 		t.Error(err)

@@ -53,7 +53,7 @@ func (g *Genesis) process() {
 
 	// Genesis transactions isn't real transactions, so don't count it here
 	utils.SortByBalanceDescending(accounts)
-	g.bc.batch.AddToBatchSingleKey(accounts, "0x0")
+	g.bc.batch.AddToBatchSingleKey(accounts, "")
 	g.bc.finalized.TrxCount = 0
 	g.bc.batch.SetGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.batch.SetTotalSupply(genesisSupply)
