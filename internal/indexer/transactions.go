@@ -28,7 +28,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		return
 	}
 
-	accounts := &storage.Balances{Accounts: bc.storage.GetAccounts()}
+	accounts := &storage.Balances{Accounts: bc.Storage.GetAccounts()}
 	block_fee := big.NewInt(0)
 
 	internal_transactions := new(models.InternalTransactionsResponse)
@@ -55,13 +55,13 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
 		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
 
-		trx_fee := trx.GetFee()
+		trx_fee := transactions[t_idx].GetFee()
 		block_fee.Add(block_fee, trx_fee)
-		accounts.AddToBalance(trx.From, big.NewInt(0).Neg(trx_fee))
-		if trx.Status == "0x0" {
+		accounts.AddToBalance(transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
+		if transactions[t_idx].Status == "0x0" {
 			continue
 		}
-		accounts.UpdateBalances(trx.From, trx.To, trx.Value)
+		accounts.UpdateBalances(transactions[t_idx].From, transactions[t_idx].To, transactions[t_idx].Value)
 		err := accounts.UpdateEvents(logs.Data)
 		if err != nil {
 			return err
@@ -71,14 +71,14 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 	if bc.block.Number%1000 == 0 {
 		err = bc.checkIndexedBalances(accounts)
 	}
-	bc.batch.SaveAccounts(accounts)
+	bc.Batch.SaveAccounts(accounts)
 	return
 }
 
 func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
 	chainBalances := make(map[string]*big.Int)
 	var mutex sync.RWMutex
-	tp := utils.MakeThreadPool()
+	tp := common.MakeThreadPool()
 	for _, balance := range accounts.Accounts {
 		if balance.IsGenesis || balance.Address == "0x00000000000000000000000000000000000000fe" {
 			continue
@@ -87,7 +87,7 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 		tp.Go(func() {
 			mutex.Lock()
 			defer mutex.Unlock()
-			b, get_err := bc.client.GetBalanceAtBlock(address, bc.block.Number)
+			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
 			if get_err != nil {
 				err = get_err
 				return
