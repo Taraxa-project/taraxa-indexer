@@ -63,27 +63,30 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 }
 
 func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
-	chainBalances := make([]*big.Int, len(accounts.Accounts))
+	chainBalances := make(map[string]*big.Int)
 	tp := utils.MakeThreadPool()
-	for i, balance := range accounts.Accounts {
-		if balance.IsGenesis {
+	for _, balance := range accounts.Accounts {
+		if balance.IsGenesis || balance.Address == "0x00000000000000000000000000000000000000fe" {
 			continue
 		}
 		address := balance.Address
-		idx := i
 		tp.Go(func() {
-			b, err := bc.client.GetBalanceAtBlock(address, bc.block.Number)
-			if err != nil {
+			b, get_err := bc.client.GetBalanceAtBlock(address, bc.block.Number)
+			if get_err != nil {
+				err = get_err
 				return
 			}
-			chainBalances[idx], _ = big.NewInt(0).SetString(b, 0)
+			chainBalances[address], _ = big.NewInt(0).SetString(b, 0)
 		})
 	}
 	tp.Wait()
 
-	for i, balance := range accounts.Accounts {
-		if balance.Balance.Cmp(chainBalances[i]) != 0 {
-			return fmt.Errorf("balance of %s: %s != %s", balance.Address, balance.Balance, chainBalances[i])
+	for _, balance := range accounts.Accounts {
+		if balance.IsGenesis {
+			continue
+		}
+		if balance.Balance.Cmp(chainBalances[balance.Address]) != 0 {
+			return fmt.Errorf("balance of %s: %s != %s", balance.Address, balance.Balance, chainBalances[balance.Address])
 		}
 	}
 	return nil
