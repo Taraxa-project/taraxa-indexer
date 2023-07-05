@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
@@ -9,7 +11,8 @@ import (
 type Storage interface {
 	Clean() error
 	Close() error
-	ForEach(o interface{}, key_prefix string, start uint64, fn func([]byte) (stop bool))
+	ForEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool))
+	ForEachBackwards(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
 	GetWeekStats(year, week int32) WeekStats
@@ -19,6 +22,8 @@ type Storage interface {
 	GetGenesisHash() GenesisHash
 	GetInternalTransactions(hash string) models.InternalTransactionsResponse
 	GetTransactionLogs(hash string) models.TransactionLogsResponse
+	GetValidatorYield(validator string, block uint64) (res Yield)
+	GetTotalYield(block uint64) (res Yield)
 }
 
 func GetTotal[T Paginated](s Storage, address string) (r uint64) {
@@ -52,7 +57,7 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 	pagination.End = end
 
 	ret = make([]T, 0, count)
-	s.ForEach(&o, address, pagination.Total-from, func(res []byte) (stop bool) {
+	s.ForEachBackwards(&o, address, pagination.Total-from, func(_, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &o)
 		if err != nil {
 			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")
@@ -64,4 +69,22 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 		return
 	})
 	return
+}
+
+func GetIntervalData[T Yields](s Storage, start uint64) map[string]T {
+	var o T
+	ret := make(map[string]T)
+	s.ForEach(&o, "", start, func(key, res []byte) bool {
+		err := rlp.DecodeBytes(res, &o)
+		ret[string(key)] = o
+		if err != nil {
+			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")
+		}
+		return false
+	})
+	return ret
+}
+
+func GetUIntKey(key uint64) string {
+	return fmt.Sprintf("%020d", key)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
@@ -12,7 +13,7 @@ import (
 
 func MakeTestBlockContext(mc *chain.ClientMock, blockNumber uint64) *blockContext {
 	st := pebble.NewStorage("")
-	bc := MakeBlockContext(st, mc)
+	bc := MakeBlockContext(st, mc, new(common.Config))
 	bc.block = &models.Pbft{}
 	bc.block.Number = blockNumber
 	bc.block.TransactionCount = 1
@@ -247,18 +248,18 @@ func TestTraceParsing(t *testing.T) {
 
 	mc.AddTracesFromJson(transaction_hash, traces_json)
 
-	transactions_trace, _ := bc.client.TraceBlockTransactions(trx.BlockNumber)
+	transactions_trace, _ := bc.Client.TraceBlockTransactions(trx.BlockNumber)
 	// Have one transaction with 9 internal transactions
 	trx_count := 1
 	internal_count := 9
 	assert.Equal(t, trx_count, len(transactions_trace))
 	assert.Equal(t, trx_count+internal_count, len(transactions_trace[0].Trace))
 
-	err := bc.processTransactions(&[]string{trx.Hash})
+	err := bc.processTransactions([]string{trx.Hash})
 	assert.Equal(t, err, nil)
 	bc.commit()
 
-	int_trx := bc.storage.GetInternalTransactions(trx.Hash)
+	int_trx := bc.Storage.GetInternalTransactions(trx.Hash)
 	assert.Equal(t, internal_count, len(int_trx.Data))
 
 	// count transactions to compare it with db data
@@ -279,7 +280,7 @@ func TestTraceParsing(t *testing.T) {
 	}
 
 	for addr, count := range addr_trx_count {
-		res, _ := storage.GetObjectsPage[models.Transaction](bc.storage, addr, 0, 20)
+		res, _ := storage.GetObjectsPage[models.Transaction](bc.Storage, addr, 0, 20)
 
 		assert.Equal(t, len(res), count)
 	}

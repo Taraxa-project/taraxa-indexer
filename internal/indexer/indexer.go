@@ -4,19 +4,21 @@ import (
 	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	log "github.com/sirupsen/logrus"
 )
 
 type Indexer struct {
-	retry_time                  time.Duration
 	client                      *chain.WsClient
 	storage                     storage.Storage
+	config                      *common.Config
+	retry_time                  time.Duration
 	consistency_check_available bool
 }
 
-func MakeAndRun(url string, storage storage.Storage) {
-	i := NewIndexer(url, storage)
+func MakeAndRun(url string, s storage.Storage, c *common.Config) {
+	i := NewIndexer(url, s, c)
 	for {
 		err := i.run()
 		f := i.storage.GetFinalizationData()
@@ -25,11 +27,18 @@ func MakeAndRun(url string, storage storage.Storage) {
 	}
 }
 
-func NewIndexer(url string, storage storage.Storage) (i *Indexer) {
-	var err error
+func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer) {
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
-	i.storage = storage
+	i.storage = s
+	i.config = c
+	// connect is retrying to connect every retry_time
+	i.connect(url)
+	return
+}
+
+func (i *Indexer) connect(url string) {
+	var err error
 	for {
 		i.client, err = chain.NewWsClient(url)
 		if err == nil {
@@ -46,7 +55,6 @@ func NewIndexer(url string, storage storage.Storage) (i *Indexer) {
 		log.WithError(err).Error("Can't connect to chain")
 		time.Sleep(i.retry_time)
 	}
-	return
 }
 
 func (i *Indexer) init() error {
@@ -54,6 +62,7 @@ func (i *Indexer) init() error {
 	if err != nil {
 		return err
 	}
+
 	remote_hash := storage.GenesisHash(genesis_blk.Hash)
 	db_clean := false
 	if i.storage.GenesisHashExist() {
@@ -68,20 +77,43 @@ func (i *Indexer) init() error {
 	} else {
 		db_clean = true
 	}
-	if !db_clean {
-		return nil
+
+	chain_genesis, err := i.client.GetGenesis()
+	if err != nil {
+		log.WithError(err).Fatal("GetGenesis error")
+	}
+	i.config.Chain = chain_genesis.ToChainConfig()
+
+	// Process genesis if db is clean
+	if db_clean {
+		genesis, err := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash)
+		if err != nil {
+			return err
+		}
+		// Genesis hash and finalized period(0) is set inside
+		genesis.process()
 	}
 
-	genesis, err := MakeGenesis(i.storage, i.client, remote_hash)
-	if err != nil {
-		return err
-	}
-	// Genesis hash and finalized period(0) is set inside
-	genesis.process()
 	return nil
 }
 
-func (i *Indexer) sync() (err error) {
+func (i *Indexer) syncPeriod(p uint64) error {
+	blk, b_err := i.client.GetBlockByNumber(p)
+	if b_err != nil {
+		return b_err
+	}
+
+	dc, tc, process_err := MakeBlockContext(i.storage, i.client, i.config).process(blk)
+	if process_err != nil {
+		return process_err
+	}
+
+	log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
+
+	return nil
+}
+
+func (i *Indexer) sync() error {
 	// start processing blocks from the next one
 	start := i.storage.GetFinalizationData().PbftCount + 1
 	end, p_err := i.client.GetLatestPeriod()
@@ -89,29 +121,21 @@ func (i *Indexer) sync() (err error) {
 		return p_err
 	}
 	if start >= end {
-		return
+		return nil
 	}
 	log.WithFields(log.Fields{"start": start, "end": end}).Info("Syncing: started")
 	prev := time.Now()
 	for p := uint64(start); p <= end; p++ {
-		blk, b_err := i.client.GetBlockByNumber(p)
-		if b_err != nil {
-			return b_err
+		if err := i.syncPeriod(p); err != nil {
+			return err
 		}
 		if p%100 == 0 {
 			log.WithFields(log.Fields{"period": p, "elapsed_ms": time.Since(prev).Milliseconds()}).Info("Syncing: block applied")
 			prev = time.Now()
 		}
-
-		dc, tc, process_err := MakeBlockContext(i.storage, i.client).process(blk)
-		if process_err != nil {
-			return process_err
-		}
-
-		log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}
 	log.WithFields(log.Fields{"period": end}).Info("Syncing: finished")
-	return
+	return nil
 }
 
 func (i *Indexer) run() error {
@@ -130,7 +154,7 @@ func (i *Indexer) run() error {
 		case err := <-sub.Err():
 			return err
 		case blk := <-ch:
-			p := chain.ParseInt(blk.Number)
+			p := chain.ParseUInt(blk.Number)
 			finalized_period := i.storage.GetFinalizationData().PbftCount
 			if p != finalized_period+1 {
 				err := i.sync()
@@ -151,7 +175,7 @@ func (i *Indexer) run() error {
 				}
 			}
 
-			bc := MakeBlockContext(i.storage, i.client)
+			bc := MakeBlockContext(i.storage, i.client, i.config)
 			dc, tc, err := bc.process(blk)
 			if err != nil {
 				return err

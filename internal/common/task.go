@@ -1,10 +1,4 @@
-package utils
-
-import (
-	"runtime"
-
-	"github.com/spiretechnology/go-pool"
-)
+package common
 
 type Task[P any] struct {
 	f      func(P) error
@@ -49,9 +43,4 @@ func (t *TaskWithResult[P, R]) Run() {
 	if exec_err != nil {
 		*t.err = exec_err
 	}
-}
-
-// isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
-func MakeThreadPool() pool.Pool {
-	return pool.New(uint(runtime.NumCPU()))
 }
