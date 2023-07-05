@@ -81,3 +81,13 @@ func (b *Batch) addToBatch(o interface{}, key []byte) error {
 	}
 	return b.Set(key, data, nil)
 }
+
+func (b *Batch) Remove(key string) {
+	b.Mutex.Lock()
+	defer b.Mutex.Unlock()
+
+	err := b.Delete([]byte(key), nil)
+	if err != nil {
+		log.WithError(err).Fatal("Remove failed")
+	}
+}

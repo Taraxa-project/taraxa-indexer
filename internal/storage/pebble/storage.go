@@ -78,31 +78,36 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 }
 
 func getPrefix(o interface{}) (ret string) {
-
 	switch tt := o.(type) {
 	case *[]storage.Account, []storage.Account:
 		ret = "b"
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
-	case *models.Transaction:
+	case *models.Transaction, models.Transaction:
 		ret = "t"
-	case *models.Pbft:
+	case *models.Pbft, models.Pbft:
 		ret = "p"
-	case *models.Dag:
+	case *models.Dag, models.Dag:
 		ret = "d"
-	case *storage.AddressStats:
+	case *storage.AddressStats, storage.AddressStats:
 		ret = "s"
-	case *storage.FinalizationData:
+	case *storage.FinalizationData, storage.FinalizationData:
 		ret = "f"
-	case *storage.GenesisHash:
+	case *storage.GenesisHash, storage.GenesisHash:
 		ret = "g"
-	case *storage.WeekStats:
+	case *storage.WeekStats, storage.WeekStats:
 		ret = "w"
-	case *storage.TotalSupply:
+	case *storage.TotalSupply, storage.TotalSupply:
 		ret = "ts"
-	case *models.InternalTransactionsResponse:
+	case *models.InternalTransactionsResponse, models.InternalTransactionsResponse:
 		ret = "i"
-	// hack if we aren't passing original type directly to this method, but passing interface from other one
+	case *storage.Yield, storage.Yield:
+		ret = "y"
+	case *storage.ValidatorsYield, storage.ValidatorsYield:
+		ret = "vy"
+	case *storage.MultipliedYield, storage.MultipliedYield:
+		ret = "my"
+	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
 		ret = getPrefix(*o.(*interface{}))
 	default:
@@ -147,19 +152,26 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-func (s *Storage) ForEach(o interface{}, key_prefix string, start uint64, fn func([]byte) (stop bool)) {
+func (s *Storage) forEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	prefix := getPrefixKey(getPrefix(&o), key_prefix)
 	start_key := getKey(getPrefix(&o), key_prefix, start)
-
 	iter := s.find(prefix)
 	defer iter.Close()
 	iter.SeekGE(start_key)
 
-	for ; iter.Valid(); iter.Prev() {
-		if fn(iter.Value()) {
+	for ; iter.Valid(); navigate(iter) {
+		if fn(iter.Key(), iter.Value()) {
 			break
 		}
 	}
+}
+
+func (s *Storage) ForEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool)) {
+	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Next() })
+}
+
+func (s *Storage) ForEachBackwards(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool)) {
+	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
 }
 
 func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {
@@ -255,22 +267,30 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 	return *ptr
 }
 
+func (s *Storage) GetValidatorYield(validator string, block uint64) (res storage.Yield) {
+	err := s.getFromDB(&res, getKey(getPrefix(&res), validator, block))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetValidatorYield failed")
+	}
+	return
+}
+
+func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
+	// total yield is stored under empty address
+	return s.GetValidatorYield("", block)
+}
+
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
-	switch tt := o.(type) {
-	case *[]storage.Account, *storage.AddressStats, *storage.FinalizationData, *storage.GenesisHash, *storage.WeekStats, *storage.TotalSupply, *models.InternalTransactionsResponse, *models.TransactionLogsResponse:
-		value, closer, err := s.get(key)
-		if err != nil {
-			return err
-		}
-		err = rlp.DecodeBytes(value, o)
-		if err != nil {
-			return err
-		}
-		if err := closer.Close(); err != nil {
-			return err
-		}
-	default:
-		log.WithField("type", tt).Fatal("getFromDB: Unexpected type")
+	value, closer, err := s.get(key)
+	if err != nil {
+		return err
+	}
+	err = rlp.DecodeBytes(value, o)
+	if err != nil {
+		return err
+	}
+	if err := closer.Close(); err != nil {
+		return err
 	}
 	return nil
 }

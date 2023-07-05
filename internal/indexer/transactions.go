@@ -6,22 +6,25 @@ import (
 	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/internal/utils"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
 
-func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
+func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
+	if len(trxHashes) == 0 {
+		return
+	}
 	var traces []chain.TransactionTrace
 	var transactions []chain.Transaction
 
-	tp := utils.MakeThreadPool()
-	tp.Go(utils.MakeTaskWithResult(bc.client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
-	tp.Go(utils.MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
+	tp := common.MakeThreadPool()
+	tp.Go(common.MakeTaskWithResult(bc.Client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
+	tp.Go(common.MakeTaskWithResult(bc.getTransactions, trxHashes, &transactions, &err).Run)
 	tp.Wait()
 
-	if err != nil {
+	if err != nil || len(traces) != len(transactions) || len(trxHashes) != len(transactions) {
 		return
 	}
 
@@ -29,27 +32,28 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	block_fee := big.NewInt(0)
 
 	internal_transactions := new(models.InternalTransactionsResponse)
-	for i, trx := range transactions {
-		trx_model := trx.ToModelWithTimestamp(bc.block.Timestamp)
-		bc.SaveTransaction(trx_model)
-		trace := traces[i]
-		if len(trace.Trace) > 1 {
-			for i, entry := range trace.Trace {
-				if i == 0 {
-					continue
-				}
-				internal := makeInternal(trx_model, entry)
-				internal_transactions.Data = append(internal_transactions.Data, internal)
-				bc.SaveTransaction(&internal)
-
-				accounts.UpdateBalances(internal.From, internal.To, internal.Value)
+	bc.transactions = make([]models.Transaction, len(transactions))
+	for t_idx := 0; t_idx < len(transactions); t_idx++ {
+		bc.transactions[t_idx] = transactions[t_idx].ToModelWithTimestamp(bc.block.Timestamp)
+		bc.SaveTransaction(bc.transactions[t_idx])
+		trace := traces[t_idx]
+		if len(trace.Trace) <= 1 {
+			continue
+		}
+		for e_idx, entry := range trace.Trace {
+			if e_idx == 0 {
+				continue
 			}
-			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
+			internal := makeInternal(bc.transactions[t_idx], entry)
+			internal_transactions.Data = append(internal_transactions.Data, internal)
+			bc.SaveTransaction(internal)
+			accounts.UpdateBalances(internal.From, internal.To, internal.Value)
 		}
 		logs := models.TransactionLogsResponse{
-			Data: trx.ExtractLogs(),
+			Data: transactions[t_idx].ExtractLogs(),
 		}
-		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
+		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
+		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
 
 		trx_fee := trx.GetFee()
 		block_fee.Add(block_fee, trx_fee)
@@ -104,8 +108,8 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 	return nil
 }
 
-func (bc *blockContext) getTransactions(trxHashes *[]string) (trxs []chain.Transaction, err error) {
-	trxs, err = bc.client.GetPeriodTransactions(bc.block.Number)
+func (bc *blockContext) getTransactions(trxHashes []string) (trxs []chain.Transaction, err error) {
+	trxs, err = bc.Client.GetPeriodTransactions(bc.block.Number)
 	if err != nil {
 		log.WithError(err).Debug("GetPeriodTransactions error")
 		return bc.getTransactionsOld(trxHashes)
@@ -114,37 +118,36 @@ func (bc *blockContext) getTransactions(trxHashes *[]string) (trxs []chain.Trans
 	return
 }
 
-func (bc *blockContext) getTransactionsOld(trxHashes *[]string) (trxs []chain.Transaction, err error) {
-	trxs = make([]chain.Transaction, len(*trxHashes))
+func (bc *blockContext) getTransactionsOld(trxHashes []string) (trxs []chain.Transaction, err error) {
+	trxs = make([]chain.Transaction, len(trxHashes))
 
-	tp := utils.MakeThreadPool()
-	for i, trx_hash := range *trxHashes {
-		tp.Go(utils.MakeTaskWithResult(bc.client.GetTransactionByHash, trx_hash, &trxs[i], &err).Run)
+	tp := common.MakeThreadPool()
+	for i, trx_hash := range trxHashes {
+		tp.Go(common.MakeTaskWithResult(bc.Client.GetTransactionByHash, trx_hash, &trxs[i], &err).Run)
 	}
 	tp.Wait()
 	return
 }
 
-func makeInternal(trx *models.Transaction, entry chain.TraceEntry) (internal models.Transaction) {
-	internal = *trx
+func makeInternal(trx models.Transaction, entry chain.TraceEntry) (internal models.Transaction) {
+	internal = trx
 	internal.From = entry.Action.From
 	internal.To = entry.Action.To
 	internal.Value = entry.Action.Value
-	internal.GasUsed = chain.ParseInt(entry.Result.GasUsed)
+	internal.GasUsed = chain.ParseUInt(entry.Result.GasUsed)
 	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
 	internal.BlockNumber = 0
-
-	return internal
+	return
 }
 
-func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
+func (bc *blockContext) SaveTransaction(trx models.Transaction) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 
-	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
-	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
+	from_index := bc.getAddress(bc.Storage, trx.From).AddTransaction(trx.Timestamp)
+	to_index := bc.getAddress(bc.Storage, trx.To).AddTransaction(trx.Timestamp)
 
-	bc.batch.AddToBatch(trx, trx.From, from_index)
-	bc.batch.AddToBatch(trx, trx.To, to_index)
+	bc.Batch.AddToBatch(trx, trx.From, from_index)
+	bc.Batch.AddToBatch(trx, trx.To, to_index)
 }
 
 // func (bc *blockContext) SaveEventLog(eventLog *models.EventLog) {
@@ -155,6 +158,6 @@ func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
 
 func (bc *blockContext) addAddressStatsToBatch() {
 	for _, stats := range bc.addressStats {
-		bc.batch.AddToBatch(stats, stats.Address, 0)
+		bc.Batch.AddToBatch(stats, stats.Address, 0)
 	}
 }

@@ -169,8 +169,18 @@ type WeekResponse struct {
 	Year      *int32    `json:"year"`
 }
 
+// YieldResponse defines model for YieldResponse.
+type YieldResponse struct {
+	FromBlock Counter `json:"fromBlock"`
+	ToBlock   Counter `json:"toBlock"`
+	Yield     string  `json:"yield"`
+}
+
 // AddressParam defines model for addressParam.
 type AddressParam = AddressFilter
+
+// BlockNumParam defines model for blockNumParam.
+type BlockNumParam = Counter
 
 // HashParam defines model for hashParam.
 type HashParam = Hash
@@ -199,10 +209,22 @@ type GetAddressTransactionsParams struct {
 	Pagination PaginationParam `form:"pagination" json:"pagination"`
 }
 
+// GetAddressYieldParams defines parameters for GetAddressYield.
+type GetAddressYieldParams struct {
+	// BlockNumber Block Number
+	BlockNumber *BlockNumParam `form:"blockNumber,omitempty" json:"blockNumber,omitempty"`
+}
+
 // GetHoldersParams defines parameters for GetHolders.
 type GetHoldersParams struct {
 	// Pagination Pagination
 	Pagination PaginationParam `form:"pagination" json:"pagination"`
+}
+
+// GetTotalYieldParams defines parameters for GetTotalYield.
+type GetTotalYieldParams struct {
+	// BlockNumber Block Number
+	BlockNumber *BlockNumParam `form:"blockNumber,omitempty" json:"blockNumber,omitempty"`
 }
 
 // GetValidatorsParams defines parameters for GetValidators.

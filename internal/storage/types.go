@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"math/big"
 	"reflect"
 	"strings"
@@ -14,6 +15,10 @@ type TotalSupply = big.Int
 
 type Paginated interface {
 	models.Transaction | models.Dag | models.Pbft
+}
+
+type Yields interface {
+	ValidatorsYield | MultipliedYield
 }
 
 func GetTypeName[T any]() string {
@@ -77,7 +82,7 @@ type FinalizationData struct {
 	PbftCount uint64 `json:"pbft_period"`
 }
 
-func (local *FinalizationData) Check(remote *FinalizationData) {
+func (local *FinalizationData) Check(remote FinalizationData) {
 	// Perform this check only if we are getting data for the same block from node
 	if local.PbftCount != remote.PbftCount {
 		return
@@ -92,3 +97,24 @@ func (local *FinalizationData) Check(remote *FinalizationData) {
 }
 
 type GenesisHash string
+
+type ValidatorYield struct {
+	Validator string   `json:"validator"`
+	Yield     *big.Int `json:"yield"`
+}
+
+type ValidatorsYield struct {
+	Yields []ValidatorYield `json:"yields"`
+}
+
+type MultipliedYield struct {
+	Yield *big.Int `json:"yield"`
+}
+
+type Yield struct {
+	Yield string `json:"yield"`
+}
+
+func FormatIntToKey(i uint64) string {
+	return fmt.Sprintf("%020d", i)
+}
