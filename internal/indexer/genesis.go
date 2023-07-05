@@ -47,7 +47,8 @@ func (g *Genesis) process() {
 		g.bc.SaveTransaction(trx)
 		value := parseStringToBigInt(trx.Value)
 		genesisSupply.Add(genesisSupply, value)
-		accounts.UpdateBalanceTo(trx.To, value)
+		accounts.AddToBalance(trx.To, value)
+		accounts.SetGenesis(trx.To)
 	}
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 

@@ -10,8 +10,9 @@ import (
 )
 
 type Account struct {
-	Address string   `json:"address"`
-	Balance *big.Int `json:"balance"`
+	Address   string   `json:"address"`
+	Balance   *big.Int `json:"balance"`
+	IsGenesis bool     `json:"is_genesis"`
 }
 
 type Balances struct {
@@ -33,6 +34,13 @@ func (a *Balances) findIndex(address string) int {
 	return -1
 }
 
+func (a *Balances) SetGenesis(address string) {
+	account := a.FindBalance(address)
+	if account != nil {
+		account.IsGenesis = true
+	}
+}
+
 func (a *Balances) FindBalance(address string) *Account {
 	i := a.findIndex(address)
 	if i == -1 {
@@ -44,8 +52,9 @@ func (a *Balances) FindBalance(address string) *Account {
 func (a *Balances) RegisterBalance(address string) *Account {
 	// Append the new account to the array
 	a.Accounts = append(a.Accounts, Account{
-		Address: address,
-		Balance: big.NewInt(0),
+		Address:   address,
+		Balance:   big.NewInt(0),
+		IsGenesis: false,
 	})
 
 	return &a.Accounts[len(a.Accounts)-1]
@@ -58,7 +67,7 @@ func (a *Balances) RemoveBalance(address string) {
 	}
 }
 
-func (a *Balances) UpdateBalanceTo(to string, value *big.Int) {
+func (a *Balances) AddToBalance(to string, value *big.Int) {
 	to_account := a.FindBalance(to)
 	if to_account == nil {
 		to_account = a.RegisterBalance(to)
@@ -78,7 +87,7 @@ func (a *Balances) UpdateBalances(from, to, value_str string) {
 		if from_account.Balance.Cmp(big.NewInt(0)) == 0 {
 			a.RemoveBalance(from)
 		}
-		a.UpdateBalanceTo(to, value)
+		a.AddToBalance(to, value)
 	}
 }
 

@@ -66,6 +66,9 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 	chainBalances := make([]*big.Int, len(accounts.Accounts))
 	tp := utils.MakeThreadPool()
 	for i, balance := range accounts.Accounts {
+		if balance.IsGenesis {
+			continue
+		}
 		address := balance.Address
 		idx := i
 		tp.Go(func() {
