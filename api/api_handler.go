@@ -8,6 +8,7 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/models"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/labstack/echo/v4"
 	"github.com/nleeper/goment"
@@ -144,12 +145,22 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error 
 
 func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
 	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
-	return ctx.JSON(http.StatusOK, a.storage.GetValidatorYield(address, block_num))
+	resp := models.YieldResponse{
+		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
+		ToBlock:   block_num,
+		Yield:     a.storage.GetValidatorYield(address, block_num).Yield,
+	}
+	return ctx.JSON(http.StatusOK, resp)
 }
 
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams) error {
 	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.TotalYieldSavingInterval)
-	return ctx.JSON(http.StatusOK, a.storage.GetTotalYield(block_num))
+	resp := models.YieldResponse{
+		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
+		ToBlock:   block_num,
+		Yield:     a.storage.GetTotalYield(block_num).Yield,
+	}
+	return ctx.JSON(http.StatusOK, resp)
 }
 
 func getPaginationStart(param *uint64) uint64 {

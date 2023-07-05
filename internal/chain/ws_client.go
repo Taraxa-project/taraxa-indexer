@@ -102,7 +102,7 @@ func (client *WsClient) addTransactionReceiptData(trx *Transaction) (err error) 
 }
 
 func (client *WsClient) GetPeriodTransactions(number uint64) (trxs []Transaction, err error) {
-	err = client.rpc.Call(&trxs, "taraxa_getPeriodTransactionsWithReceipts", fmt.Sprintf("0x%x", number))
+	err = client.rpc.Call(&trxs, "debug_getPeriodTransactionsWithReceipts", fmt.Sprintf("0x%x", number))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
@@ -120,7 +120,7 @@ func (client *WsClient) GetDagBlockByHash(hash string) (dag DagBlock, err error)
 }
 
 func (client *WsClient) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
-	err = client.rpc.Call(&dags, "taraxa_getPeriodDagBlocks", fmt.Sprintf("0x%x", period))
+	err = client.rpc.Call(&dags, "debug_getPeriodDagBlocks", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
@@ -138,7 +138,7 @@ func (client *WsClient) GetChainStats() (fd storage.FinalizationData, err error)
 }
 
 func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error) {
-	err = client.rpc.Call(&vr, "taraxa_getPreviousBlockCertVotes", fmt.Sprintf("0x%x", period))
+	err = client.rpc.Call(&vr, "debug_getPreviousBlockCertVotes", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }

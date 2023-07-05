@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var multiplier = big.NewInt(10e12)
+var multiplier = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
 var percentage_multiplier = big.NewInt(10000)
 
 type Rewards struct {
@@ -102,21 +102,20 @@ func calculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData)
 }
 
 func getValidatorsYield(rewards map[string]*big.Int, totalStake *big.Int, validators []dpos_interface.DposInterfaceValidatorData) []storage.ValidatorYield {
-	validators_yield := make(map[string]*big.Int)
+	ret := make([]storage.ValidatorYield, len(validators))
+	i := 0
 	for _, v := range validators {
 		validator := strings.ToLower(v.Account.Hex())
-		validator_reward := rewards[validator]
-		if validator_reward == nil {
-			continue
+		ret[i] = storage.ValidatorYield{Validator: validator, Yield: big.NewInt(0)}
+		if rewards[validator] != nil {
+			ret[i].Yield.Add(ret[i].Yield, getMultipliedYield(rewards[validator], v.Info.TotalStake))
 		}
-		validators_yield[validator] = getMultipliedYield(validator_reward, v.Info.TotalStake)
-	}
-	ret := make([]storage.ValidatorYield, len(validators_yield))
-	i := 0
-	for k, v := range validators_yield {
-		ret[i] = storage.ValidatorYield{Validator: k, Yield: v}
 		i++
 	}
+	if len(ret) != len(validators) {
+		log.WithFields(log.Fields{"i": i, "len(ret)": len(ret), "len(rewards)": len(rewards)}).Fatal("getValidatorsYield failed")
+	}
+
 	return ret
 }
 
@@ -124,6 +123,9 @@ func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []m
 	r.addTotalMinted(total_minted)
 
 	totalStake := calculateTotalStake(validators)
+	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
+		log.WithFields(log.Fields{"total_stake": totalStake}).Info("totalStake")
+	}
 	rewards, total_reward := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
 	validators_yield := getValidatorsYield(rewards, totalStake, validators)
 	if total_reward.Cmp(total_minted) != 0 {
@@ -154,34 +156,39 @@ func (r *Rewards) processIntervalYield(batch storage.Batch) {
 		batch.Remove(k)
 	}
 
-	yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, r.config.TotalYieldSavingInterval)
+	yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.TotalYieldSavingInterval))
 	batch.AddToBatchSingleKey(&storage.Yield{Yield: common.FormatFloat(yield)}, storage.FormatIntToKey(r.blockNum))
 }
 
 func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 	yields := storage.GetIntervalData[storage.ValidatorsYield](r.storage, r.blockNum-r.config.TotalYieldSavingInterval)
 	sum_by_validator := make(map[string]*big.Int)
+	count_by_validator := make(map[string]int64)
 	for k, y := range yields {
 		for _, y := range y.Yields {
 			if sum_by_validator[y.Validator] == nil {
 				sum_by_validator[y.Validator] = big.NewInt(0)
 			}
 			sum_by_validator[y.Validator].Add(sum_by_validator[y.Validator], y.Yield)
+			count_by_validator[y.Validator]++
 		}
 		batch.Remove(k)
 	}
 
 	for val, sum := range sum_by_validator {
-		yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, r.config.ValidatorsYieldSavingInterval)
+		yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, count_by_validator[val])
+		if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
+			log.WithFields(log.Fields{"validator": val, "yield": yield}).Info("processValidatorsIntervalYield")
+		}
 		batch.AddToBatch(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
 	}
 }
 
-func getYieldForInterval(yield, blocks_per_year *big.Int, interval uint64) float64 {
+func getYieldForInterval(yield, blocks_per_year *big.Int, elem_count int64) float64 {
 	res := big.NewInt(0)
 	res.Mul(yield, blocks_per_year)
-	res.Div(res, big.NewInt(int64(interval)))
 	res.Mul(res, percentage_multiplier)
+	res.Div(res, big.NewInt(int64(elem_count)))
 	res.Div(res, multiplier)
 
 	ret := float64(res.Uint64())

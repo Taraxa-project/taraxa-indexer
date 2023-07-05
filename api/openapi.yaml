@@ -658,3 +658,12 @@ components:
         Block Number
       schema:
         $ref: "#/components/schemas/Counter"
+    addressesParam:
+      name: addresses
+      in: query
+      required: true
+      description: |
+        Addresses
+      schema:
+        $ref: "#/components/schemas/Address"
+

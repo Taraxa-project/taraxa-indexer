@@ -307,7 +307,7 @@ func TestTotalYieldSaving(t *testing.T) {
 
 	// 10% yield per block will be equal to 100% for 10 blocks
 	yield := st.GetTotalYield(10)
-	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, config.TotalYieldSavingInterval)), yield.Yield)
+	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
 }
 
 func TestValidatorsYieldSaving(t *testing.T) {
@@ -341,5 +341,5 @@ func TestValidatorsYieldSaving(t *testing.T) {
 
 	// 10% yield per block will be equal to 100% for 10 blocks
 	yield := st.GetTotalYield(10)
-	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, config.TotalYieldSavingInterval)), yield.Yield)
+	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
 }

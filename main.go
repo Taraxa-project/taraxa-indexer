@@ -39,8 +39,8 @@ func init() {
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
-	yield_saving_interval = flag.Int("yield_saving_interval", 1000, "interval for saving total yield")
-	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 1000, "interval for saving validators yield")
+	yield_saving_interval = flag.Int("yield_saving_interval", 150000, "interval for saving total yield")
+	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 150000, "interval for saving validators yield")
 
 	flag.Parse()
 
@@ -84,6 +84,9 @@ func main() {
 	c := common.DefaultConfig()
 	c.TotalYieldSavingInterval = uint64(*yield_saving_interval)
 	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
+
+	fin := st.GetFinalizationData()
+	log.WithFields(log.Fields{"pbft_count": fin.PbftCount}).Info("Loaded db with")
 
 	apiHandler := api.NewApiHandler(st, c)
 	api.RegisterHandlers(e, apiHandler)
