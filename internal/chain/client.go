@@ -1,8 +1,6 @@
 package chain
 
 import (
-	"math/big"
-
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -19,7 +17,7 @@ type Client interface {
 	GetGenesis() (genesis *GenesisObject, err error)
 	GetChainStats() (ns *storage.FinalizationData, err error)
 	SubscribeNewHeads() (chan *Block, *rpc.ClientSubscription, error)
-	GetBalanceAtBlock(address string, blockNumber uint64) (balance *big.Int, err error)
+	GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error)
 	// Close disconnects from the node
 	Close()
 }

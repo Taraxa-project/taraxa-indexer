@@ -181,14 +181,8 @@ func TestAccountsBatch(t *testing.T) {
 	}}
 
 	batch := st.NewBatch()
-
 	batch.SaveAccounts(accounts)
-
-	err := st.addToDBTest(accounts.Accounts, "", 0)
-
-	if err != nil {
-		t.Error(err)
-	}
+	batch.CommitBatch()
 
 	ret := st.GetAccounts()
 

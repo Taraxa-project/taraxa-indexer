@@ -58,6 +58,14 @@ func (a *Balances) RemoveBalance(address string) {
 	}
 }
 
+func (a *Balances) UpdateBalanceTo(to string, value *big.Int) {
+	to_account := a.FindBalance(to)
+	if to_account == nil {
+		to_account = a.RegisterBalance(to)
+	}
+	to_account.Balance.Add(to_account.Balance, value)
+}
+
 func (a *Balances) UpdateBalances(from, to, value_str string) {
 	value, ok := big.NewInt(0).SetString(value_str, 0)
 
@@ -70,12 +78,7 @@ func (a *Balances) UpdateBalances(from, to, value_str string) {
 		if from_account.Balance.Cmp(big.NewInt(0)) == 0 {
 			a.RemoveBalance(from)
 		}
-
-		to_account := a.FindBalance(to)
-		if to_account == nil {
-			to_account = a.RegisterBalance(to)
-		}
-		to_account.Balance.Add(to_account.Balance, value)
+		a.UpdateBalanceTo(to, value)
 	}
 }
 

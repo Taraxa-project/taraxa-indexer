@@ -2,7 +2,6 @@ package events
 
 import (
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -82,7 +81,7 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 		event.Validator = validator.Hex()
 		return &event, nil
 	}
-	return nil, fmt.Errorf("no matching event topic found")
+	return nil, nil
 }
 
 func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {

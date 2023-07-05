@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"fmt"
-	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 
@@ -27,9 +26,9 @@ func NewWsClient(url string) (*WsClient, error) {
 	return &WsClient{rpc: client, ctx: ctx}, nil
 }
 
-func (client *WsClient) GetBalanceAtBlock(address string, blockNumber uint64) (balance *big.Int, err error) {
+func (client *WsClient) GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error) {
 	blkNumberHex := fmt.Sprintf("0x%x", blockNumber)
-	err = client.rpc.Call(balance, "eth_getBalance", address, blkNumberHex)
+	err = client.rpc.Call(&balance, "eth_getBalance", address, blkNumberHex)
 	metrics.RpcCallsCounter.Inc()
 	return
 }

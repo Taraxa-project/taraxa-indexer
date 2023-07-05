@@ -63,21 +63,24 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 }
 
 func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
-	chainBalances := make([]*big.Int, 0, len(accounts.Accounts))
-
+	chainBalances := make([]*big.Int, len(accounts.Accounts))
 	tp := utils.MakeThreadPool()
 	for i, balance := range accounts.Accounts {
 		address := balance.Address
 		idx := i
 		tp.Go(func() {
-			chainBalances[idx], err = bc.client.GetBalanceAtBlock(address, bc.block.Number)
+			b, err := bc.client.GetBalanceAtBlock(address, bc.block.Number)
+			if err != nil {
+				return
+			}
+			chainBalances[idx], _ = big.NewInt(0).SetString(b, 0)
 		})
 	}
 	tp.Wait()
 
 	for i, balance := range accounts.Accounts {
 		if balance.Balance.Cmp(chainBalances[i]) != 0 {
-			return fmt.Errorf("balance of %s is not equal to balance from chain", balance.Address)
+			return fmt.Errorf("balance of %s: %s != %s", balance.Address, balance.Balance, chainBalances[i])
 		}
 	}
 	return nil
