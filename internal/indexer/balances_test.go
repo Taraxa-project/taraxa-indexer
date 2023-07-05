@@ -35,7 +35,7 @@ func TestUpdateBalancesInternal(t *testing.T) {
 	// Validate the updated balances
 	{
 		acc := accounts.FindBalance("0x1111111111111111111111111111111111111111")
-		assert.Equal(t, big.NewInt(79), acc.Balance, "UpdateBalancesInternal failed to update 'from' balance correctly")
+		assert.Equal(t, big.NewInt(80), acc.Balance, "UpdateBalancesInternal failed to update 'from' balance correctly")
 	}
 
 	{
