@@ -40,7 +40,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 				internal_transactions.Data = append(internal_transactions.Data, internal)
 				bc.SaveTransaction(&internal)
 
-				accounts.UpdateBalances(internal.From, internal.To, internal.Value)
+				accounts.UpdateBalances(internal.From, internal.To, internal.Value, "", "")
 			}
 			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
 		}
@@ -49,7 +49,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 
-		accounts.UpdateBalances(trx.From, trx.To, trx.Value)
+		accounts.UpdateBalances(trx.From, trx.To, trx.Value, trx.GasUsed, trx.GasPrice)
 		err := accounts.UpdateEvents(logs.Data)
 		if err != nil {
 			return err

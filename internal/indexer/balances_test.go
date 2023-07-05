@@ -23,17 +23,22 @@ func TestUpdateBalancesInternal(t *testing.T) {
 		},
 	}}
 	trx := models.Transaction{
-		From:  "0x1111111111111111111111111111111111111111",
-		To:    "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-		Value: "20",
+		From:     "0x1111111111111111111111111111111111111111",
+		To:       "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
+		GasPrice: uint64(1),
+		GasUsed:  uint64(1),
+		Value:    "20",
 	}
 
-	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
+	gasUsedStr := big.NewInt(int64(trx.GasUsed)).String()
+	gasPriceStr := big.NewInt(int64(trx.GasPrice)).String()
+
+	accounts.UpdateBalances(trx.From, trx.To, trx.Value, gasUsedStr, gasPriceStr)
 
 	// Validate the updated balances
 	{
 		acc := accounts.FindBalance("0x1111111111111111111111111111111111111111")
-		assert.Equal(t, big.NewInt(80), acc.Balance, "UpdateBalancesInternal failed to update 'from' balance correctly")
+		assert.Equal(t, big.NewInt(79), acc.Balance, "UpdateBalancesInternal failed to update 'from' balance correctly")
 	}
 
 	{
@@ -86,7 +91,7 @@ func TestUpdateBalances(t *testing.T) {
 	}
 
 	// Invoke the method
-	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
+	accounts.UpdateBalances(trx.From, trx.To, trx.Value, "", "")
 	err := accounts.UpdateEvents(trx.ExtractLogs())
 
 	if err != nil {

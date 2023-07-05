@@ -75,7 +75,7 @@ func (a *Balances) AddToBalance(to string, value *big.Int) {
 	to_account.Balance.Add(to_account.Balance, value)
 }
 
-func (a *Balances) UpdateBalances(from, to, value_str string) {
+func (a *Balances) UpdateBalances(from, to, value_str, gas_used, gas_price string) {
 	value, ok := big.NewInt(0).SetString(value_str, 0)
 
 	if ok && value.Cmp(big.NewInt(0)) == 1 {
@@ -84,10 +84,17 @@ func (a *Balances) UpdateBalances(from, to, value_str string) {
 			from_account = a.RegisterBalance(from)
 		}
 		from_account.Balance.Sub(from_account.Balance, value)
+		if gas_used != "" && gas_price != "" {
+			gasUsed, _ := big.NewInt(0).SetString(gas_used, 0)
+			gasPrice, _ := big.NewInt(0).SetString(gas_price, 0)
+			negGas := big.NewInt(0).Neg(big.NewInt(0).Mul(gasUsed, gasPrice))
+			a.AddToBalance(from, negGas)
+		}
 		if from_account.Balance.Cmp(big.NewInt(0)) == 0 {
 			a.RemoveBalance(from)
 		}
 		a.AddToBalance(to, value)
+
 	}
 }
 
