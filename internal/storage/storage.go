@@ -80,9 +80,4 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []Account, pagination *m
 	pagination.End = end
 	ret = holders[from:end]
 	return
-	//  slice := holders[from:end]
-	// for i := range slice {
-	// 	ret = append(ret, models.Account{Address: slice[i].Address, Balance: slice[i].Balance.String()})
-	// }
-	// return
 }

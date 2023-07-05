@@ -58,9 +58,6 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	if bc.block.Number%1000 == 0 {
 		err = bc.checkIndexedBalances(accounts)
 	}
-	for _, balance := range accounts.Accounts {
-		fmt.Printf("%s: %s\n", balance.Address, balance.Balance.String())
-	}
 	bc.batch.SaveAccounts(accounts)
 	return
 }
