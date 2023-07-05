@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/nleeper/goment v1.4.4
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spiretechnology/go-pool v1.0.0
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
