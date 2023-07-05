@@ -3,6 +3,7 @@ package indexer
 import (
 	"fmt"
 	"math/big"
+	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -25,6 +26,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 	}
 
 	accounts := &storage.Balances{Accounts: bc.storage.GetAccounts()}
+	block_fee := big.NewInt(0)
 
 	internal_transactions := new(models.InternalTransactionsResponse)
 	for i, trx := range transactions {
@@ -40,7 +42,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 				internal_transactions.Data = append(internal_transactions.Data, internal)
 				bc.SaveTransaction(&internal)
 
-				accounts.UpdateBalances(internal.From, internal.To, internal.Value, "", "")
+				accounts.UpdateBalances(internal.From, internal.To, internal.Value)
 			}
 			bc.batch.AddToBatchSingleKey(internal_transactions, trx_model.Hash)
 		}
@@ -49,12 +51,19 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 		}
 		bc.batch.AddToBatchSingleKey(logs, trx_model.Hash)
 
-		accounts.UpdateBalances(trx.From, trx.To, trx.Value, trx.GasUsed, trx.GasPrice)
+		trx_fee := trx.GetFee()
+		block_fee.Add(block_fee, trx_fee)
+		accounts.AddToBalance(trx.From, big.NewInt(0).Neg(trx_fee))
+		if trx.Status == "0x0" {
+			continue
+		}
+		accounts.UpdateBalances(trx.From, trx.To, trx.Value)
 		err := accounts.UpdateEvents(logs.Data)
 		if err != nil {
 			return err
 		}
 	}
+	accounts.AddToBalance(bc.block.Author, block_fee)
 	if bc.block.Number%1000 == 0 {
 		err = bc.checkIndexedBalances(accounts)
 	}
@@ -64,6 +73,7 @@ func (bc *blockContext) processTransactions(trxHashes *[]string) (err error) {
 
 func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
 	chainBalances := make(map[string]*big.Int)
+	var mutex sync.RWMutex
 	tp := utils.MakeThreadPool()
 	for _, balance := range accounts.Accounts {
 		if balance.IsGenesis || balance.Address == "0x00000000000000000000000000000000000000fe" {
@@ -71,6 +81,8 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 		}
 		address := balance.Address
 		tp.Go(func() {
+			mutex.Lock()
+			defer mutex.Unlock()
 			b, get_err := bc.client.GetBalanceAtBlock(address, bc.block.Number)
 			if get_err != nil {
 				err = get_err
@@ -82,7 +94,7 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 	tp.Wait()
 
 	for _, balance := range accounts.Accounts {
-		if balance.IsGenesis {
+		if balance.IsGenesis || balance.Address == "0x00000000000000000000000000000000000000fe" {
 			continue
 		}
 		if balance.Balance.Cmp(chainBalances[balance.Address]) != 0 {

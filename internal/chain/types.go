@@ -2,6 +2,7 @@ package chain
 
 import (
 	"log"
+	"math/big"
 	"runtime/debug"
 	"strconv"
 
@@ -120,6 +121,13 @@ func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx *models.Transa
 	trx.Timestamp = timestamp
 
 	return
+}
+
+func (t *Transaction) GetFee() *big.Int {
+	gasUsed, _ := big.NewInt(0).SetString(t.GasUsed, 0)
+	gasPrice, _ := big.NewInt(0).SetString(t.GasPrice, 0)
+
+	return big.NewInt(0).Mul(gasUsed, gasPrice)
 }
 
 func (t *Transaction) ExtractLogs() (logs []models.EventLog) {

@@ -30,10 +30,7 @@ func TestUpdateBalancesInternal(t *testing.T) {
 		Value:    "20",
 	}
 
-	gasUsedStr := big.NewInt(int64(trx.GasUsed)).String()
-	gasPriceStr := big.NewInt(int64(trx.GasPrice)).String()
-
-	accounts.UpdateBalances(trx.From, trx.To, trx.Value, gasUsedStr, gasPriceStr)
+	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
 
 	// Validate the updated balances
 	{
@@ -91,7 +88,7 @@ func TestUpdateBalances(t *testing.T) {
 	}
 
 	// Invoke the method
-	accounts.UpdateBalances(trx.From, trx.To, trx.Value, "", "")
+	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
 	err := accounts.UpdateEvents(trx.ExtractLogs())
 
 	if err != nil {
