@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
@@ -69,27 +68,6 @@ func (bc *blockContext) processTransactions(trxHashes []string, balances *storag
 		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
 	}
 	balances.AddToBalance(bc.block.Author, block_fee)
-	return
-}
-
-func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
-	tp := common.MakeThreadPool()
-	for _, balance := range accounts.Accounts {
-		address := balance.Address
-		tp.Go(func() {
-			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
-			if get_err != nil {
-				err = get_err
-				return
-			}
-			chain_balance := common.ParseStringToBigInt(b)
-			if balance.Balance.Cmp(chain_balance) != 0 {
-				err = fmt.Errorf("balance of %s: calc(%s) != chain(%s)", balance.Address, balance.Balance, chain_balance)
-			}
-		})
-	}
-	tp.Wait()
-
 	return
 }
 

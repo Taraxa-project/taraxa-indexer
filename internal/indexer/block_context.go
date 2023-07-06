@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -78,6 +79,9 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 	if bc.block.Number%1000 == 0 {
 		err = bc.checkIndexedBalances(balances)
+		if err != nil {
+			return
+		}
 	}
 	bc.Batch.SaveAccounts(balances)
 
@@ -104,6 +108,28 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	r.AfterCommit()
 
 	metrics.Save(start_processing, dags_count, trx_count, bc.finalized)
+
+	return
+}
+
+func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
+	tp := common.MakeThreadPool()
+	for _, balance := range accounts.Accounts {
+		address := balance.Address
+		balance := balance.Balance
+		tp.Go(func() {
+			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
+			if get_err != nil {
+				err = get_err
+				return
+			}
+			chain_balance := common.ParseStringToBigInt(b)
+			if balance.Cmp(chain_balance) != 0 {
+				err = fmt.Errorf("balance of %s: calc(%s) != chain(%s)", address, balance, chain_balance)
+			}
+		})
+	}
+	tp.Wait()
 
 	return
 }
