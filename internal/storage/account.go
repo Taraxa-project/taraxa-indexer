@@ -69,6 +69,7 @@ func (a *Balances) RemoveBalance(address string) {
 }
 
 func (a *Balances) AddToBalance(address string, value *big.Int) {
+	address = strings.ToLower(address)
 	account := a.FindBalance(address)
 	if account == nil {
 		account = a.RegisterBalance(address)
@@ -81,6 +82,7 @@ func (a *Balances) AddToBalance(address string, value *big.Int) {
 
 func (a *Balances) UpdateBalances(from, to, value_str string) {
 	from = strings.ToLower(from)
+	to = strings.ToLower(to)
 	value, ok := big.NewInt(0).SetString(value_str, 0)
 
 	if ok && value.Cmp(big.NewInt(0)) == 1 {

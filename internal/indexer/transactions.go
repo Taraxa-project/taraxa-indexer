@@ -3,7 +3,6 @@ package indexer
 import (
 	"fmt"
 	"math/big"
-	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -12,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
+func (bc *blockContext) processTransactions(trxHashes []string, balances *storage.Balances) (err error) {
 	if len(trxHashes) == 0 {
 		return
 	}
@@ -28,7 +27,6 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		return
 	}
 
-	accounts := &storage.Balances{Accounts: bc.Storage.GetAccounts()}
 	block_fee := big.NewInt(0)
 
 	internal_transactions := new(models.InternalTransactionsResponse)
@@ -45,12 +43,12 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 
 		trx_fee := transactions[t_idx].GetFee()
 		block_fee.Add(block_fee, trx_fee)
-		accounts.AddToBalance(transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
+		balances.AddToBalance(transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
 		if transactions[t_idx].Status == "0x0" {
 			continue
 		}
-		accounts.UpdateBalances(transactions[t_idx].From, transactions[t_idx].To, transactions[t_idx].Value)
-		err := accounts.UpdateEvents(logs.Data)
+		balances.UpdateBalances(transactions[t_idx].From, transactions[t_idx].To, transactions[t_idx].Value)
+		err := balances.UpdateEvents(logs.Data)
 		if err != nil {
 			return err
 		}
@@ -65,51 +63,34 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 			internal := makeInternal(bc.transactions[t_idx], entry)
 			internal_transactions.Data = append(internal_transactions.Data, internal)
 			bc.SaveTransaction(internal)
-			accounts.UpdateBalances(internal.From, internal.To, internal.Value)
+			balances.UpdateBalances(internal.From, internal.To, internal.Value)
 		}
 
 		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
-
 	}
-	accounts.AddToBalance(bc.block.Author, block_fee)
-	// if bc.block.Number%1000 == 0 {
-	err = bc.checkIndexedBalances(accounts)
-	// }
-	bc.Batch.SaveAccounts(accounts)
+	balances.AddToBalance(bc.block.Author, block_fee)
 	return
 }
 
 func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err error) {
-	chainBalances := make(map[string]*big.Int)
-	var mutex sync.RWMutex
 	tp := common.MakeThreadPool()
 	for _, balance := range accounts.Accounts {
-		if balance.Address == common.DposContractAddress {
-			continue
-		}
 		address := balance.Address
 		tp.Go(func() {
-			mutex.Lock()
-			defer mutex.Unlock()
 			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
 			if get_err != nil {
 				err = get_err
 				return
 			}
-			chainBalances[address], _ = big.NewInt(0).SetString(b, 0)
+			chain_balance := common.ParseStringToBigInt(b)
+			if balance.Balance.Cmp(chain_balance) != 0 {
+				err = fmt.Errorf("balance of %s: calc(%s) != chain(%s)", balance.Address, balance.Balance, chain_balance)
+			}
 		})
 	}
 	tp.Wait()
 
-	for _, balance := range accounts.Accounts {
-		if balance.Address == common.DposContractAddress {
-			continue
-		}
-		if balance.Balance.Cmp(chainBalances[balance.Address]) != 0 {
-			return fmt.Errorf("balance of %s: calc(%s) != chain(%s)", balance.Address, balance.Balance, chainBalances[balance.Address])
-		}
-	}
-	return nil
+	return
 }
 
 func (bc *blockContext) getTransactions(trxHashes []string) (trxs []chain.Transaction, err error) {
