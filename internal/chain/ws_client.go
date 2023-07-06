@@ -7,16 +7,15 @@ import (
 
 	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client"
 	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 )
-
-var dposContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000FE")
 
 // WsClient is a struct that connects to a Taraxa node.
 type WsClient struct {
@@ -37,7 +36,7 @@ func NewWsClient(url string) (*WsClient, error) {
 	client.GetChainId()
 
 	ethclient := ethclient.NewClient(client.rpc)
-	client.dpos, err = dpos_contract_client.NewDposContractClient(ethclient, dposContractAddress, client.ChainId)
+	client.dpos, err = dpos_contract_client.NewDposContractClient(ethclient, ethcommon.HexToAddress(common.DposContractAddress), client.ChainId)
 	if err != nil {
 		log.WithError(err).Fatal("Can't create dpos client")
 	}

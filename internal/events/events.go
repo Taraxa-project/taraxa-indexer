@@ -6,13 +6,12 @@ import (
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
-
-const DposContractAddress = "0x00000000000000000000000000000000000000fe"
 
 // LogReward ..
 type LogReward struct {
@@ -59,8 +58,8 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		account := common.HexToAddress(log.Topics[1])
-		validator := common.HexToAddress(log.Topics[2])
+		account := ethcommon.HexToAddress(log.Topics[1])
+		validator := ethcommon.HexToAddress(log.Topics[2])
 
 		// Set the addresses in the event struct
 		event.Account = account.Hex()
@@ -73,8 +72,8 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		account := common.HexToAddress(log.Topics[1])
-		validator := common.HexToAddress(log.Topics[2])
+		account := ethcommon.HexToAddress(log.Topics[1])
+		validator := ethcommon.HexToAddress(log.Topics[2])
 
 		// Set the addresses in the event struct
 		event.Account = account.Hex()
@@ -86,7 +85,7 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 
 func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
 	for _, log := range logs {
-		if !strings.EqualFold(log.Address, DposContractAddress) {
+		if !strings.EqualFold(log.Address, common.DposContractAddress) {
 			continue
 		}
 		decoded, err := DecodeEvent(log)

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/events"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
@@ -100,7 +101,7 @@ func (a *Balances) UpdateEvents(logs []models.EventLog) error {
 			}
 			to_account.Balance.Add(to_account.Balance, event.Value)
 
-			from_account := a.FindBalance(events.DposContractAddress)
+			from_account := a.FindBalance(common.DposContractAddress)
 			if from_account == nil {
 				from_account = a.RegisterBalance(event.Account)
 			}

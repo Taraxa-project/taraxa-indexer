@@ -164,7 +164,8 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error 
 }
 
 func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
-	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
 	resp := models.YieldResponse{
 		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
 		ToBlock:   block_num,
@@ -174,7 +175,8 @@ func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, par
 }
 
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams) error {
-	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.TotalYieldSavingInterval)
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.TotalYieldSavingInterval)
 	resp := models.YieldResponse{
 		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
 		ToBlock:   block_num,

@@ -68,9 +68,9 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		}
 	}
 	accounts.AddToBalance(bc.block.Author, block_fee)
-	if bc.block.Number%1000 == 0 {
-		err = bc.checkIndexedBalances(accounts)
-	}
+	// if bc.block.Number%1000 == 0 {
+	err = bc.checkIndexedBalances(accounts)
+	// }
 	bc.Batch.SaveAccounts(accounts)
 	return
 }
@@ -80,7 +80,7 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 	var mutex sync.RWMutex
 	tp := common.MakeThreadPool()
 	for _, balance := range accounts.Accounts {
-		if balance.IsGenesis || balance.Address == "0x00000000000000000000000000000000000000fe" {
+		if balance.IsGenesis || balance.Address == common.DposContractAddress {
 			continue
 		}
 		address := balance.Address
@@ -98,7 +98,7 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 	tp.Wait()
 
 	for _, balance := range accounts.Accounts {
-		if balance.IsGenesis || balance.Address == "0x00000000000000000000000000000000000000fe" {
+		if balance.IsGenesis || balance.Address == common.DposContractAddress {
 			continue
 		}
 		if balance.Balance.Cmp(chainBalances[balance.Address]) != 0 {
