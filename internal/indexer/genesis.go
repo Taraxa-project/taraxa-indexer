@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
@@ -54,7 +53,6 @@ func (g *Genesis) process() {
 	for _, validator := range g.genesis.Dpos.InitialValidators {
 		for addr, value := range validator.Delegations {
 			delegation := common.ParseStringToBigInt(value)
-			fmt.Println(addr, value, delegation)
 			accounts.AddToBalance(addr, big.NewInt(0).Neg(delegation))
 			accounts.AddToBalance(common.DposContractAddress, delegation)
 		}

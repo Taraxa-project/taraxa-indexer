@@ -80,6 +80,7 @@ func (a *Balances) AddToBalance(address string, value *big.Int) {
 }
 
 func (a *Balances) UpdateBalances(from, to, value_str string) {
+	from = strings.ToLower(from)
 	value, ok := big.NewInt(0).SetString(value_str, 0)
 
 	if ok && value.Cmp(big.NewInt(0)) == 1 {

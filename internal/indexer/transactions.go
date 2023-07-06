@@ -37,23 +37,11 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		bc.transactions[t_idx] = transactions[t_idx].ToModelWithTimestamp(bc.block.Timestamp)
 		bc.SaveTransaction(bc.transactions[t_idx])
 		trace := traces[t_idx]
-		if len(trace.Trace) <= 1 {
-			continue
-		}
-		for e_idx, entry := range trace.Trace {
-			if e_idx == 0 {
-				continue
-			}
-			internal := makeInternal(bc.transactions[t_idx], entry)
-			internal_transactions.Data = append(internal_transactions.Data, internal)
-			bc.SaveTransaction(internal)
-			accounts.UpdateBalances(internal.From, internal.To, internal.Value)
-		}
+
 		logs := models.TransactionLogsResponse{
 			Data: transactions[t_idx].ExtractLogs(),
 		}
 		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
-		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
 
 		trx_fee := transactions[t_idx].GetFee()
 		block_fee.Add(block_fee, trx_fee)
@@ -66,6 +54,22 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		if err != nil {
 			return err
 		}
+
+		if len(trace.Trace) <= 1 {
+			continue
+		}
+		for e_idx, entry := range trace.Trace {
+			if e_idx == 0 {
+				continue
+			}
+			internal := makeInternal(bc.transactions[t_idx], entry)
+			internal_transactions.Data = append(internal_transactions.Data, internal)
+			bc.SaveTransaction(internal)
+			accounts.UpdateBalances(internal.From, internal.To, internal.Value)
+		}
+
+		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
+
 	}
 	accounts.AddToBalance(bc.block.Author, block_fee)
 	// if bc.block.Number%1000 == 0 {
@@ -80,7 +84,7 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 	var mutex sync.RWMutex
 	tp := common.MakeThreadPool()
 	for _, balance := range accounts.Accounts {
-		if balance.IsGenesis || balance.Address == common.DposContractAddress {
+		if balance.Address == common.DposContractAddress {
 			continue
 		}
 		address := balance.Address
@@ -98,11 +102,11 @@ func (bc *blockContext) checkIndexedBalances(accounts *storage.Balances) (err er
 	tp.Wait()
 
 	for _, balance := range accounts.Accounts {
-		if balance.IsGenesis || balance.Address == common.DposContractAddress {
+		if balance.Address == common.DposContractAddress {
 			continue
 		}
 		if balance.Balance.Cmp(chainBalances[balance.Address]) != 0 {
-			return fmt.Errorf("balance of %s: %s != %s", balance.Address, balance.Balance, chainBalances[balance.Address])
+			return fmt.Errorf("balance of %s: calc(%s) != chain(%s)", balance.Address, balance.Balance, chainBalances[balance.Address])
 		}
 	}
 	return nil
