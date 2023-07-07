@@ -20,6 +20,7 @@ type Client interface {
 	GetGenesis() (genesis GenesisObject, err error)
 	GetChainStats() (ns storage.FinalizationData, err error)
 	SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error)
+	GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error)
 	// Close disconnects from the node
 	Close()
 }

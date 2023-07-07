@@ -5,9 +5,10 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/spiretechnology/go-pool"
 )
+
+const DposContractAddress = "0x00000000000000000000000000000000000000fe"
 
 // isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
 func MakeThreadPool() pool.Pool {
@@ -24,10 +25,10 @@ func FormatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', 4, 64)
 }
 
-func GetYieldIntervalEnd(storage storage.Storage, block_num *uint64, interval uint64) uint64 {
+func GetYieldIntervalEnd(pbft_count uint64, block_num *uint64, interval uint64) uint64 {
 	block := uint64(0)
 	if block_num == nil {
-		block = storage.GetFinalizationData().PbftCount
+		block = pbft_count
 	} else {
 		block = *block_num
 	}

@@ -1,6 +1,7 @@
 package pebble
 
 import (
+	"math/big"
 	"os"
 	"strconv"
 	"testing"
@@ -162,4 +163,31 @@ func TestBatch(t *testing.T) {
 	if !ret.IsEqual(addr1) {
 		t.Error("Broken DB")
 	}
+}
+
+func TestAccountsBatch(t *testing.T) {
+	st := NewStorage("")
+	defer st.Close()
+
+	accounts := &storage.Balances{Accounts: []storage.Account{
+		{
+			Address: "0x1111111111111111111111111111111111111111",
+			Balance: big.NewInt(100),
+		},
+		{
+			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
+			Balance: big.NewInt(50),
+		},
+	}}
+
+	batch := st.NewBatch()
+	batch.SaveAccounts(accounts)
+	batch.CommitBatch()
+
+	ret := st.GetAccounts()
+
+	if len(ret) != len(accounts.Accounts) {
+		t.Error("Broken DB")
+	}
+
 }

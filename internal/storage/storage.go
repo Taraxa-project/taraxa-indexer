@@ -15,6 +15,7 @@ type Storage interface {
 	ForEachBackwards(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
+	GetAccounts() []Account
 	GetWeekStats(year, week int32) WeekStats
 	GetFinalizationData() *FinalizationData
 	GetAddressStats(addr string) *AddressStats
@@ -71,6 +72,20 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 	return
 }
 
+func GetHoldersPage(s Storage, from, count uint64) (ret []Account, pagination *models.PaginatedResponse) {
+	holders := s.GetAccounts()
+	pagination = new(models.PaginatedResponse)
+	pagination.Start = from
+	pagination.Total = uint64(len(holders))
+	end := from + count
+	pagination.HasNext = (end < pagination.Total)
+	if end > pagination.Total {
+		end = pagination.Total
+	}
+	pagination.End = end
+	ret = holders[from:end]
+	return
+}
 func GetIntervalData[T Yields](s Storage, start uint64) map[string]T {
 	var o T
 	ret := make(map[string]T)

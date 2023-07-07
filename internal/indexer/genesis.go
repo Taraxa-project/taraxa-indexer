@@ -41,14 +41,25 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) (trx models.Transaction
 
 func (g *Genesis) process() {
 	genesisSupply := big.NewInt(0)
+	accounts := &storage.Balances{Accounts: g.storage.GetAccounts()}
 	for addr, value := range g.genesis.InitialBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)
-		genesisSupply.Add(genesisSupply, common.ParseStringToBigInt(trx.Value))
+		value := common.ParseStringToBigInt(trx.Value)
+		genesisSupply.Add(genesisSupply, value)
+		accounts.AddToBalance(trx.To, value)
+	}
+	for _, validator := range g.genesis.Dpos.InitialValidators {
+		for addr, value := range validator.Delegations {
+			delegation := common.ParseStringToBigInt(value)
+			accounts.AddToBalance(addr, big.NewInt(0).Neg(delegation))
+			accounts.AddToBalance(common.DposContractAddress, delegation)
+		}
 	}
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
+	g.bc.Batch.SaveAccounts(accounts)
 	g.bc.finalized.TrxCount = 0
 	g.bc.Batch.SetGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.Batch.SetTotalSupply(genesisSupply)

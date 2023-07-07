@@ -6,11 +6,17 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 )
 
+type initialValidator struct {
+	Address     string            `json:"address"`
+	Delegations map[string]string `json:"delegations"`
+}
+
 type DposConfig struct {
-	BlocksPerYear        string `json:"blocks_per_year"`
-	DagProposersReward   string `json:"dag_proposers_reward"`
-	MaxBlockAuthorReward string `json:"max_block_author_reward"`
-	YieldPercentage      string `json:"yield_percentage"`
+	BlocksPerYear        string             `json:"blocks_per_year"`
+	DagProposersReward   string             `json:"dag_proposers_reward"`
+	MaxBlockAuthorReward string             `json:"max_block_author_reward"`
+	YieldPercentage      string             `json:"yield_percentage"`
+	InitialValidators    []initialValidator `json:"initial_validators"`
 }
 
 type PbftConfig struct {

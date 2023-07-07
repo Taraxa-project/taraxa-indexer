@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -28,6 +29,7 @@ type blockContext struct {
 	finalized    *storage.FinalizationData
 	statsMutex   sync.RWMutex
 	addressStats map[string]*storage.AddressStats
+	balances     *storage.Balances
 }
 
 func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
@@ -38,6 +40,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
 	bc.Config = config
+	bc.balances = &storage.Balances{Accounts: bc.Storage.GetAccounts()}
 
 	return &bc
 }
@@ -72,6 +75,16 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
 	total_minted := common.ParseStringToBigInt(raw.TotalReward)
+	bc.balances.AddToBalance(common.DposContractAddress, total_minted)
+
+	if bc.block.Number%1000 == 0 {
+		err = bc.checkIndexedBalances()
+		if err != nil {
+			return
+		}
+	}
+	bc.Batch.SaveAccounts(bc.balances)
+
 	if total_minted.Cmp(big.NewInt(0)) == 1 {
 		r.Process(total_minted, bc.dags, bc.transactions, *votes, validators)
 	}
@@ -95,6 +108,28 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	r.AfterCommit()
 
 	metrics.Save(start_processing, dags_count, trx_count, bc.finalized)
+
+	return
+}
+
+func (bc *blockContext) checkIndexedBalances() (err error) {
+	tp := common.MakeThreadPool()
+	for _, balance := range bc.balances.Accounts {
+		address := balance.Address
+		balance := balance.Balance
+		tp.Go(func() {
+			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
+			if get_err != nil {
+				err = get_err
+				return
+			}
+			chain_balance := common.ParseStringToBigInt(b)
+			if balance.Cmp(chain_balance) != 0 {
+				err = fmt.Errorf("balance of %s: calc(%s) != chain(%s)", address, balance, chain_balance)
+			}
+		})
+	}
+	tp.Wait()
 
 	return
 }

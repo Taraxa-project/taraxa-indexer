@@ -79,6 +79,8 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 
 func getPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
+	case *[]storage.Account, []storage.Account:
+		ret = "b"
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = "e"
 	case *models.Transaction, models.Transaction:
@@ -193,6 +195,15 @@ func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 		log.Fatal("GetTotalSupply ", err)
 	}
 	return ptr
+}
+
+func (s *Storage) GetAccounts() []storage.Account {
+	ptr := new([]storage.Account)
+	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), ""))
+	if err != nil && err != pebble.ErrNotFound {
+		log.Fatal("GetAccounts failed: ", err)
+	}
+	return *ptr
 }
 
 func (s *Storage) GetWeekStats(year, week int32) storage.WeekStats {

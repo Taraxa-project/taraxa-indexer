@@ -41,6 +41,20 @@ func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilte
 	return response
 }
 
+func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
+	ret, pagination := storage.GetHoldersPage(a.storage, getPaginationStart(pag.Start), pag.Limit)
+
+	response := struct {
+		PaginatedResponse
+		Data []storage.Account `json:"data"`
+	}{
+		PaginatedResponse: *pagination,
+		Data:              ret,
+	}
+
+	return response
+}
+
 // GetAddressDags returns all DAG blocks sent by the selected address
 func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
 	return ctx.JSON(http.StatusOK, GetAddressDataPage[Dag](a, address, &params.Pagination))
@@ -109,6 +123,12 @@ func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTo
 	return ctx.JSON(http.StatusOK, count)
 }
 
+func (a *ApiHandler) GetHolders(ctx echo.Context, params GetHoldersParams) error {
+	log.WithField("params", params).Debug("GetHolders")
+	ret := GetHoldersDataPage(a, &params.Pagination)
+	return ctx.JSON(http.StatusOK, ret)
+}
+
 // GetValidator returns info about the validator for the selected week
 func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params GetValidatorParams) error {
 	address = strings.ToLower(address)
@@ -144,7 +164,8 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error 
 }
 
 func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
-	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
 	resp := models.YieldResponse{
 		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
 		ToBlock:   block_num,
@@ -154,7 +175,8 @@ func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, par
 }
 
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams) error {
-	block_num := common.GetYieldIntervalEnd(a.storage, params.BlockNumber, a.config.TotalYieldSavingInterval)
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.TotalYieldSavingInterval)
 	resp := models.YieldResponse{
 		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
 		ToBlock:   block_num,

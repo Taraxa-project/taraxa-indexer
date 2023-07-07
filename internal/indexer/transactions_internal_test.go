@@ -28,7 +28,8 @@ func TestTraceParsing(t *testing.T) {
 		"blockNumber": "0x5487c",
 		"from": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 		"gas": "0x5b8d80",
-		"gasPrice": "0x1",
+		"gasPrice": "0x0",
+		"gasUsed": "0x5af868",
 		"hash": "0x1312631675d90f8625f6661bb384708d7b020f1894e12d34616c6258e6edf372",
 		"input": "0xd2d745b10000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000000090000000000000000000000000dc0d841f962759da25547c686fa440cf6c28c61000000000000000000000000f1c587a22fbf80af80446fa17e7322952f18456c000000000000000000000000cddb0d484ca1c625ffca0882396ef34ffff242e300000000000000000000000010ce6f9c7c22f82214c40755b3eea5f126a7148d000000000000000000000000d42eaa28c5eafee9a0040a7ac74dd3f4b57678bd000000000000000000000000ec15db470db85cc75b0e3fa5b6a0c607a5e8c64a000000000000000000000000a4195def477491ef7f00b8688c9b8032cd71bb2a0000000000000000000000008f1567bb4381f4ed53dbeb3c0dca5c4f189a111000000000000000000000000052124d5982576507dd4a18d6607225e64be168bb0000000000000000000000000000000000000000000000000000000000000009000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000000000000000000000000000000000000000000000000000000000e8d4a51000",
 		"nonce": "0x0",
@@ -67,7 +68,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0x0dc0d841f962759da25547c686fa440cf6c28c61",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -86,7 +87,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0xf1c587a22fbf80af80446fa17e7322952f18456c",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -105,7 +106,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0xcddb0d484ca1c625ffca0882396ef34ffff242e3",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -124,7 +125,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0x10ce6f9c7c22f82214c40755b3eea5f126a7148d",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -143,7 +144,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0xd42eaa28c5eafee9a0040a7ac74dd3f4b57678bd",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -162,7 +163,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0xec15db470db85cc75b0e3fa5b6a0c607a5e8c64a",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -181,7 +182,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0xa4195def477491ef7f00b8688c9b8032cd71bb2a",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -200,7 +201,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0x8f1567bb4381f4ed53dbeb3c0dca5c4f189a1110",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -219,7 +220,7 @@ func TestTraceParsing(t *testing.T) {
 					"from": "0x1578f035581f664efa85a6da822464bd9edd8850",
 					"gas": "0x8fc",
 					"input": "0x",
-					"to": "0x52124d5982576507dd4a18d6607225e64be168bb",
+					"to": "0x99a2d5feaecb1a729d4f9af4197cc03bb9a37bc3",
 					"value": "0xe8d4a51000"
 				},
 				"result": {
@@ -256,6 +257,7 @@ func TestTraceParsing(t *testing.T) {
 	assert.Equal(t, trx_count+internal_count, len(transactions_trace[0].Trace))
 
 	err := bc.processTransactions([]string{trx.Hash})
+
 	assert.Equal(t, err, nil)
 	bc.commit()
 
