@@ -11,9 +11,8 @@ import (
 )
 
 type Account struct {
-	Address   string   `json:"address"`
-	Balance   *big.Int `json:"balance"`
-	IsGenesis bool     `json:"is_genesis"`
+	Address string   `json:"address"`
+	Balance *big.Int `json:"balance"`
 }
 
 type Balances struct {
@@ -35,13 +34,6 @@ func (a *Balances) findIndex(address string) int {
 	return -1
 }
 
-func (a *Balances) SetGenesis(address string) {
-	account := a.FindBalance(address)
-	if account != nil {
-		account.IsGenesis = true
-	}
-}
-
 func (a *Balances) FindBalance(address string) *Account {
 	i := a.findIndex(address)
 	if i == -1 {
@@ -53,9 +45,8 @@ func (a *Balances) FindBalance(address string) *Account {
 func (a *Balances) RegisterBalance(address string) *Account {
 	// Append the new account to the array
 	a.Accounts = append(a.Accounts, Account{
-		Address:   address,
-		Balance:   big.NewInt(0),
-		IsGenesis: false,
+		Address: address,
+		Balance: big.NewInt(0),
 	})
 
 	return &a.Accounts[len(a.Accounts)-1]

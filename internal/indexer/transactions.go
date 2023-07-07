@@ -5,12 +5,11 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
 
-func (bc *blockContext) processTransactions(trxHashes []string, balances *storage.Balances) (err error) {
+func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 	if len(trxHashes) == 0 {
 		return
 	}
@@ -28,46 +27,56 @@ func (bc *blockContext) processTransactions(trxHashes []string, balances *storag
 
 	block_fee := big.NewInt(0)
 
-	internal_transactions := new(models.InternalTransactionsResponse)
 	bc.transactions = make([]models.Transaction, len(transactions))
 	for t_idx := 0; t_idx < len(transactions); t_idx++ {
 		bc.transactions[t_idx] = transactions[t_idx].ToModelWithTimestamp(bc.block.Timestamp)
 		bc.SaveTransaction(bc.transactions[t_idx])
-		trace := traces[t_idx]
 
+		trx_fee := transactions[t_idx].GetFee()
+		block_fee.Add(block_fee, trx_fee)
+		// Remove fee from sender balance
+		bc.balances.AddToBalance(transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
+		if transactions[t_idx].Status == "0x0" {
+			continue
+		}
+		// remove value from sender and add to receiver
+		bc.balances.UpdateBalances(transactions[t_idx].From, transactions[t_idx].To, transactions[t_idx].Value)
+
+		// process logs
 		logs := models.TransactionLogsResponse{
 			Data: transactions[t_idx].ExtractLogs(),
 		}
 		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
-
-		trx_fee := transactions[t_idx].GetFee()
-		block_fee.Add(block_fee, trx_fee)
-		balances.AddToBalance(transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
-		if transactions[t_idx].Status == "0x0" {
-			continue
-		}
-		balances.UpdateBalances(transactions[t_idx].From, transactions[t_idx].To, transactions[t_idx].Value)
-		err := balances.UpdateEvents(logs.Data)
+		err := bc.balances.UpdateEvents(logs.Data)
 		if err != nil {
 			return err
 		}
 
-		if len(trace.Trace) <= 1 {
+		if internal_transactions := bc.processInternalTransactions(traces[t_idx], t_idx); internal_transactions != nil {
+			bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
+		}
+	}
+	// add total fee from the block to block producer balance
+	bc.balances.AddToBalance(bc.block.Author, block_fee)
+	return
+}
+
+func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace, t_idx int) (internal_transactions *models.InternalTransactionsResponse) {
+	if len(trace.Trace) <= 1 {
+		return
+	}
+	internal_transactions = new(models.InternalTransactionsResponse)
+	internal_transactions.Data = make([]models.Transaction, 0, len(trace.Trace)-1)
+
+	for e_idx, entry := range trace.Trace {
+		if e_idx == 0 {
 			continue
 		}
-		for e_idx, entry := range trace.Trace {
-			if e_idx == 0 {
-				continue
-			}
-			internal := makeInternal(bc.transactions[t_idx], entry)
-			internal_transactions.Data = append(internal_transactions.Data, internal)
-			bc.SaveTransaction(internal)
-			balances.UpdateBalances(internal.From, internal.To, internal.Value)
-		}
-
-		bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
+		internal := makeInternal(bc.transactions[t_idx], entry)
+		internal_transactions.Data = append(internal_transactions.Data, internal)
+		bc.SaveTransaction(internal)
+		bc.balances.UpdateBalances(internal.From, internal.To, internal.Value)
 	}
-	balances.AddToBalance(bc.block.Author, block_fee)
 	return
 }
 

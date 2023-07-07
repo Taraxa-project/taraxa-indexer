@@ -48,7 +48,6 @@ func (g *Genesis) process() {
 		value := common.ParseStringToBigInt(trx.Value)
 		genesisSupply.Add(genesisSupply, value)
 		accounts.AddToBalance(trx.To, value)
-		accounts.SetGenesis(trx.To)
 	}
 	for _, validator := range g.genesis.Dpos.InitialValidators {
 		for addr, value := range validator.Delegations {
