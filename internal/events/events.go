@@ -14,6 +14,9 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
+const commissionRewardsClaimedName = "CommissionRewardsClaimed(address,address,uint256)"
+const rewardsClaimedName = "RewardsClaimed(address,address,uint256)"
+
 func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
 
 	relevantAbi := contracts.ContractABIs[log.Address]
@@ -66,12 +69,14 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 			return nil, err
 		}
 
-		if name == "RewardsClaimed" || name == "CommissionRewardsClaimed" {
+		fmt.Println(name)
+
+		if name == rewardsClaimedName || name == commissionRewardsClaimedName {
 			account := ethcommon.HexToAddress(log.Topics[1])
 			validator := ethcommon.HexToAddress(log.Topics[2])
 			value, _ := big.NewInt(0).SetString(decoded[0], 10)
 
-			if name == "RewardsClaimed" && decoded[0] != "" {
+			if name == rewardsClaimedName && decoded[0] != "" {
 				decodedEvents = append(decodedEvents, LogReward{
 					EventName: "RewardsClaimed",
 					Account:   account.Hex(),
@@ -80,7 +85,7 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 				})
 			}
 
-			if name == "CommissionRewardsClaimed" && decoded[0] != "" {
+			if name == commissionRewardsClaimedName && decoded[0] != "" {
 				decodedEvents = append(decodedEvents, LogReward{
 					EventName: "CommissionRewardsClaimed",
 					Account:   account.Hex(),
