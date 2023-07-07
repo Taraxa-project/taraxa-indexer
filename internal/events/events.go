@@ -53,7 +53,7 @@ func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
 		return "", nil, err
 	}
 
-	return event.Name, params, nil
+	return event.Sig, params, nil
 }
 
 func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
