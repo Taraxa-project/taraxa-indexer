@@ -12,7 +12,6 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
@@ -57,85 +56,40 @@ func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
 	return event.Name, params, nil
 }
 
-func DecodeEvent(log models.EventLog) (interface{}, error) {
-	// Convert the hex-encoded data to bytes
-	trimmed := strings.TrimPrefix(log.Data, "0x")
-	data, err := hex.DecodeString(trimmed)
-
-	if err != nil {
-		return nil, err
-	}
-
-	contractABI, error := abi.JSON(strings.NewReader(contracts.ContractABIs[log.Address]))
-	if error != nil {
-		return nil, error
-	}
-
-	rewardsClaimedTopic := crypto.Keccak256Hash([]byte("RewardsClaimed(address,address,uint256)"))
-	commissionRewardsClaimedTopic := crypto.Keccak256Hash([]byte("CommissionRewardsClaimed(address,address,uint256)"))
-	// Decode the event based on its topic
-	switch log.Topics[0] {
-	case rewardsClaimedTopic.Hex():
-		var event RewardsClaimedEvent
-		err := contractABI.UnpackIntoInterface(&event, "RewardsClaimed", data)
-
-		if err != nil {
-			return nil, err
-		}
-		account := ethcommon.HexToAddress(log.Topics[1])
-		validator := ethcommon.HexToAddress(log.Topics[2])
-
-		// Set the addresses in the event struct
-		event.Account = account.Hex()
-		event.Validator = validator.Hex()
-		return &event, nil
-
-	case commissionRewardsClaimedTopic.Hex():
-		var event CommissionRewardsClaimedEvent
-		err := contractABI.UnpackIntoInterface(&event, "CommissionRewardsClaimed", data)
-		if err != nil {
-			return nil, err
-		}
-		account := ethcommon.HexToAddress(log.Topics[1])
-		validator := ethcommon.HexToAddress(log.Topics[2])
-
-		// Set the addresses in the event struct
-		event.Account = account.Hex()
-		event.Validator = validator.Hex()
-		return &event, nil
-	}
-	return nil, nil
-}
-
 func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err error) {
 	for _, log := range logs {
 		if !strings.EqualFold(log.Address, common.DposContractAddress) {
 			continue
 		}
-		decoded, err := DecodeEvent(log)
+		name, decoded, err := DecodeEventDynamic(log)
 		if err != nil {
 			return nil, err
 		}
 
-		switch event := decoded.(type) {
-		case *RewardsClaimedEvent:
-			decodedEvents = append(decodedEvents, LogReward{
-				EventName: "RewardsClaimed",
-				Account:   event.Account,
-				Validator: event.Validator,
-				Value:     event.Amount,
-			})
+		if name == "RewardsClaimed" || name == "CommissionRewardsClaimed" {
+			account := ethcommon.HexToAddress(log.Topics[1])
+			validator := ethcommon.HexToAddress(log.Topics[2])
+			value, _ := big.NewInt(0).SetString(decoded[0], 10)
 
-		case *CommissionRewardsClaimedEvent:
-			decodedEvents = append(decodedEvents, LogReward{
-				EventName: "CommissionRewardsClaimed",
-				Account:   event.Account,
-				Validator: event.Validator,
-				Value:     event.Amount,
-			})
+			if name == "RewardsClaimed" && decoded[0] != "" {
+				decodedEvents = append(decodedEvents, LogReward{
+					EventName: "RewardsClaimed",
+					Account:   account.Hex(),
+					Validator: validator.Hex(),
+					Value:     value,
+				})
+			}
+
+			if name == "CommissionRewardsClaimed" && decoded[0] != "" {
+				decodedEvents = append(decodedEvents, LogReward{
+					EventName: "CommissionRewardsClaimed",
+					Account:   account.Hex(),
+					Validator: validator.Hex(),
+					Value:     value,
+				})
+			}
 		}
 	}
-
 	return decodedEvents, err
 }
 
