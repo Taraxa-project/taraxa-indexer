@@ -401,6 +401,8 @@ components:
         - logIndex
         - address
         - data
+        - name
+        - params
         - topics
         - removed
         - transactionHash
@@ -416,6 +418,12 @@ components:
             type: string
         data:
           type: string
+        name: 
+          type: string
+        params:
+          type: array
+          items:
+            type: string
         removed:
           type: boolean
         transactionHash:

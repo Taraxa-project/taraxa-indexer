@@ -50,6 +50,8 @@ type EventLog struct {
 	Address          Address  `json:"address"`
 	Data             string   `json:"data"`
 	LogIndex         Counter  `json:"logIndex"`
+	Name             string   `json:"name"`
+	Params           []string `json:"params"`
 	Removed          bool     `json:"removed"`
 	Topics           []string `json:"topics"`
 	TransactionHash  Hash     `json:"transactionHash"`
