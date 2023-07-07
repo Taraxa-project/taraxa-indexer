@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/events"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/cockroachdb/pebble"
@@ -261,6 +262,15 @@ func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactio
 func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse {
 	ptr := new(models.TransactionLogsResponse)
 	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
+	for i, eventLog := range ptr.Data {
+		name, decoded, err := events.DecodeEventDynamic(eventLog)
+		if err != nil {
+			log.WithError(err).WithField("name", name).WithField("decoded", decoded).Error(err)
+		}
+		eventLog.Name = name
+		eventLog.Params = decoded
+		ptr.Data[i] = eventLog
+	}
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetTransactionLogs failed")
 	}

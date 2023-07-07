@@ -2,35 +2,59 @@ package events
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// LogReward ..
-type LogReward struct {
-	Account   string
-	Validator string
-	Value     *big.Int
-	EventName string
-}
+func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
 
-type RewardsClaimedEvent struct {
-	Account   string
-	Validator string
-	Amount    *big.Int
-}
+	relevantAbi := contracts.ContractABIs[log.Address]
+	if relevantAbi == "" {
+		return "", nil, nil
+	}
+	// Convert the hex-encoded data to bytes
+	trimmed := strings.TrimPrefix(log.Data, "0x")
+	data, err := hex.DecodeString(trimmed)
 
-type CommissionRewardsClaimedEvent struct {
-	Account   string
-	Validator string
-	Amount    *big.Int
+	if err != nil {
+		return "", nil, err
+	}
+
+	contractABI, error := abi.JSON(strings.NewReader(relevantAbi))
+	if error != nil {
+		return "", nil, error
+	}
+
+	// Get the event for the topic
+
+	event, err := contractABI.EventByID(ethcommon.HexToHash(log.Topics[0]))
+
+	if err != nil {
+		return "", nil, err
+	}
+
+	unpacked, err := contractABI.Unpack(event.Name, data)
+
+	if err != nil {
+		return "", nil, err
+	}
+
+	params, err := parseToStringSlice(unpacked)
+
+	if err != nil {
+		return "", nil, err
+	}
+
+	return event.Name, params, nil
 }
 
 func DecodeEvent(log models.EventLog) (interface{}, error) {
@@ -42,7 +66,7 @@ func DecodeEvent(log models.EventLog) (interface{}, error) {
 		return nil, err
 	}
 
-	contractABI, error := abi.JSON(strings.NewReader(dpos_interface.DposInterfaceABI))
+	contractABI, error := abi.JSON(strings.NewReader(contracts.ContractABIs[log.Address]))
 	if error != nil {
 		return nil, error
 	}
@@ -113,4 +137,27 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 	}
 
 	return decodedEvents, err
+}
+
+func parseToStringSlice(data []interface{}) ([]string, error) {
+	result := make([]string, len(data))
+
+	for i, item := range data {
+		switch val := item.(type) {
+		case string:
+			result[i] = val
+		case int:
+			result[i] = strconv.Itoa(val)
+		case int64:
+			result[i] = strconv.FormatInt(val, 10)
+		case float64:
+			result[i] = strconv.FormatFloat(val, 'f', -1, 64)
+		case *big.Int:
+			result[i] = val.String()
+		default:
+			return nil, fmt.Errorf("failed to convert element at index %d to string", i)
+		}
+	}
+
+	return result, nil
 }
