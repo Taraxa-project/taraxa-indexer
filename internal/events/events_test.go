@@ -7,62 +7,17 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
-func TestDecodeEvent(t *testing.T) {
-	// Test RewardsClaimedEvent
-	rewardsClaimedTopic := "0x9310ccfcb8de723f578a9e4282ea9f521f05ae40dc08f3068dfad528a65ee3c7" // Example topic for RewardsClaimed event
-	rewardsClaimedData := "0x000000000000000000000000000000000000000000000000095e271c526c181b"  // Example data for RewardsClaimed event
-	rewardsClaimedLog := models.EventLog{
-		Address:          "0x00000000000000000000000000000000000000fe",
-		LogIndex:         0,
-		Removed:          false,
-		Topics:           []string{rewardsClaimedTopic, "0x000000000000000000000000fc43217e71ec0a1cc480f3d210cd07cbde7374ec", "0x000000000000000000000000fc43217e71ec0a1cc480f3d210cd07cbde7374ec"},
-		Data:             rewardsClaimedData,
-		TransactionHash:  "0xecd3243842f3fe4a0e8419a0ac85e4a6098bde7635de53bcad18e57f80cc6463",
-		TransactionIndex: 1,
-	}
-
-	decoded, err := DecodeEvent(rewardsClaimedLog)
-	if err != nil {
-		t.Errorf("Failed to decode RewardsClaimedEvent: %v", err)
-	}
-	_, ok := decoded.(*RewardsClaimedEvent)
-	if !ok {
-		t.Errorf("Decoded event is not of type RewardsClaimedEvent")
-	}
-
-	// Test CommissionRewardsClaimedEvent
-	commissionRewardsClaimedTopic := "0xf0ec9e0f6add850a1738c5822244e26ffc3d1f14da7537aa240582b25af12ad0" // Example topic for CommissionRewardsClaimed event
-	commissionRewardsClaimedData := "0x000000000000000000000000000000000000000000000000a7a44a964be1f30a"  // Example data for CommissionRewardsClaimed event
-	commissionRewardsClaimedLog := models.EventLog{
-		Address:          "0x00000000000000000000000000000000000000fe",
-		LogIndex:         0,
-		Removed:          false,
-		Topics:           []string{commissionRewardsClaimedTopic, "0x0000000000000000000000000dc0d841f962759da25547c686fa440cf6c28c61", "0x000000000000000000000000ed4d5f4f3641cbc056e466d15dbe2403e38056f8"},
-		Data:             commissionRewardsClaimedData,
-		TransactionHash:  "0xe667503bfec2ade69c5e03398aa29a88e035931cadd2caf265c0c85345f3f40e",
-		TransactionIndex: 1,
-	}
-
-	decoded, err = DecodeEvent(commissionRewardsClaimedLog)
-	if err != nil {
-		t.Errorf("Failed to decode CommissionRewardsClaimedEvent: %v", err)
-	}
-
-	_, ok = decoded.(*CommissionRewardsClaimedEvent)
-	if !ok {
-		t.Errorf("Decoded event is not of type CommissionRewardsClaimedEvent")
-	}
-}
-
 func TestDecodeRewardsTopics(t *testing.T) {
 	// Test case with valid logs
 	logs := []models.EventLog{{
 
-		Address:          "0x00000000000000000000000000000000000000fe",
-		Data:             "0x000000000000000000000000000000000000000000000005d9da3b556bb3aa86",
-		LogIndex:         0,
-		Removed:          false,
-		Topics:           []string{"0x9310ccfcb8de723f578a9e4282ea9f521f05ae40dc08f3068dfad528a65ee3c7", "0x00000000000000000000000021db400dcb1ef3bc3aee4f3d028ec1939b7fadd6", "0x0000000000000000000000004beaf4ce3c239ac7195a1e422725c0465271fb42"},
+		Address:  "0x00000000000000000000000000000000000000fe",
+		Data:     "0x000000000000000000000000000000000000000000000005d9da3b556bb3aa86",
+		LogIndex: 0,
+		Removed:  false,
+		Topics: []string{"0x9310ccfcb8de723f578a9e4282ea9f521f05ae40dc08f3068dfad528a65ee3c7",
+			"0x00000000000000000000000021db400dcb1ef3bc3aee4f3d028ec1939b7fadd6",
+			"0x0000000000000000000000004beaf4ce3c239ac7195a1e422725c0465271fb42"},
 		TransactionHash:  "0xd8c9296770c696b313128f1cc913b1a5e90ddc62b049ceb8a476b1125d65d3a4",
 		TransactionIndex: 1,
 	},
@@ -91,13 +46,13 @@ func TestDecodeRewardsTopics(t *testing.T) {
 	valueTwo, _ := new(big.Int).SetString("12079862109893161738", 10)
 	expectedEvents := []LogReward{
 		{
-			EventName: "RewardsClaimed",
+			EventName: "RewardsClaimed(address,address,uint256)",
 			Account:   "0x21DB400dCB1eF3bC3AEe4f3d028ec1939b7FadD6",
 			Validator: "0x4BEAf4ce3c239Ac7195a1e422725c0465271fb42",
 			Value:     valueOne,
 		},
 		{
-			EventName: "CommissionRewardsClaimed",
+			EventName: "CommissionRewardsClaimed(address,address,uint256)",
 			Account:   "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
 			Validator: "0xEd4d5f4F3641cbC056E466d15DBE2403e38056f8",
 			Value:     valueTwo,

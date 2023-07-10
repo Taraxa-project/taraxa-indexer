@@ -148,6 +148,8 @@ func (t *Transaction) ExtractLogs() (logs []models.EventLog) {
 			Address:          log.Address,
 			Data:             log.Data,
 			LogIndex:         ParseUInt(log.LogIndex),
+			Name:             "",
+			Params:           []string{},
 			Removed:          log.Removed,
 			Topics:           log.Topics,
 			TransactionHash:  log.TransactionHash,
