@@ -69,30 +69,17 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 			return nil, err
 		}
 
-		fmt.Println(name)
-
 		if name == rewardsClaimedName || name == commissionRewardsClaimedName {
 			account := ethcommon.HexToAddress(log.Topics[1])
 			validator := ethcommon.HexToAddress(log.Topics[2])
 			value, _ := big.NewInt(0).SetString(decoded[0], 10)
 
-			if name == rewardsClaimedName && decoded[0] != "" {
-				decodedEvents = append(decodedEvents, LogReward{
-					EventName: "RewardsClaimed",
-					Account:   account.Hex(),
-					Validator: validator.Hex(),
-					Value:     value,
-				})
-			}
-
-			if name == commissionRewardsClaimedName && decoded[0] != "" {
-				decodedEvents = append(decodedEvents, LogReward{
-					EventName: "CommissionRewardsClaimed",
-					Account:   account.Hex(),
-					Validator: validator.Hex(),
-					Value:     value,
-				})
-			}
+			decodedEvents = append(decodedEvents, LogReward{
+				EventName: name,
+				Account:   account.Hex(),
+				Validator: validator.Hex(),
+				Value:     value,
+			})
 		}
 	}
 	return decodedEvents, err

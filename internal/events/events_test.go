@@ -46,13 +46,13 @@ func TestDecodeRewardsTopics(t *testing.T) {
 	valueTwo, _ := new(big.Int).SetString("12079862109893161738", 10)
 	expectedEvents := []LogReward{
 		{
-			EventName: "RewardsClaimed",
+			EventName: "RewardsClaimed(address,address,uint256)",
 			Account:   "0x21DB400dCB1eF3bC3AEe4f3d028ec1939b7FadD6",
 			Validator: "0x4BEAf4ce3c239Ac7195a1e422725c0465271fb42",
 			Value:     valueOne,
 		},
 		{
-			EventName: "CommissionRewardsClaimed",
+			EventName: "CommissionRewardsClaimed(address,address,uint256)",
 			Account:   "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
 			Validator: "0xEd4d5f4F3641cbC056E466d15DBE2403e38056f8",
 			Value:     valueTwo,

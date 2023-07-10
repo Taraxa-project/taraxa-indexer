@@ -8,15 +8,3 @@ type LogReward struct {
 	Value     *big.Int
 	EventName string
 }
-
-type RewardsClaimedEvent struct {
-	Account   string
-	Validator string
-	Amount    *big.Int
-}
-
-type CommissionRewardsClaimedEvent struct {
-	Account   string
-	Validator string
-	Amount    *big.Int
-}
