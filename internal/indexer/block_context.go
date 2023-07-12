@@ -7,180 +7,185 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+	"github.com/Taraxa-project/taraxa-indexer/internal/rewards"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
-	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
-	"github.com/spiretechnology/go-pool"
 )
 
 type blockContext struct {
-	storage        *storage.Storage
-	batch          *storage.Batch
-	client         *chain.WsClient
-	tp             pool.Pool
-	blockTimestamp uint64
-	addressStats   map[string]*storage.AddressStats
-	finalized      *storage.FinalizationData
-	statsMutex     sync.RWMutex
-	progress       *progressbar.ProgressBar
+	Storage      storage.Storage
+	Batch        storage.Batch
+	Config       *common.Config
+	Client       chain.Client
+	block        *models.Pbft
+	dags         []chain.DagBlock
+	transactions []models.Transaction
+	finalized    *storage.FinalizationData
+	statsMutex   sync.RWMutex
+	addressStats map[string]*storage.AddressStats
+	balances     *storage.Balances
 }
 
-func MakeBlockContext(s *storage.Storage, client *chain.WsClient, tp pool.Pool) *blockContext {
+func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
 	var bc blockContext
-	bc.storage = s
-	bc.batch = s.NewBatch()
-	bc.client = client
-	// pool limit is limit of concurrent ws requests to the node
-	bc.tp = tp
+	bc.Storage = s
+	bc.Batch = s.NewBatch()
+	bc.Client = client
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
+	bc.Config = config
+	bc.balances = &storage.Balances{Accounts: bc.Storage.GetAccounts()}
 
 	return &bc
 }
 
-func (bc *blockContext) commit(period uint64) {
-	bc.batch.SetFinalizationData(bc.finalized)
+func (bc *blockContext) commit() {
+	bc.Batch.SetFinalizationData(bc.finalized)
 	bc.addAddressStatsToBatch()
-	bc.batch.CommitBatch()
+	bc.Batch.CommitBatch()
 
 	metrics.StorageCommitCounter.Inc()
 }
 
-func (bc *blockContext) process(raw *chain.Block) (dags_count, trx_count uint64, err error) {
-	startProcessing := time.Now()
-	block := raw.ToModel()
-	transactions := raw.Transactions
+func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, err error) {
+	start_processing := time.Now()
+	bc.block = raw.ToModel()
 
-	trx_count = block.TransactionCount
-	bc.finalized.TrxCount += trx_count
-	bc.blockTimestamp = block.Timestamp
+	tp := common.MakeThreadPool()
+	tp.Go(func() { bc.updateValidatorStats(bc.block) })
+	tp.Go(func() { err = bc.processDags() })
+	tp.Go(func() { err = bc.processTransactions(raw.Transactions) })
 
-	// Add reward minted in this block to TotalSupply
-	bc.addToTotalSupply(raw.TotalReward)
+	votes := new(chain.VotesResponse)
+	tp.Go(common.MakeTaskWithResult(bc.Client.GetPreviousBlockCertVotes, bc.block.Number, votes, &err).Run)
 
-	block_with_dags, pbft_err := bc.client.GetPbftBlockWithDagBlocks(block.Number)
-	block.PbftHash = block_with_dags.BlockHash
-	if pbft_err != nil {
-		err = pbft_err
-		return
-	}
-	dags_count = uint64(len(block_with_dags.Schedule.DagBlocksOrder))
-	bc.finalized.DagCount += dags_count
-	if trx_count+dags_count > 1000 {
-		bc.progress = progressbar.Default(int64(trx_count)+int64(dags_count), "Applying block "+fmt.Sprint(block.Number))
-	}
-	bc.tp.Go(func() { bc.updateValidatorStats(block) })
+	validators := make([]dpos_interface.DposInterfaceValidatorData, 0)
+	tp.Go(common.MakeTaskWithResult(bc.Client.GetValidatorsAtBlock, bc.block.Number, &validators, &err).Run)
 
-	for _, trx_hash := range *transactions {
-		bc.tp.Go(MakeTask(bc.processTransaction, trx_hash, &err).Run)
-	}
-
-	for _, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		bc.tp.Go(MakeTask(bc.processDag, dag_hash, &err).Run)
-	}
-
-	bc.tp.Wait()
+	tp.Wait()
 	if err != nil {
 		return
 	}
 
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
+	total_minted := common.ParseStringToBigInt(raw.TotalReward)
+	bc.balances.AddToBalance(common.DposContractAddress, total_minted)
+
+	if bc.block.Number%1000 == 0 {
+		err = bc.checkIndexedBalances()
+		if err != nil {
+			return
+		}
+	}
+	bc.Batch.SaveAccounts(bc.balances)
+
+	if total_minted.Cmp(big.NewInt(0)) == 1 {
+		r.Process(total_minted, bc.dags, bc.transactions, *votes, validators)
+	}
+
+	dags_count = uint64(len(bc.dags))
+	trx_count = bc.block.TransactionCount
+	bc.finalized.TrxCount += trx_count
+	bc.finalized.DagCount += dags_count
 	bc.finalized.PbftCount++
-	author_pbft_index := bc.getAddress(bc.storage, block.Author).AddPbft(block.Timestamp)
-	log.WithFields(log.Fields{"author": block.Author, "hash": block.Hash}).Debug("Saving PBFT block")
-	bc.batch.AddToBatch(block, block.Author, author_pbft_index)
+
+	pbft_author_index := bc.getAddress(bc.Storage, bc.block.Author).AddPbft(bc.block.Timestamp)
+	log.WithFields(log.Fields{"author": bc.block.Author, "hash": bc.block.Hash}).Debug("Saving PBFT block")
+	bc.Batch.AddToBatch(bc.block, bc.block.Author, pbft_author_index)
 
 	// If stats is available check for consistency
-	remote_stats, stats_err := bc.client.GetChainStats()
+	remote_stats, stats_err := bc.Client.GetChainStats()
 	if stats_err == nil {
 		bc.finalized.Check(remote_stats)
 	}
-	bc.commit(block.Number)
+	bc.commit()
+	r.AfterCommit()
 
-	// metrics
-	metrics.BlockProcessingTimeMilisec.Observe(float64(time.Since(startProcessing).Milliseconds()))
-	metrics.IndexedBlocksCounter.Inc()
-
-	metrics.IndexedDagBlocksLastProcessedBlock.Set(float64(dags_count))
-	metrics.IndexedTransactionsLastProcessedBlock.Set(float64(trx_count))
-
-	metrics.IndexedDagBlocks.Add(float64(dags_count))
-	metrics.IndexedTransactions.Add(float64(trx_count))
-
-	metrics.IndexedBlocksTotal.Set(float64(bc.finalized.PbftCount))
-	metrics.IndexedDagsTotal.Set(float64(bc.finalized.DagCount))
-	metrics.IndexedTransactionsTotal.Set(float64(bc.finalized.TrxCount))
-
-	metrics.LastProcessedBlockTimestamp.SetToCurrentTime()
+	metrics.Save(start_processing, dags_count, trx_count, bc.finalized)
 
 	return
 }
 
-func parseStringToBigInt(v string) *big.Int {
-	a := big.NewInt(0)
-	a.SetString(v, 0)
-	return a
-}
-
-func (bc *blockContext) addToTotalSupply(amount string) {
-	a := parseStringToBigInt(amount)
-
-	current := bc.storage.GetTotalSupply()
-	current.Add(current, a)
-
-	bc.batch.SetTotalSupply(current)
-}
-
-func (bc *blockContext) addToProgress() {
-	if bc.progress != nil {
-		err := bc.progress.Add(1)
-		if err != nil {
-			log.WithError(err).Error("Can't add to progress bar")
-		}
+func (bc *blockContext) checkIndexedBalances() (err error) {
+	tp := common.MakeThreadPool()
+	for _, balance := range bc.balances.Accounts {
+		address := balance.Address
+		balance := balance.Balance
+		tp.Go(func() {
+			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
+			if get_err != nil {
+				err = get_err
+				return
+			}
+			chain_balance := common.ParseStringToBigInt(b)
+			if balance.Cmp(chain_balance) != 0 {
+				err = fmt.Errorf("balance of %s: calc(%s) != chain(%s)", address, balance, chain_balance)
+			}
+		})
 	}
-}
+	tp.Wait()
 
-func (bc *blockContext) processTransaction(hash string) error {
-	trx, err := bc.client.GetTransactionByHash(hash)
-	if err != nil {
-		return err
-	}
-
-	bc.SaveTransaction(trx.ToModelWithTimestamp(bc.blockTimestamp))
-	bc.addToProgress()
-	return nil
+	return
 }
 
 func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 	tn, _ := goment.Unix(int64(block.Timestamp))
-	weekStats := bc.storage.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
+	weekStats := bc.Storage.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
 	weekStats.AddPbftBlock(block)
-	bc.batch.UpdateWeekStats(weekStats)
+	bc.Batch.UpdateWeekStats(weekStats)
 }
 
-func (bc *blockContext) processDag(hash string) error {
-	raw_dag, err := bc.client.GetDagBlockByHash(hash)
+func (bc *blockContext) processDags() (err error) {
+	dag_blocks, err := bc.Client.GetPeriodDagBlocks(bc.block.Number)
 	if err != nil {
-		return err
+		log.WithError(err).Debug("GetPeriodDagBlocks error")
+		return bc.processDagsOld()
 	}
-	dag := raw_dag.ToModel()
+	bc.dags = make([]chain.DagBlock, len(dag_blocks))
+	for i, dag := range dag_blocks {
+		bc.dags[i] = dag
+		bc.saveDag(dag.ToModel())
+	}
+	return
+}
+
+func (bc *blockContext) processDagsOld() (err error) {
+	block_with_dags, err := bc.Client.GetPbftBlockWithDagBlocks(bc.block.Number)
+	if err != nil {
+		return
+	}
+	bc.block.PbftHash = block_with_dags.BlockHash
+
+	tp := common.MakeThreadPool()
+	for i, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
+		tp.Go(common.MakeTaskWithResult(bc.processDag, dag_hash, &bc.dags[i], &err).Run)
+	}
+	tp.Wait()
+	return
+}
+
+func (bc *blockContext) processDag(hash string) (dag chain.DagBlock, err error) {
+	dag, err = bc.Client.GetDagBlockByHash(hash)
+	if err != nil {
+		return chain.DagBlock{}, err
+	}
+	bc.saveDag(dag.ToModel())
+	return
+}
+
+func (bc *blockContext) saveDag(dag *models.Dag) {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
-	dag_index := bc.getAddress(bc.storage, dag.Sender).AddDag(dag.Timestamp)
-	bc.batch.AddToBatch(dag, dag.Sender, dag_index)
-	bc.addToProgress()
-	return nil
+	dag_index := bc.getAddress(bc.Storage, dag.Sender).AddDag(dag.Timestamp)
+	bc.Batch.AddToBatch(dag, dag.Sender, dag_index)
 }
 
-func (bc *blockContext) addAddressStatsToBatch() {
-	for _, stats := range bc.addressStats {
-		bc.batch.AddToBatch(stats, stats.Address, 0)
-	}
-}
-
-func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.AddressStats {
+func (bc *blockContext) getAddress(s storage.Storage, addr string) *storage.AddressStats {
 	addr = strings.ToLower(addr)
 	bc.statsMutex.Lock()
 	defer bc.statsMutex.Unlock()
@@ -192,13 +197,4 @@ func (bc *blockContext) getAddress(s *storage.Storage, addr string) *storage.Add
 	bc.addressStats[addr] = s.GetAddressStats(addr)
 
 	return bc.addressStats[addr]
-}
-
-func (bc *blockContext) SaveTransaction(trx *models.Transaction) {
-	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
-	from_index := bc.getAddress(bc.storage, trx.From).AddTransaction(trx.Timestamp)
-	to_index := bc.getAddress(bc.storage, trx.To).AddTransaction(trx.Timestamp)
-
-	bc.batch.AddToBatch(trx, trx.From, from_index)
-	bc.batch.AddToBatch(trx, trx.To, to_index)
 }

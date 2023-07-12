@@ -1,9 +1,9 @@
 package storage
 
 import (
+	"fmt"
 	"math/big"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 
@@ -15,6 +15,10 @@ type TotalSupply = big.Int
 
 type Paginated interface {
 	models.Transaction | models.Dag | models.Pbft
+}
+
+type Yields interface {
+	ValidatorsYield | MultipliedYield
 }
 
 func GetTypeName[T any]() string {
@@ -61,7 +65,7 @@ func MakeEmptyAddressStats(addr string) *AddressStats {
 	return data
 }
 
-func (a *AddressStats) isEqual(b *AddressStats) bool {
+func (a *AddressStats) IsEqual(b *AddressStats) bool {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	b.mutex.Lock()
@@ -78,7 +82,7 @@ type FinalizationData struct {
 	PbftCount uint64 `json:"pbft_period"`
 }
 
-func (local *FinalizationData) Check(remote *FinalizationData) {
+func (local *FinalizationData) Check(remote FinalizationData) {
 	// Perform this check only if we are getting data for the same block from node
 	if local.PbftCount != remote.PbftCount {
 		return
@@ -92,54 +96,25 @@ func (local *FinalizationData) Check(remote *FinalizationData) {
 	}
 }
 
-type WeekStats struct {
-	Validators []models.Validator
-	Total      uint32
-	key        []byte `rlp:"-"`
-}
-
-func MakeEmptyWeekStats() *WeekStats {
-	data := new(WeekStats)
-	return data
-}
-
-func (w *WeekStats) Sort() {
-	sort.Slice(w.Validators, func(i, j int) bool {
-		return w.Validators[i].PbftCount > w.Validators[j].PbftCount
-	})
-}
-
-func (w *WeekStats) AddPbftBlock(block *models.Pbft) {
-	w.Total++
-	for k, v := range w.Validators {
-		if v.Address == block.Author {
-			w.Validators[k].PbftCount++
-			return
-		}
-	}
-	w.Validators = append(w.Validators, models.Validator{Address: block.Author, PbftCount: 1})
-}
-
-func (w *WeekStats) GetPaginated(from, count uint64) ([]models.Validator, *models.PaginatedResponse) {
-	pagination := new(models.PaginatedResponse)
-	pagination.Total = uint64(len(w.Validators))
-	pagination.Start = from
-	end := from + count
-	pagination.HasNext = (end < pagination.Total)
-	if end > pagination.Total {
-		end = pagination.Total
-	}
-	pagination.End = end
-
-	w.Sort()
-	var validators []models.Validator
-
-	for k, v := range w.Validators[from:end] {
-		v.Rank = uint64(k + 1)
-		validators = append(validators, v)
-	}
-
-	return validators, pagination
-}
-
 type GenesisHash string
+
+type ValidatorYield struct {
+	Validator string   `json:"validator"`
+	Yield     *big.Int `json:"yield"`
+}
+
+type ValidatorsYield struct {
+	Yields []ValidatorYield `json:"yields"`
+}
+
+type MultipliedYield struct {
+	Yield *big.Int `json:"yield"`
+}
+
+type Yield struct {
+	Yield string `json:"yield"`
+}
+
+func FormatIntToKey(i uint64) string {
+	return fmt.Sprintf("%020d", i)
+}

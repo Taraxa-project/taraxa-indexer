@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/models"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/labstack/echo/v4"
 	"github.com/nleeper/goment"
@@ -14,11 +16,12 @@ import (
 )
 
 type ApiHandler struct {
-	storage *storage.Storage
+	storage storage.Storage
+	config  *common.Config
 }
 
-func NewApiHandler(s *storage.Storage) *ApiHandler {
-	return &ApiHandler{s}
+func NewApiHandler(s storage.Storage, c *common.Config) *ApiHandler {
+	return &ApiHandler{s, c}
 }
 
 func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilter, pag *PaginationParam) interface{} {
@@ -30,6 +33,20 @@ func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilte
 	response := struct {
 		PaginatedResponse
 		Data []T `json:"data"`
+	}{
+		PaginatedResponse: *pagination,
+		Data:              ret,
+	}
+
+	return response
+}
+
+func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
+	ret, pagination := storage.GetHoldersPage(a.storage, getPaginationStart(pag.Start), pag.Limit)
+
+	response := struct {
+		PaginatedResponse
+		Data []storage.Account `json:"data"`
 	}{
 		PaginatedResponse: *pagination,
 		Data:              ret,
@@ -106,6 +123,12 @@ func (a *ApiHandler) GetValidatorsTotal(ctx echo.Context, params GetValidatorsTo
 	return ctx.JSON(http.StatusOK, count)
 }
 
+func (a *ApiHandler) GetHolders(ctx echo.Context, params GetHoldersParams) error {
+	log.WithField("params", params).Debug("GetHolders")
+	ret := GetHoldersDataPage(a, &params.Pagination)
+	return ctx.JSON(http.StatusOK, ret)
+}
+
 // GetValidator returns info about the validator for the selected week
 func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params GetValidatorParams) error {
 	address = strings.ToLower(address)
@@ -130,6 +153,36 @@ func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params
 
 func (a *ApiHandler) GetTotalSupply(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, a.storage.GetTotalSupply().String())
+}
+
+func (a *ApiHandler) GetInternalTransactions(ctx echo.Context, hash HashParam) error {
+	return ctx.JSON(http.StatusOK, a.storage.GetInternalTransactions(hash))
+}
+
+func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error {
+	return ctx.JSON(http.StatusOK, a.storage.GetTransactionLogs(hash))
+}
+
+func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
+	resp := models.YieldResponse{
+		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
+		ToBlock:   block_num,
+		Yield:     a.storage.GetValidatorYield(address, block_num).Yield,
+	}
+	return ctx.JSON(http.StatusOK, resp)
+}
+
+func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams) error {
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.TotalYieldSavingInterval)
+	resp := models.YieldResponse{
+		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
+		ToBlock:   block_num,
+		Yield:     a.storage.GetTotalYield(block_num).Yield,
+	}
+	return ctx.JSON(http.StatusOK, resp)
 }
 
 func getPaginationStart(param *uint64) uint64 {

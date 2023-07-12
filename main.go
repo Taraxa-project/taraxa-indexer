@@ -12,21 +12,25 @@ import (
 	"strconv"
 
 	"github.com/Taraxa-project/taraxa-indexer/api"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	http_port     *int
-	metrics_port  *int
-	blockchain_ws *string
-	data_dir      *string
-	log_level     *string
+	http_port                        *int
+	metrics_port                     *int
+	blockchain_ws                    *string
+	data_dir                         *string
+	log_level                        *string
+	yield_saving_interval            *int
+	validators_yield_saving_interval *int
 )
 
 func init() {
@@ -35,6 +39,8 @@ func init() {
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
+	yield_saving_interval = flag.Int("yield_saving_interval", 150000, "interval for saving total yield")
+	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 150000, "interval for saving validators yield")
 
 	flag.Parse()
 
@@ -48,7 +54,7 @@ func init() {
 		Info("Application started")
 }
 
-func setupCloseHandler(st *storage.Storage, fn func()) {
+func setupCloseHandler(st storage.Storage, fn func()) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
@@ -59,7 +65,7 @@ func setupCloseHandler(st *storage.Storage, fn func()) {
 }
 
 func main() {
-	st := storage.NewStorage(filepath.Join(*data_dir, "db"))
+	st := pebble.NewStorage(filepath.Join(*data_dir, "db"))
 	setupCloseHandler(st, func() { st.Close() })
 
 	swagger, err := api.GetSwagger()
@@ -75,10 +81,17 @@ func main() {
 	// It is logging every incoming request. Do we need this?
 	// e.Use(echomiddleware.Logger())
 
-	apiHandler := api.NewApiHandler(st)
+	c := common.DefaultConfig()
+	c.TotalYieldSavingInterval = uint64(*yield_saving_interval)
+	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
+
+	fin := st.GetFinalizationData()
+	log.WithFields(log.Fields{"pbft_count": fin.PbftCount}).Info("Loaded db with")
+
+	apiHandler := api.NewApiHandler(st, c)
 	api.RegisterHandlers(e, apiHandler)
 
-	go indexer.MakeAndRun(*blockchain_ws, st)
+	go indexer.MakeAndRun(*blockchain_ws, st, c)
 
 	// start a http server for prometheus on a separate go routine
 	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))

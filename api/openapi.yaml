@@ -21,6 +21,32 @@ servers:
   - url: https://indexer.devnet.taraxa.io
     description: Devnet network
 paths:
+  /holders:
+    get:
+      tags:
+        - Holders
+      summary: "Returns the list of TARA token holders and their balances"
+      description: |
+        Returns the list of TARA token holders and their balances
+      operationId: "getHolders"
+      parameters:
+        - $ref: "#/components/parameters/paginationParam"
+      responses:
+        "200":
+          description: |
+            Currentlist of TARA token holders and their balances as a string- string pair as values could be pretty big
+          content:
+            application/json:
+              schema:
+                properties:
+                  holders:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/HoldersPaginatedResponse"
+        default:
+          description: |
+            Unexpected error
   /totalSupply:
     get:
       tags:
@@ -40,6 +66,28 @@ paths:
                   currentSupply:
                     type: string
                     example: "1234567890"
+        default:
+          description: |
+            Unexpected error
+  /totalYield:
+    get:
+      tags:
+        - totalYield
+      summary: "Returns total yield"
+      description: |
+        Returns stored total yield value closest to specified block number
+      operationId: "getTotalYield"
+      parameters:
+        - $ref: "#/components/parameters/blockNumParam"
+      responses:
+        "200":
+          description: |
+            Current total yield as string as value could be pretty big
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/YieldResponse"
         default:
           description: |
             Unexpected error
@@ -199,6 +247,73 @@ paths:
         default:
           description: |
             Unexpected error
+  /address/{address}/yield:
+    get:
+      tags:
+        - Address
+      summary: "Returns yield for the address"
+      description: |
+        Returns yield for the address at specified block
+      operationId: "getAddressYield"
+      parameters:
+        - $ref: "#/components/parameters/addressParam"
+        - $ref: "#/components/parameters/blockNumParam"
+      responses:
+        "200":
+          description: |
+            Current total yield as string as value could be pretty big
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/YieldResponse"
+        default:
+          description: |
+            Unexpected error
+  /transaction/{hash}/internal_transactions:
+    get:
+      tags:
+        - Hash
+      summary: "Returns internal transactions"
+      description: |
+        Returns all internal transactions of transaction with specified hash
+      operationId: "getInternalTransactions"
+      parameters:
+        - $ref: "#/components/parameters/hashParam"
+      responses:
+        "200":
+          description: |
+            A JSON object containing a list of all internal transactions of transaction with specified hash
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/InternalTransactionsResponse"
+        default:
+          description: |
+            Unexpected error
+  /transaction/{hash}/logs:
+    get:
+      tags:
+        - Hash
+      summary: "Returns event logs of transaction"
+      description: |
+        Returns all logs of the transaction with specified hash 
+      operationId: "getTransactionLogs"
+      parameters:
+        - $ref: "#/components/parameters/hashParam"
+      responses:
+        "200":
+          description: |
+            A JSON object array containing a list of all evetn lgos of the transaction with specified hash 
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/TransactionLogsResponse"
+        default:
+          description: |
+            Unexpected error
 components:
   schemas:
     Address:
@@ -238,6 +353,17 @@ components:
           minimum: 2022
           default: 2023
           nullable: true
+    Account:
+      type: object
+      required:
+        - address
+        - balance
+      properties:
+        address:
+          $ref: "#/components/schemas/Address"
+        balance:
+          type: string
+          example: "0"
     Period:
       type: object
       required:
@@ -268,6 +394,41 @@ components:
         address:
           $ref: "#/components/schemas/Address"
         pbftCount:
+          $ref: "#/components/schemas/Counter"
+    EventLog:
+      type: object
+      required:
+        - logIndex
+        - address
+        - data
+        - name
+        - params
+        - topics
+        - removed
+        - transactionHash
+        - transactionIndex
+      properties:
+        logIndex:
+          $ref: "#/components/schemas/Counter"
+        address:
+          $ref: "#/components/schemas/Address"
+        topics:
+          type: array
+          items:
+            type: string
+        data:
+          type: string
+        name: 
+          type: string
+        params:
+          type: array
+          items:
+            type: string
+        removed:
+          type: boolean
+        transactionHash:
+          $ref: "#/components/schemas/Hash"
+        transactionIndex:
           $ref: "#/components/schemas/Counter"
     Transaction:
       type: object
@@ -312,8 +473,16 @@ components:
         type:
           type: integer
           format: uint8
-          enum: [0, 1, 2]
-          x-enum-varnames: [transfer, contract_call, contract_creation]
+          enum: [0, 1, 2, 3, 4, 5]
+          x-enum-varnames:
+            [
+              transfer,
+              contract_call,
+              contract_creation,
+              internal_transfer,
+              internal_contract_call,
+              internal_contract_creation,
+            ]
     Dag:
       type: object
       required:
@@ -406,6 +575,15 @@ components:
         hasNext:
           type: boolean
           default: true
+    HoldersPaginatedResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaginatedResponse"
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Account"
     ValidatorsPaginatedResponse:
       allOf:
         - $ref: "#/components/schemas/PaginatedResponse"
@@ -417,7 +595,6 @@ components:
               - $ref: "#/components/schemas/Validator"
         week:
           $ref: "#/components/schemas/WeekResponse"
-
     TransactionsPaginatedResponse:
       allOf:
         - $ref: "#/components/schemas/PaginatedResponse"
@@ -445,6 +622,37 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/Pbft"
+    YieldResponse:
+      required:
+        - yield
+        - fromBlock
+        - toBlock
+      properties:
+        yield:
+          type: string
+          example: "0,1999"
+        fromBlock:
+          $ref: "#/components/schemas/Counter"
+        toBlock:
+          $ref: "#/components/schemas/Counter"
+    InternalTransactionsResponse:
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Transaction"
+    TransactionLogsResponse:
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/EventLog"
     AddressFilter:
       $ref: "#/components/schemas/Address"
     PaginationFilter:
@@ -488,3 +696,28 @@ components:
         Week to filter by
       schema:
         $ref: "#/components/schemas/Week"
+    hashParam:
+      name: hash
+      in: path
+      required: true
+      description: |
+        Hash of the item(transaction) to get data for
+      schema:
+        $ref: "#/components/schemas/Hash"
+    blockNumParam:
+      name: blockNumber
+      in: query
+      required: false
+      description: |
+        Block Number
+      schema:
+        $ref: "#/components/schemas/Counter"
+    addressesParam:
+      name: addresses
+      in: query
+      required: true
+      description: |
+        Addresses
+      schema:
+        $ref: "#/components/schemas/Address"
+
