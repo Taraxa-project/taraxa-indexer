@@ -62,10 +62,42 @@ func ParseToStringSlice(data []interface{}) ([]string, error) {
 			result[i] = val.String()
 		case []byte:
 			result[i] = fmt.Sprintf("0x%x", val)
+		case []string:
+			result[i] = strings.Join(val, ",")
+		case []*big.Int:
+			result[i] = strings.Join(bigIntSliceToStringSlice(val), ",")
+		case []int:
+			result[i] = strings.Join(intSliceToStringSlice(val), ",")
+		case []ethcommon.Address:
+			result[i] = strings.Join(ethcommonAddressesToStringSlice(val), ",")
 		default:
 			return nil, fmt.Errorf("failed to convert element at index %d to string", i)
 		}
 	}
 
 	return result, nil
+}
+
+func ethcommonAddressesToStringSlice(val []ethcommon.Address) []string {
+	result := make([]string, len(val))
+	for i, item := range val {
+		result[i] = strings.ToLower(item.Hex())
+	}
+	return result
+}
+
+func intSliceToStringSlice(val []int) []string {
+	result := make([]string, len(val))
+	for i, item := range val {
+		result[i] = strconv.Itoa(item)
+	}
+	return result
+}
+
+func bigIntSliceToStringSlice(val []*big.Int) []string {
+	result := make([]string, len(val))
+	for i, item := range val {
+		result[i] = item.String()
+	}
+	return result
 }

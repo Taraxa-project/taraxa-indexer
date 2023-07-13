@@ -30,6 +30,17 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 	bc.transactions = make([]models.Transaction, len(transactions))
 	for t_idx := 0; t_idx < len(transactions); t_idx++ {
 		bc.transactions[t_idx] = transactions[t_idx].ToModelWithTimestamp(bc.block.Timestamp)
+
+		calldata, err := extractInternalTransactionData(transactions[t_idx])
+
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{"hash": transactions[t_idx].Hash}).Debug("extractInternalTransactionData error")
+			continue
+		}
+
+		trx := &bc.transactions[t_idx]
+		trx.Calldata = calldata
+		bc.transactions[t_idx] = *trx
 		bc.SaveTransaction(bc.transactions[t_idx])
 
 		trx_fee := transactions[t_idx].GetFee()
@@ -47,7 +58,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 			Data: transactions[t_idx].ExtractLogs(),
 		}
 		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
-		err := bc.balances.UpdateEvents(logs.Data)
+		err = bc.balances.UpdateEvents(logs.Data)
 		if err != nil {
 			return err
 		}
@@ -74,6 +85,7 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		}
 		internal := makeInternal(bc.transactions[t_idx], entry)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
+
 		bc.SaveTransaction(internal)
 		bc.balances.UpdateBalances(internal.From, internal.To, internal.Value)
 	}
@@ -110,6 +122,23 @@ func makeInternal(trx models.Transaction, entry chain.TraceEntry) (internal mode
 	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
 	internal.BlockNumber = trx.BlockNumber
 	return
+}
+
+func extractInternalTransactionData(trx chain.Transaction) (calldata models.CallData, err error) {
+
+	sig, params, err := DecodeTransaction(trx)
+
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"hash": trx.Hash}).Debug("DecodeTransaction error")
+		return calldata, err
+	}
+
+	calldata = models.CallData{
+		FunctionSignature: sig,
+		Arguments:         params,
+	}
+
+	return calldata, nil
 }
 
 func (bc *blockContext) SaveTransaction(trx models.Transaction) {

@@ -20,7 +20,7 @@ func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
 }
 
 func DecodeTransaction(tx chain.Transaction) (functionSig string, params []string, err error) {
-	relevantAbi := contracts.ContractABIs[tx.To]
+	relevantAbi := contracts.ContractABIs[strings.ToLower(tx.To)]
 	if relevantAbi == "" {
 		return "", nil, nil
 	}
@@ -31,6 +31,11 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 
 	trimmed := strings.TrimPrefix(tx.Data, "0x")
 	bytes, err := hex.DecodeString(trimmed)
+
+	if err != nil {
+		return "", nil, err
+	}
+
 	funcId, data, err := splitFunctionIDFromData(bytes)
 	if err != nil {
 		return "", nil, err
@@ -40,8 +45,6 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 
 	functionSig = method.Sig
 
-	fmt.Println("DecodeTransaction Method: ", functionSig)
-
 	if err != nil {
 		return "", nil, err
 	}
@@ -49,10 +52,6 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 	if method == nil {
 		return
 	}
-
-	fmt.Println("Len of data: ", len(data))
-
-	fmt.Println(method.Inputs)
 
 	// TODO: move to separate function
 	var args abi.Arguments
@@ -66,7 +65,6 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 	unpacked, err := args.Unpack(data)
 	// END TODO
 
-	fmt.Println("DecodeTransaction Unpacked: ", unpacked)
 	if err != nil {
 		return "", nil, err
 	}
@@ -78,5 +76,4 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 	}
 
 	return functionSig, params, nil
-
 }
