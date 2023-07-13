@@ -98,6 +98,7 @@ type Transaction struct {
 	TransactionIndex string     `json:"transactionIndex"`
 	Input            string     `json:"input"`
 	ContractAddress  string     `json:"contractAddress"`
+	Data             string     `json:"data"`
 }
 
 const emptyInput = "0x"

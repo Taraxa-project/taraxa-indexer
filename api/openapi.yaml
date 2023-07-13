@@ -353,6 +353,19 @@ components:
           minimum: 2022
           default: 2023
           nullable: true
+    CallData:
+      type: object
+      required:
+        - functionSignature
+        - arguments
+      properties:
+        functionSignature:
+          type: string
+          example: "0x00000000"
+        arguments:
+          type: array
+          items:
+            type: string
     Account:
       type: object
       required:
@@ -445,11 +458,14 @@ components:
         - timestamp
         - status
         - type
+        - calldata
       properties:
         hash:
           $ref: "#/components/schemas/Hash"
         blockNumber:
           $ref: "#/components/schemas/Counter"
+        calldata: 
+          $ref: "#/components/schemas/CallData"
         transactionIndex:
           $ref: "#/components/schemas/Counter"
         from:

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"math/big"
 	"runtime"
 	"strconv"
@@ -38,4 +39,27 @@ func GetYieldIntervalEnd(pbft_count uint64, block_num *uint64, interval uint64) 
 	}
 	block = block - block%interval + interval
 	return block
+}
+
+func ParseToStringSlice(data []interface{}) ([]string, error) {
+	result := make([]string, len(data))
+
+	for i, item := range data {
+		switch val := item.(type) {
+		case string:
+			result[i] = val
+		case int:
+			result[i] = strconv.Itoa(val)
+		case int64:
+			result[i] = strconv.FormatInt(val, 10)
+		case float64:
+			result[i] = strconv.FormatFloat(val, 'f', -1, 64)
+		case *big.Int:
+			result[i] = val.String()
+		default:
+			return nil, fmt.Errorf("failed to convert element at index %d to string", i)
+		}
+	}
+
+	return result, nil
 }

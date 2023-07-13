@@ -2,9 +2,7 @@ package events
 
 import (
 	"encoding/hex"
-	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -50,7 +48,7 @@ func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
 		return "", nil, err
 	}
 
-	params, err := parseToStringSlice(unpacked)
+	params, err := common.ParseToStringSlice(unpacked)
 
 	if err != nil {
 		return "", nil, err
@@ -83,27 +81,4 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 		}
 	}
 	return decodedEvents, err
-}
-
-func parseToStringSlice(data []interface{}) ([]string, error) {
-	result := make([]string, len(data))
-
-	for i, item := range data {
-		switch val := item.(type) {
-		case string:
-			result[i] = val
-		case int:
-			result[i] = strconv.Itoa(val)
-		case int64:
-			result[i] = strconv.FormatInt(val, 10)
-		case float64:
-			result[i] = strconv.FormatFloat(val, 'f', -1, 64)
-		case *big.Int:
-			result[i] = val.String()
-		default:
-			return nil, fmt.Errorf("failed to convert element at index %d to string", i)
-		}
-	}
-
-	return result, nil
 }
