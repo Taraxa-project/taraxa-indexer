@@ -20,6 +20,9 @@ func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
 }
 
 func DecodeTransaction(tx chain.Transaction) (functionSig string, params []string, err error) {
+	if tx.Data == "" {
+		return "", nil, nil
+	}
 	relevantAbi := contracts.ContractABIs[strings.ToLower(tx.To)]
 	if relevantAbi == "" {
 		return "", nil, nil
