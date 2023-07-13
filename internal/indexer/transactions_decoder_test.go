@@ -60,7 +60,7 @@ func TestDecodeTransaction(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "claim(address,uint256,uint256,bytes)", functionName)
 	assert.Equal(t, []string{
-		"0xfb1b6f568a9c5db31a46fd9f9dec0d96a5f4f5ea",
+		"0x3aef315b67c2e23aae9e9c1174d05371e2c9b144",
 	}, params)
 
 	// _, _, err = DecodeTransaction(wrong_trx)

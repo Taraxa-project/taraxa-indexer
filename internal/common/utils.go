@@ -5,7 +5,9 @@ import (
 	"math/big"
 	"runtime"
 	"strconv"
+	"strings"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/spiretechnology/go-pool"
 )
 
@@ -46,6 +48,8 @@ func ParseToStringSlice(data []interface{}) ([]string, error) {
 
 	for i, item := range data {
 		switch val := item.(type) {
+		case ethcommon.Address:
+			result[i] = strings.ToLower(val.Hex())
 		case string:
 			result[i] = val
 		case int:
@@ -56,6 +60,8 @@ func ParseToStringSlice(data []interface{}) ([]string, error) {
 			result[i] = strconv.FormatFloat(val, 'f', -1, 64)
 		case *big.Int:
 			result[i] = val.String()
+		case []byte:
+			result[i] = fmt.Sprintf("0x%x", val)
 		default:
 			return nil, fmt.Errorf("failed to convert element at index %d to string", i)
 		}

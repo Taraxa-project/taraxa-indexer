@@ -3,6 +3,7 @@ package indexer
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
@@ -53,7 +54,17 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 
 	fmt.Println(method.Inputs)
 
-	unpacked, err := contractABI.Unpack(method.Name, data)
+	// TODO: move to separate function
+	var args abi.Arguments
+	if method, ok := contractABI.Methods[method.Name]; ok {
+		if len(data)%32 != 0 {
+			log.Fatal("failed to decode transaction")
+			// return nil, fmt.Errorf("abi: improperly formatted output: %q - Bytes: %+v", data, data)
+		}
+		args = method.Inputs
+	}
+	unpacked, err := args.Unpack(data)
+	// END TODO
 
 	fmt.Println("DecodeTransaction Unpacked: ", unpacked)
 	if err != nil {
