@@ -9,8 +9,8 @@ const Multicall = `[{"inputs":[{"components":[{"internalType":"address","name":"
 const MultisendNative = `[{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"SentBack","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"recipient","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"TokensSent","type":"event"},{"inputs":[{"internalType":"address payable[]","name":"_recipients","type":"address[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"}],"name":"multisendToken","outputs":[],"stateMutability":"payable","type":"function"}]`
 
 var ContractABIs = map[string]string{
-	"0xFCe7a3121B42664AaD145712e1c2Bf2e38f60AA1": Multicall,
-	"0x1578F035581f664Efa85A6Da822464bD9Edd8850": MultisendNative,
+	"0xfce7a3121b42664aad145712e1c2bf2e38f60aa1": Multicall,
+	"0x1578f035581f664efa85a6da822464bd9edd8850": MultisendNative,
 	"0xf3b803a8f4c4fc3fbe454b6438dc0ed22735f01b": ClaimNative,
 	"0x00000000000000000000000000000000000000fe": dpos_interface.DposInterfaceABI,
 }

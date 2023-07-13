@@ -17,7 +17,7 @@ const rewardsClaimedName = "RewardsClaimed(address,address,uint256)"
 
 func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
 
-	relevantAbi := contracts.ContractABIs[log.Address]
+	relevantAbi := contracts.ContractABIs[strings.ToLower(log.Address)]
 	if relevantAbi == "" {
 		return "", nil, nil
 	}
