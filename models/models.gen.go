@@ -128,7 +128,7 @@ type Timestamp = uint64
 // Transaction defines model for Transaction.
 type Transaction struct {
 	BlockNumber      Counter         `json:"blockNumber"`
-	Calldata         CallData        `json:"calldata"`
+	Calldata         *CallData       `json:"calldata,omitempty"`
 	From             Address         `json:"from"`
 	GasPrice         Counter         `json:"gasPrice"`
 	GasUsed          Counter         `json:"gasUsed"`
