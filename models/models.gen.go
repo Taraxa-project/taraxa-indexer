@@ -27,8 +27,8 @@ type AddressFilter = Address
 
 // CallData defines model for CallData.
 type CallData struct {
-	Arguments         []string `json:"arguments"`
-	FunctionSignature string   `json:"functionSignature"`
+	Name   *string   `json:"name"`
+	Params *[]string `json:"params"`
 }
 
 // CountResponse defines model for CountResponse.
@@ -129,6 +129,7 @@ type Timestamp = uint64
 type Transaction struct {
 	BlockNumber      Counter         `json:"blockNumber"`
 	Calldata         *CallData       `json:"calldata,omitempty"`
+	Data             string          `json:"data"`
 	From             Address         `json:"from"`
 	GasPrice         Counter         `json:"gasPrice"`
 	GasUsed          Counter         `json:"gasUsed"`

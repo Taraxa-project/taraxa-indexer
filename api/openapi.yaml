@@ -356,14 +356,16 @@ components:
     CallData:
       type: object
       required:
-        - functionSignature
-        - arguments
+        - name
+        - params
       properties:
-        functionSignature:
+        name:
           type: string
-          example: "0x00000000"
-        arguments:
+          example: "delegate(address)"
+          nullable: true
+        params:
           type: array
+          nullable: true
           items:
             type: string
     Account:
@@ -458,6 +460,7 @@ components:
         - timestamp
         - status
         - type
+        - data
       optional:
         - calldata
       properties:
@@ -467,6 +470,8 @@ components:
           $ref: "#/components/schemas/Counter"
         calldata: 
           $ref: "#/components/schemas/CallData"
+        data:
+          type: string
         transactionIndex:
           $ref: "#/components/schemas/Counter"
         from:
