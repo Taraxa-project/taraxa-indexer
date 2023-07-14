@@ -39,7 +39,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		}
 
 		trx := &bc.transactions[t_idx]
-		trx.Calldata = calldata
+		trx.Calldata = &calldata
 		bc.transactions[t_idx] = *trx
 		bc.SaveTransaction(bc.transactions[t_idx])
 

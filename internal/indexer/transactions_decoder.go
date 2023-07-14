@@ -3,7 +3,6 @@ package indexer
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
@@ -21,11 +20,11 @@ func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
 
 func DecodeTransaction(tx chain.Transaction) (functionSig string, params []string, err error) {
 	if tx.Data == "" {
-		return "", nil, nil
+		return
 	}
 	relevantAbi := contracts.ContractABIs[strings.ToLower(tx.To)]
 	if relevantAbi == "" {
-		return "", nil, nil
+		return
 	}
 	contractABI, error := abi.JSON(strings.NewReader(relevantAbi))
 	if error != nil {
@@ -56,17 +55,7 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 		return
 	}
 
-	// TODO: move to separate function
-	var args abi.Arguments
-	if method, ok := contractABI.Methods[method.Name]; ok {
-		if len(data)%32 != 0 {
-			log.Fatal("failed to decode transaction")
-			// return nil, fmt.Errorf("abi: improperly formatted output: %q - Bytes: %+v", data, data)
-		}
-		args = method.Inputs
-	}
-	unpacked, err := args.Unpack(data)
-	// END TODO
+	unpacked, err := unpackParams(contractABI, method, data)
 
 	if err != nil {
 		return "", nil, err
@@ -78,5 +67,17 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 		return "", nil, err
 	}
 
-	return functionSig, params, nil
+	return
+}
+
+func unpackParams(contractABI abi.ABI, method *abi.Method, data []byte) ([]interface{}, error) {
+	var args abi.Arguments
+	if method, ok := contractABI.Methods[method.Name]; ok {
+		if len(data)%32 != 0 {
+			return nil, fmt.Errorf("abi: improperly formatted output: %x", data)
+		}
+		args = method.Inputs
+	}
+	unpacked, err := args.Unpack(data)
+	return unpacked, err
 }
