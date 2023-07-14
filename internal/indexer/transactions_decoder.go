@@ -26,45 +26,41 @@ func DecodeTransaction(tx chain.Transaction) (functionSig string, params []strin
 	if relevantAbi == "" {
 		return
 	}
-	contractABI, error := abi.JSON(strings.NewReader(relevantAbi))
-	if error != nil {
-		return "", nil, error
+	contractABI, err := abi.JSON(strings.NewReader(relevantAbi))
+	if err != nil {
+		return
 	}
 
 	trimmed := strings.TrimPrefix(tx.Data, "0x")
 	bytes, err := hex.DecodeString(trimmed)
 
 	if err != nil {
-		return "", nil, err
+		return
 	}
 
 	funcId, data, err := splitFunctionIDFromData(bytes)
 	if err != nil {
-		return "", nil, err
+		return
 	}
 	// Decode the transaction
 	method, err := contractABI.MethodById(funcId)
 
 	functionSig = method.Sig
 
-	if err != nil {
-		return "", nil, err
-	}
-
-	if method == nil {
+	if err != nil || method == nil {
 		return
 	}
 
 	unpacked, err := unpackParams(contractABI, method, data)
 
 	if err != nil {
-		return "", nil, err
+		return
 	}
 
 	params, err = common.ParseToStringSlice(unpacked)
 
 	if err != nil {
-		return "", nil, err
+		return
 	}
 
 	return
