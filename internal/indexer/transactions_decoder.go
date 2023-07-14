@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
+	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	log "github.com/sirupsen/logrus"
 )
 
 func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
@@ -18,7 +19,7 @@ func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
 	return data[:4], data[4:], nil
 }
 
-func DecodeTransaction(tx chain.Transaction) (functionSig string, params []string, err error) {
+func DecodeTransaction(tx models.Transaction) (functionSig string, params []string, err error) {
 	if tx.Data == "" {
 		return
 	}
@@ -76,4 +77,25 @@ func unpackParams(contractABI abi.ABI, method *abi.Method, data []byte) ([]inter
 	}
 	unpacked, err := args.Unpack(data)
 	return unpacked, err
+}
+
+func ExtractInternalTransactionData(trx models.Transaction) (calldata models.CallData, err error) {
+
+	sig, params, err := DecodeTransaction(trx)
+
+	if sig == "" && params != nil {
+		return calldata, nil
+	}
+
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"hash": trx.Hash}).Debug("DecodeTransaction error")
+		return calldata, err
+	}
+
+	calldata = models.CallData{
+		Name:   &sig,
+		Params: &params,
+	}
+
+	return calldata, nil
 }

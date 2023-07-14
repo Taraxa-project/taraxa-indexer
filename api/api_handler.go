@@ -4,9 +4,11 @@ package api
 
 import (
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
@@ -29,7 +31,12 @@ func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilte
 	log.WithFields(logFields).Debug("GetAddressDataPage")
 
 	ret, pagination := storage.GetObjectsPage[T](a.storage, address, getPaginationStart(pag.Start), pag.Limit)
-
+	for _, o := range ret {
+		err := Process[T](&o)
+		if err != nil {
+			log.WithError(err).WithFields(logFields).Error("Error processing data")
+		}
+	}
 	response := struct {
 		PaginatedResponse
 		Data []T `json:"data"`
@@ -200,4 +207,32 @@ func getYearWeek(w *WeekParam) (int32, int32) {
 	}
 
 	return int32(*w.Year), int32(*w.Week)
+}
+
+func Process[T storage.Paginated](o *T) error {
+	v := reflect.ValueOf(o).Elem()
+
+	if v.Kind() == reflect.Struct {
+		switch {
+		case v.Type() == reflect.TypeOf(models.Transaction{}):
+			tx := v.Addr().Interface().(*models.Transaction)
+			calldata, err := indexer.ExtractInternalTransactionData(*tx)
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{"hash": tx.Hash}).Debug("extractInternalTransactionData error")
+			}
+
+			tx.Calldata = &calldata
+			return nil
+		case v.Type() == reflect.TypeOf(models.Dag{}):
+			return nil
+		case v.Type() == reflect.TypeOf(models.Pbft{}):
+			return nil
+		default:
+			log.Fatalf("GetCount incorrect type passed: %v", v.Type())
+		}
+	} else {
+		log.Fatalf("GetCount incorrect type passed: %T", o)
+	}
+
+	return nil
 }

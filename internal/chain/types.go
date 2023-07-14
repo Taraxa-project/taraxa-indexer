@@ -98,7 +98,6 @@ type Transaction struct {
 	TransactionIndex string     `json:"transactionIndex"`
 	Input            string     `json:"input"`
 	ContractAddress  string     `json:"contractAddress"`
-	Data             string     `json:"data"`
 }
 
 const emptyInput = "0x"
@@ -132,7 +131,7 @@ func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transac
 		trx.To = t.ContractAddress
 	}
 	trx.Timestamp = timestamp
-
+	trx.Calldata = &models.CallData{}
 	return
 }
 
