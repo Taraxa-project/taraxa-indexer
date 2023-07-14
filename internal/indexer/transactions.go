@@ -40,7 +40,11 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 			continue
 		}
 		// remove value from sender and add to receiver
-		bc.balances.UpdateBalances(transactions[t_idx].From, transactions[t_idx].To, transactions[t_idx].Value)
+		receiver := transactions[t_idx].To
+		if receiver == "" {
+			receiver = transactions[t_idx].ContractAddress
+		}
+		bc.balances.UpdateBalances(transactions[t_idx].From, receiver, transactions[t_idx].Value)
 
 		// process logs
 		logs := models.TransactionLogsResponse{
