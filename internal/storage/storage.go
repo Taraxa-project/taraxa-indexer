@@ -72,7 +72,7 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 	return
 }
 
-func GetHoldersPage(s Storage, from, count uint64) (ret []Account, pagination *models.PaginatedResponse) {
+func GetHoldersPage(s Storage, from, count uint64) (ret []AccountReturn, pagination *models.PaginatedResponse) {
 	holders := s.GetAccounts()
 	pagination = new(models.PaginatedResponse)
 	pagination.Start = from
@@ -83,7 +83,12 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []Account, pagination *m
 		end = pagination.Total
 	}
 	pagination.End = end
-	ret = holders[from:end]
+
+	var balancesString []AccountReturn
+	for _, holder := range holders[from:end] {
+		balancesString = append(balancesString, AccountReturn{holder.Address, holder.Balance.String()})
+	}
+	ret = balancesString
 	return
 }
 func GetIntervalData[T Yields](s Storage, start uint64) map[string]T {

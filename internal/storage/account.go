@@ -15,6 +15,11 @@ type Account struct {
 	Balance *big.Int `json:"balance"`
 }
 
+type AccountReturn struct {
+	Address string `json:"address"`
+	Balance string `json:"balance"`
+}
+
 type Balances struct {
 	Accounts []Account `json:"accounts"`
 }
