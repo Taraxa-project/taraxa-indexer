@@ -96,7 +96,6 @@ type Transaction struct {
 	GasUsed          string     `json:"gasUsed"`
 	Status           string     `json:"status"`
 	TransactionIndex string     `json:"transactionIndex"`
-	Input            string     `json:"input"`
 	ContractAddress  string     `json:"contractAddress"`
 }
 

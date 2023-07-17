@@ -122,6 +122,10 @@ func (bc *blockContext) SaveTransaction(trx models.Transaction) {
 
 	bc.Batch.AddToBatch(trx, trx.From, from_index)
 	bc.Batch.AddToBatch(trx, trx.To, to_index)
+
+	if (trx.Input != "0x") && (trx.Input != "") {
+		bc.Batch.AddToBatchSingleKey(trx, trx.Hash)
+	}
 }
 
 func (bc *blockContext) addAddressStatsToBatch() {

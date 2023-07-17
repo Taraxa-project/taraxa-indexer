@@ -20,7 +20,7 @@ func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
 }
 
 func DecodeTransaction(tx models.Transaction) (functionSig string, params []string, err error) {
-	if tx.Data == "" {
+	if tx.Input == "" {
 		return
 	}
 	relevantAbi := contracts.ContractABIs[strings.ToLower(tx.To)]
@@ -32,7 +32,7 @@ func DecodeTransaction(tx models.Transaction) (functionSig string, params []stri
 		return
 	}
 
-	trimmed := strings.TrimPrefix(tx.Data, "0x")
+	trimmed := strings.TrimPrefix(tx.Input, "0x")
 	bytes, err := hex.DecodeString(trimmed)
 
 	if err != nil {
@@ -45,6 +45,10 @@ func DecodeTransaction(tx models.Transaction) (functionSig string, params []stri
 	}
 	// Decode the transaction
 	method, err := contractABI.MethodById(funcId)
+
+	if method == nil {
+		fmt.Println(method, err)
+	}
 
 	functionSig = method.Sig
 
@@ -79,7 +83,7 @@ func unpackParams(contractABI abi.ABI, method *abi.Method, data []byte) ([]inter
 	return unpacked, err
 }
 
-func ExtractInternalTransactionData(trx models.Transaction) (calldata models.CallData, err error) {
+func ExtractTransactionData(trx models.Transaction) (calldata models.CallData, err error) {
 
 	sig, params, err := DecodeTransaction(trx)
 
