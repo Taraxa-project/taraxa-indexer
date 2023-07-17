@@ -84,7 +84,7 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []AccountReturn, paginat
 	}
 	pagination.End = end
 
-	var balancesString []AccountReturn
+	balancesString := make([]AccountReturn, 0, count)
 	for _, holder := range holders[from:end] {
 		balancesString = append(balancesString, AccountReturn{holder.Address, holder.Balance.String()})
 	}
