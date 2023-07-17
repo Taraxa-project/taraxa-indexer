@@ -270,6 +270,28 @@ paths:
         default:
           description: |
             Unexpected error
+  /transaction/{hash}:
+    get:
+      tags:
+        - Hash
+      summary: "Returns the decoded transaction"
+      description: |
+        Returns the decoded transaction with specified hash
+      operationId: "getDecodedTransaction"
+      parameters:
+        - $ref: "#/components/parameters/hashParam"
+      responses:
+        "200":
+          description: |
+            A JSON object describing a transaction with specified hash including all decoded events(if decoded). Returns 404 if transaction with specified hash has no data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Transaction"
+        default:
+          description: |
+            Unexpected error
   /transaction/{hash}/internal_transactions:
     get:
       tags:
@@ -460,7 +482,7 @@ components:
         - timestamp
         - status
         - type
-        - data
+        - input
       optional:
         - calldata
       properties:
@@ -470,7 +492,7 @@ components:
           $ref: "#/components/schemas/Counter"
         calldata: 
           $ref: "#/components/schemas/CallData"
-        data:
+        input:
           type: string
         transactionIndex:
           $ref: "#/components/schemas/Counter"

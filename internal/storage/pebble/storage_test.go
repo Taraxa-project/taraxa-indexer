@@ -191,3 +191,26 @@ func TestAccountsBatch(t *testing.T) {
 	}
 
 }
+
+func TestTxByHash(t *testing.T) {
+	st := NewStorage("")
+	defer st.Close()
+
+	testName := "test"
+	tx := models.Transaction{
+		Hash:     "0x111111",
+		From:     "0x222222",
+		To:       "0x333333",
+		Value:    "100",
+		Calldata: &models.CallData{Name: &testName, Params: &[]string{"1", "2", "3"}},
+	}
+
+	batch := st.NewBatch()
+	batch.AddToBatchSingleKey(tx, tx.Hash)
+	batch.CommitBatch()
+
+	ret := st.GetTransactionByHash(tx.Hash)
+
+	assert.Equal(t, tx, ret)
+
+}

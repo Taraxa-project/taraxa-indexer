@@ -290,6 +290,14 @@ func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
 	return s.GetValidatorYield("", block)
 }
 
+func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
+	err := s.getFromDB(&res, getPrefixKey(getPrefix(&res), strings.ToLower(hash)))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetTransactionByHash failed")
+	}
+	return
+}
+
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
 	value, closer, err := s.get(key)
 	if err != nil {

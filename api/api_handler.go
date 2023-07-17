@@ -62,6 +62,22 @@ func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
 	return response
 }
 
+func (a *ApiHandler) GetDecodedTransaction(ctx echo.Context, hash string) error {
+	txHash := strings.ToLower(hash)
+
+	tx := a.storage.GetTransactionByHash(txHash)
+	if tx.Hash == "" {
+		return ctx.JSON(http.StatusNotFound, "Transaction not found")
+	}
+
+	err := Process[Transaction](&tx)
+	if err != nil {
+		log.WithError(err).WithField("hash", hash).Error("Error processing transaction")
+	}
+
+	return ctx.JSON(http.StatusOK, tx)
+}
+
 // GetAddressDags returns all DAG blocks sent by the selected address
 func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
 	return ctx.JSON(http.StatusOK, GetAddressDataPage[Dag](a, address, &params.Pagination))
@@ -216,7 +232,7 @@ func Process[T storage.Paginated](o *T) error {
 		switch {
 		case v.Type() == reflect.TypeOf(models.Transaction{}):
 			tx := v.Addr().Interface().(*models.Transaction)
-			calldata, err := indexer.ExtractInternalTransactionData(*tx)
+			calldata, err := indexer.ExtractTransactionData(*tx)
 			if err != nil {
 				log.WithError(err).WithFields(log.Fields{"hash": tx.Hash}).Debug("extractInternalTransactionData error")
 			}
