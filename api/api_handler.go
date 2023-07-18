@@ -46,7 +46,7 @@ func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
 
 	response := struct {
 		PaginatedResponse
-		Data []storage.Account `json:"data"`
+		Data []models.Account `json:"data"`
 	}{
 		PaginatedResponse: *pagination,
 		Data:              ret,
