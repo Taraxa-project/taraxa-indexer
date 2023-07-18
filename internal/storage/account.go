@@ -15,9 +15,11 @@ type Account struct {
 	Balance *big.Int `json:"balance"`
 }
 
-type AccountReturn struct {
-	Address string `json:"address"`
-	Balance string `json:"balance"`
+func (a *Account) ToModel() models.Account {
+	return models.Account{
+		Address: a.Address,
+		Balance: a.Balance.String(),
+	}
 }
 
 type Balances struct {
