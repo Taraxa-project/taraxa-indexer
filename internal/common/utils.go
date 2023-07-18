@@ -32,7 +32,7 @@ func FormatFloat(f float64) string {
 func GetYieldIntervalEnd(pbft_count uint64, block_num *uint64, interval uint64) uint64 {
 	block := uint64(0)
 	if block_num == nil {
-		block = pbft_count
+		block = pbft_count - interval
 	} else {
 		block = *block_num
 	}
