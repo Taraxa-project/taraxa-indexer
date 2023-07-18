@@ -25,6 +25,12 @@ type Address = string
 // AddressFilter defines model for AddressFilter.
 type AddressFilter = Address
 
+// CallData defines model for CallData.
+type CallData struct {
+	Name   string `json:"name"`
+	Params any    `json:"params"`
+}
+
 // CountResponse defines model for CountResponse.
 type CountResponse struct {
 	Total Counter `json:"total"`
@@ -51,7 +57,7 @@ type EventLog struct {
 	Data             string   `json:"data"`
 	LogIndex         Counter  `json:"logIndex"`
 	Name             string   `json:"name"`
-	Params           []string `json:"params"`
+	Params           any      `json:"params"`
 	Removed          bool     `json:"removed"`
 	Topics           []string `json:"topics"`
 	TransactionHash  Hash     `json:"transactionHash"`
@@ -122,10 +128,12 @@ type Timestamp = uint64
 // Transaction defines model for Transaction.
 type Transaction struct {
 	BlockNumber      Counter         `json:"blockNumber"`
+	Calldata         *CallData       `json:"calldata,omitempty" rlp:"nil"`
 	From             Address         `json:"from"`
 	GasPrice         Counter         `json:"gasPrice"`
 	GasUsed          Counter         `json:"gasUsed"`
 	Hash             Hash            `json:"hash"`
+	Input            string          `json:"input"`
 	Nonce            Counter         `json:"nonce"`
 	Status           bool            `json:"status"`
 	Timestamp        Timestamp       `json:"timestamp"`

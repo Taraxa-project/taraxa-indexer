@@ -270,6 +270,28 @@ paths:
         default:
           description: |
             Unexpected error
+  /transaction/{hash}:
+    get:
+      tags:
+        - Hash
+      summary: "Returns the decoded transaction"
+      description: |
+        Returns the decoded transaction with specified hash
+      operationId: "getTransaction"
+      parameters:
+        - $ref: "#/components/parameters/hashParam"
+      responses:
+        "200":
+          description: |
+            A JSON object describing a transaction with specified hash including all decoded events(if decoded). Returns 404 if transaction with specified hash has no data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Transaction"
+        default:
+          description: |
+            Unexpected error
   /transaction/{hash}/internal_transactions:
     get:
       tags:
@@ -298,14 +320,14 @@ paths:
         - Hash
       summary: "Returns event logs of transaction"
       description: |
-        Returns all logs of the transaction with specified hash 
+        Returns all logs of the transaction with specified hash
       operationId: "getTransactionLogs"
       parameters:
         - $ref: "#/components/parameters/hashParam"
       responses:
         "200":
           description: |
-            A JSON object array containing a list of all evetn lgos of the transaction with specified hash 
+            A JSON object array containing a list of all evetn lgos of the transaction with specified hash
           content:
             application/json:
               schema:
@@ -353,6 +375,22 @@ components:
           minimum: 2022
           default: 2023
           nullable: true
+    CallData:
+      type: object
+      x-oapi-codegen-extra-tags:
+        rlp: "nil"
+      required:
+        - name
+        - params
+      properties:
+        name:
+          type: string
+          example: "delegate(address)"
+        params:
+          type: array
+          x-go-type: "any"
+          items:
+            type: string
     Account:
       type: object
       required:
@@ -418,10 +456,11 @@ components:
             type: string
         data:
           type: string
-        name: 
+        name:
           type: string
         params:
           type: array
+          x-go-type: "any"
           items:
             type: string
         removed:
@@ -445,11 +484,18 @@ components:
         - timestamp
         - status
         - type
+        - input
+      optional:
+        - calldata
       properties:
         hash:
           $ref: "#/components/schemas/Hash"
         blockNumber:
           $ref: "#/components/schemas/Counter"
+        calldata:
+          $ref: "#/components/schemas/CallData"
+        input:
+          type: string
         transactionIndex:
           $ref: "#/components/schemas/Counter"
         from:
@@ -720,4 +766,3 @@ components:
         Addresses
       schema:
         $ref: "#/components/schemas/Address"
-

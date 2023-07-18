@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -17,9 +16,8 @@ import (
 const commissionRewardsClaimedName = "CommissionRewardsClaimed(address,address,uint256)"
 const rewardsClaimedName = "RewardsClaimed(address,address,uint256)"
 
-func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
-
-	relevantAbi := contracts.ContractABIs[log.Address]
+func DecodeEventDynamic(log models.EventLog) (string, any, error) {
+	relevantAbi := contracts.ContractABIs[strings.ToLower(log.Address)]
 	if relevantAbi == "" {
 		return "", nil, nil
 	}
@@ -50,7 +48,7 @@ func DecodeEventDynamic(log models.EventLog) (string, []string, error) {
 		return "", nil, err
 	}
 
-	params, err := parseToStringSlice(unpacked)
+	params, err := common.ParseToString(unpacked)
 
 	if err != nil {
 		return "", nil, err
@@ -64,15 +62,15 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 		if !strings.EqualFold(log.Address, common.DposContractAddress) {
 			continue
 		}
-		name, decoded, err := DecodeEventDynamic(log)
+		name, d, err := DecodeEventDynamic(log)
 		if err != nil {
 			return nil, err
 		}
-
+		decoded := d.([]interface{})
 		if name == rewardsClaimedName || name == commissionRewardsClaimedName {
 			account := ethcommon.HexToAddress(log.Topics[1])
 			validator := ethcommon.HexToAddress(log.Topics[2])
-			value, _ := big.NewInt(0).SetString(decoded[0], 10)
+			value, _ := big.NewInt(0).SetString(fmt.Sprintf("%v", decoded[0]), 10)
 
 			decodedEvents = append(decodedEvents, LogReward{
 				EventName: name,
@@ -83,27 +81,4 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 		}
 	}
 	return decodedEvents, err
-}
-
-func parseToStringSlice(data []interface{}) ([]string, error) {
-	result := make([]string, len(data))
-
-	for i, item := range data {
-		switch val := item.(type) {
-		case string:
-			result[i] = val
-		case int:
-			result[i] = strconv.Itoa(val)
-		case int64:
-			result[i] = strconv.FormatInt(val, 10)
-		case float64:
-			result[i] = strconv.FormatFloat(val, 'f', -1, 64)
-		case *big.Int:
-			result[i] = val.String()
-		default:
-			return nil, fmt.Errorf("failed to convert element at index %d to string", i)
-		}
-	}
-
-	return result, nil
 }

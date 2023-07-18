@@ -21,6 +21,7 @@ type Storage interface {
 	GetAddressStats(addr string) *AddressStats
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash
+	GetTransactionByHash(hash string) models.Transaction
 	GetInternalTransactions(hash string) models.InternalTransactionsResponse
 	GetTransactionLogs(hash string) models.TransactionLogsResponse
 	GetValidatorYield(validator string, block uint64) (res Yield)
@@ -72,7 +73,7 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 	return
 }
 
-func GetHoldersPage(s Storage, from, count uint64) (ret []Account, pagination *models.PaginatedResponse) {
+func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagination *models.PaginatedResponse) {
 	holders := s.GetAccounts()
 	pagination = new(models.PaginatedResponse)
 	pagination.Start = from
@@ -83,7 +84,11 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []Account, pagination *m
 		end = pagination.Total
 	}
 	pagination.End = end
-	ret = holders[from:end]
+
+	ret = make([]models.Account, 0, count)
+	for i := from; i < end; i++ {
+		ret = append(ret, holders[i].ToModel())
+	}
 	return
 }
 func GetIntervalData[T Yields](s Storage, start uint64) map[string]T {

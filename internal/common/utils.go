@@ -1,10 +1,14 @@
 package common
 
 import (
+	"fmt"
 	"math/big"
+	"reflect"
 	"runtime"
 	"strconv"
+	"strings"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/spiretechnology/go-pool"
 )
 
@@ -28,7 +32,7 @@ func FormatFloat(f float64) string {
 func GetYieldIntervalEnd(pbft_count uint64, block_num *uint64, interval uint64) uint64 {
 	block := uint64(0)
 	if block_num == nil {
-		block = pbft_count
+		block = pbft_count - interval
 	} else {
 		block = *block_num
 	}
@@ -38,4 +42,41 @@ func GetYieldIntervalEnd(pbft_count uint64, block_num *uint64, interval uint64) 
 	}
 	block = block - block%interval + interval
 	return block
+}
+
+func ParseToString(item any) (result any, err error) {
+	switch val := item.(type) {
+	case ethcommon.Address:
+		result = strings.ToLower(val.Hex())
+	case string:
+		result = val
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		result = fmt.Sprintf("%d", val)
+	case float32:
+		result = FormatFloat(float64(val))
+	case float64:
+		result = FormatFloat(val)
+	case *big.Int:
+		result = val.String()
+	case []byte:
+		result = fmt.Sprintf("0x%x", val)
+	case bool:
+		result = fmt.Sprintf("%t", val)
+	default:
+		// log.Error("ParseToString default ", reflect.TypeOf(item).Kind(), item)
+		if reflect.TypeOf(item).Kind() == reflect.Array || reflect.TypeOf(item).Kind() == reflect.Slice {
+			sliceValue := reflect.ValueOf(item)
+			sliceLen := sliceValue.Len()
+			sliceResult := make([]any, sliceLen)
+			for j := 0; j < sliceLen; j++ {
+				toDecode := sliceValue.Index(j).Interface()
+				res, _ := ParseToString(toDecode)
+				sliceResult[j] = res
+			}
+			result = sliceResult
+		} else {
+			return nil, fmt.Errorf("unsupported type %v", reflect.TypeOf(item))
+		}
+	}
+	return
 }

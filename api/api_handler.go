@@ -46,13 +46,29 @@ func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
 
 	response := struct {
 		PaginatedResponse
-		Data []storage.Account `json:"data"`
+		Data []models.Account `json:"data"`
 	}{
 		PaginatedResponse: *pagination,
 		Data:              ret,
 	}
 
 	return response
+}
+
+func (a *ApiHandler) GetTransaction(ctx echo.Context, hash string) error {
+	txHash := strings.ToLower(hash)
+
+	tx := a.storage.GetTransactionByHash(txHash)
+	if tx.Hash == "" {
+		return ctx.JSON(http.StatusNotFound, "Transaction not found")
+	}
+
+	err := common.ProcessTransaction(&tx)
+	if err != nil {
+		log.WithError(err).WithField("hash", hash).Error("Error processing transaction")
+	}
+
+	return ctx.JSON(http.StatusOK, tx)
 }
 
 // GetAddressDags returns all DAG blocks sent by the selected address

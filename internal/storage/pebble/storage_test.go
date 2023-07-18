@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
@@ -190,4 +191,29 @@ func TestAccountsBatch(t *testing.T) {
 		t.Error("Broken DB")
 	}
 
+}
+
+func TestTxByHash(t *testing.T) {
+	st := NewStorage("")
+	defer st.Close()
+
+	tx := models.Transaction{
+		Hash:  "0x111111",
+		From:  "0x222222",
+		Value: "100",
+		To:    "0x00000000000000000000000000000000000000fe",
+		Input: "0x5c19a95c000000000000000000000000ed4d5f4f3641cbc056e466d15dbe2403e38056f8",
+	}
+
+	batch := st.NewBatch()
+	batch.AddToBatchSingleKey(tx, tx.Hash)
+	batch.CommitBatch()
+
+	ret := st.GetTransactionByHash(tx.Hash)
+	err := common.ProcessTransaction(&ret)
+
+	assert.NoError(t, err)
+	assert.Equal(t, tx.Hash, ret.Hash)
+	assert.Equal(t, tx.Input, ret.Input)
+	assert.Equal(t, []any{"0xed4d5f4f3641cbc056e466d15dbe2403e38056f8"}, ret.Calldata.Params)
 }
