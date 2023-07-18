@@ -30,6 +30,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 	bc.transactions = make([]models.Transaction, len(transactions))
 	for t_idx := 0; t_idx < len(transactions); t_idx++ {
 		bc.transactions[t_idx] = transactions[t_idx].ToModelWithTimestamp(bc.block.Timestamp)
+
 		bc.SaveTransaction(bc.transactions[t_idx])
 
 		trx_fee := transactions[t_idx].GetFee()
@@ -47,7 +48,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 			Data: transactions[t_idx].ExtractLogs(),
 		}
 		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
-		err := bc.balances.UpdateEvents(logs.Data)
+		err = bc.balances.UpdateEvents(logs.Data)
 		if err != nil {
 			return err
 		}
@@ -74,6 +75,7 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		}
 		internal := makeInternal(bc.transactions[t_idx], entry)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
+
 		bc.SaveTransaction(internal)
 		bc.balances.UpdateBalances(internal.From, internal.To, internal.Value)
 	}
@@ -120,6 +122,10 @@ func (bc *blockContext) SaveTransaction(trx models.Transaction) {
 
 	bc.Batch.AddToBatch(trx, trx.From, from_index)
 	bc.Batch.AddToBatch(trx, trx.To, to_index)
+
+	if (trx.Input != "0x") && (trx.Input != "") {
+		bc.Batch.AddToBatchSingleKey(trx, trx.Hash)
+	}
 }
 
 func (bc *blockContext) addAddressStatsToBatch() {

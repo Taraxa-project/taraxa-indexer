@@ -21,6 +21,7 @@ type Storage interface {
 	GetAddressStats(addr string) *AddressStats
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash
+	GetTransactionByHash(hash string) models.Transaction
 	GetInternalTransactions(hash string) models.InternalTransactionsResponse
 	GetTransactionLogs(hash string) models.TransactionLogsResponse
 	GetValidatorYield(validator string, block uint64) (res Yield)

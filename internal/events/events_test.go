@@ -1,6 +1,7 @@
 package events
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -37,7 +38,6 @@ func TestDecodeRewardsTopics(t *testing.T) {
 	}
 
 	decodedEvents, err := DecodeRewardsTopics(logs)
-	t.Log(decodedEvents)
 	if err != nil {
 		t.Errorf("Failed to decode rewards topics: %v", err)
 	}
@@ -64,6 +64,7 @@ func TestDecodeRewardsTopics(t *testing.T) {
 	}
 
 	for i, event := range decodedEvents {
+		fmt.Println("decodedEvents: ", event)
 		expectedEvent := expectedEvents[i]
 
 		if event.EventName != expectedEvent.EventName {

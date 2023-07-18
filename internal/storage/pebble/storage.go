@@ -263,12 +263,12 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 	ptr := new(models.TransactionLogsResponse)
 	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
 	for i, eventLog := range ptr.Data {
-		name, decoded, err := events.DecodeEventDynamic(eventLog)
+		name, params, err := events.DecodeEventDynamic(eventLog)
 		if err != nil {
-			log.WithError(err).WithField("name", name).WithField("decoded", decoded).Error(err)
+			log.WithError(err).WithField("name", name).WithField("params", params).Error(err)
 		}
 		eventLog.Name = name
-		eventLog.Params = decoded
+		eventLog.Params = params
 		ptr.Data[i] = eventLog
 	}
 	if err != nil && err != pebble.ErrNotFound {
@@ -288,6 +288,14 @@ func (s *Storage) GetValidatorYield(validator string, block uint64) (res storage
 func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
 	// total yield is stored under empty address
 	return s.GetValidatorYield("", block)
+}
+
+func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
+	err := s.getFromDB(&res, getPrefixKey(getPrefix(&res), strings.ToLower(hash)))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetTransactionByHash failed")
+	}
+	return
 }
 
 func (s *Storage) getFromDB(o interface{}, key []byte) error {
