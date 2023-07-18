@@ -44,40 +44,39 @@ func GetYieldIntervalEnd(pbft_count uint64, block_num *uint64, interval uint64) 
 	return block
 }
 
-func ParseToStringSlice(data []interface{}) ([]string, error) {
-	result := make([]string, len(data))
-
-	for i, item := range data {
-		switch val := item.(type) {
-		case ethcommon.Address:
-			result[i] = strings.ToLower(val.Hex())
-		case string:
-			result[i] = val
-		case int:
-			result[i] = strconv.Itoa(val)
-		case int64:
-			result[i] = strconv.FormatInt(val, 10)
-		case float64:
-			result[i] = strconv.FormatFloat(val, 'f', -1, 64)
-		case *big.Int:
-			result[i] = val.String()
-		case []byte:
-			result[i] = fmt.Sprintf("0x%x", val)
-		default:
-			if reflect.TypeOf(item).Kind() == reflect.Slice {
-				sliceValue := reflect.ValueOf(item)
-				sliceLen := sliceValue.Len()
-				sliceResult := make([]string, sliceLen)
-				for j := 0; j < sliceLen; j++ {
-					toDecode := sliceValue.Index(j).Interface()
-					res, _ := ParseToStringSlice([]interface{}{toDecode})
-					sliceResult[j] = res[0]
-				}
-				result[i] = strings.Join(sliceResult, ",")
-			} else {
-				return nil, fmt.Errorf("unsupported type %v", reflect.TypeOf(item))
+func ParseToString(item any) (result any, err error) {
+	switch val := item.(type) {
+	case ethcommon.Address:
+		result = strings.ToLower(val.Hex())
+	case string:
+		result = val
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		result = fmt.Sprintf("%d", val)
+	case float32:
+		result = FormatFloat(float64(val))
+	case float64:
+		result = FormatFloat(val)
+	case *big.Int:
+		result = val.String()
+	case []byte:
+		result = fmt.Sprintf("0x%x", val)
+	case bool:
+		result = fmt.Sprintf("%t", val)
+	default:
+		// log.Error("ParseToString default ", reflect.TypeOf(item).Kind(), item)
+		if reflect.TypeOf(item).Kind() == reflect.Array || reflect.TypeOf(item).Kind() == reflect.Slice {
+			sliceValue := reflect.ValueOf(item)
+			sliceLen := sliceValue.Len()
+			sliceResult := make([]any, sliceLen)
+			for j := 0; j < sliceLen; j++ {
+				toDecode := sliceValue.Index(j).Interface()
+				res, _ := ParseToString(toDecode)
+				sliceResult[j] = res
 			}
+			result = sliceResult
+		} else {
+			return nil, fmt.Errorf("unsupported type %v", reflect.TypeOf(item))
 		}
 	}
-	return result, nil
+	return
 }

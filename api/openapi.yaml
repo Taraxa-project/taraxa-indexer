@@ -277,7 +277,7 @@ paths:
       summary: "Returns the decoded transaction"
       description: |
         Returns the decoded transaction with specified hash
-      operationId: "getDecodedTransaction"
+      operationId: "getTransaction"
       parameters:
         - $ref: "#/components/parameters/hashParam"
       responses:
@@ -320,14 +320,14 @@ paths:
         - Hash
       summary: "Returns event logs of transaction"
       description: |
-        Returns all logs of the transaction with specified hash 
+        Returns all logs of the transaction with specified hash
       operationId: "getTransactionLogs"
       parameters:
         - $ref: "#/components/parameters/hashParam"
       responses:
         "200":
           description: |
-            A JSON object array containing a list of all evetn lgos of the transaction with specified hash 
+            A JSON object array containing a list of all evetn lgos of the transaction with specified hash
           content:
             application/json:
               schema:
@@ -377,6 +377,8 @@ components:
           nullable: true
     CallData:
       type: object
+      x-oapi-codegen-extra-tags:
+        rlp: "nil"
       required:
         - name
         - params
@@ -384,10 +386,9 @@ components:
         name:
           type: string
           example: "delegate(address)"
-          nullable: true
         params:
           type: array
-          nullable: true
+          x-go-type: "any"
           items:
             type: string
     Account:
@@ -455,10 +456,11 @@ components:
             type: string
         data:
           type: string
-        name: 
+        name:
           type: string
         params:
           type: array
+          x-go-type: "any"
           items:
             type: string
         removed:
@@ -490,7 +492,7 @@ components:
           $ref: "#/components/schemas/Hash"
         blockNumber:
           $ref: "#/components/schemas/Counter"
-        calldata: 
+        calldata:
           $ref: "#/components/schemas/CallData"
         input:
           type: string
@@ -764,4 +766,3 @@ components:
         Addresses
       schema:
         $ref: "#/components/schemas/Address"
-

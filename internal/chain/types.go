@@ -130,7 +130,6 @@ func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transac
 		trx.To = t.ContractAddress
 	}
 	trx.Timestamp = timestamp
-	trx.Calldata = &models.CallData{}
 	return
 }
 
