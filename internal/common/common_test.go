@@ -23,4 +23,7 @@ func TestIntervalEnd(t *testing.T) {
 		end := GetYieldIntervalEnd(10000, &block_num, interval)
 		assert.Equal(t, uint64(1100), end)
 	}
+
+	end := GetYieldIntervalEnd(150, nil, interval)
+	assert.Equal(t, uint64(100), end)
 }
