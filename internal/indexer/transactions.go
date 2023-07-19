@@ -10,6 +10,7 @@ import (
 )
 
 func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
+	defer common.LogExecutionTimeFn("processTransactions")()
 	if len(trxHashes) == 0 {
 		return
 	}

@@ -68,6 +68,7 @@ func (client *WsClient) GetBalanceAtBlock(address string, blockNumber uint64) (b
 }
 
 func (client *WsClient) GetBlockByNumber(number uint64) (blk Block, err error) {
+	defer common.LogExecutionTimeFn("GetBlockByNumber")()
 	err = client.rpc.Call(&blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
 	metrics.RpcCallsCounter.Inc()
 	return
@@ -84,6 +85,7 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 }
 
 func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {
+	defer common.LogExecutionTimeFn("TraceBlockTransactions")()
 	err = client.rpc.Call(&traces, "trace_replayBlockTransactions", fmt.Sprintf("0x%x", number), []string{"trace"})
 	defer metrics.RpcCallsCounter.Inc()
 	return
@@ -108,6 +110,7 @@ func (client *WsClient) addTransactionReceiptData(trx *Transaction) (err error) 
 }
 
 func (client *WsClient) GetPeriodTransactions(number uint64) (trxs []Transaction, err error) {
+	defer common.LogExecutionTimeFn("GetPeriodTransactions")()
 	err = client.rpc.Call(&trxs, "debug_getPeriodTransactionsWithReceipts", fmt.Sprintf("0x%x", number))
 	metrics.RpcCallsCounter.Inc()
 	return
@@ -126,6 +129,7 @@ func (client *WsClient) GetDagBlockByHash(hash string) (dag DagBlock, err error)
 }
 
 func (client *WsClient) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
+	defer common.LogExecutionTimeFn("GetPeriodDagBlocks")()
 	err = client.rpc.Call(&dags, "debug_getPeriodDagBlocks", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return

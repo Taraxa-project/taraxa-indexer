@@ -7,8 +7,10 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	log "github.com/sirupsen/logrus"
 	"github.com/spiretechnology/go-pool"
 )
 
@@ -79,4 +81,13 @@ func ParseToString(item any) (result any, err error) {
 		}
 	}
 	return
+}
+
+func LogExecutionTime(start time.Time, name string) {
+	log.WithFields(log.Fields{"method": name, "elapsed": FormatFloat(float64(time.Since(start).Nanoseconds()) / float64(1000000))}).Info("Execution time")
+}
+
+func LogExecutionTimeFn(name string) func() {
+	start := time.Now()
+	return func() { LogExecutionTime(start, name) }
 }

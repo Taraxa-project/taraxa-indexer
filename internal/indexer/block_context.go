@@ -46,6 +46,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 }
 
 func (bc *blockContext) commit() {
+	defer common.LogExecutionTimeFn("commit")()
 	bc.Batch.SetFinalizationData(bc.finalized)
 	bc.addAddressStatsToBatch()
 	bc.Batch.CommitBatch()
@@ -54,6 +55,7 @@ func (bc *blockContext) commit() {
 }
 
 func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, err error) {
+	defer common.LogExecutionTimeFn("process")()
 	start_processing := time.Now()
 	bc.block = raw.ToModel()
 
@@ -135,6 +137,7 @@ func (bc *blockContext) checkIndexedBalances() (err error) {
 }
 
 func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
+	defer common.LogExecutionTimeFn("updateValidatorStats")()
 	tn, _ := goment.Unix(int64(block.Timestamp))
 	weekStats := bc.Storage.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
 	weekStats.AddPbftBlock(block)
@@ -142,6 +145,7 @@ func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
 }
 
 func (bc *blockContext) processDags() (err error) {
+	defer common.LogExecutionTimeFn("processDags")()
 	dag_blocks, err := bc.Client.GetPeriodDagBlocks(bc.block.Number)
 	if err != nil {
 		log.WithError(err).Debug("GetPeriodDagBlocks error")
@@ -156,6 +160,7 @@ func (bc *blockContext) processDags() (err error) {
 }
 
 func (bc *blockContext) processDagsOld() (err error) {
+	defer common.LogExecutionTimeFn("processDagsOld")()
 	block_with_dags, err := bc.Client.GetPbftBlockWithDagBlocks(bc.block.Number)
 	if err != nil {
 		return

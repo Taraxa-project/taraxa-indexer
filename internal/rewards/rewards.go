@@ -137,6 +137,7 @@ func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []m
 }
 
 func (r *Rewards) AfterCommit() {
+	defer common.LogExecutionTimeFn("AfterCommit")()
 	b := r.storage.NewBatch()
 	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
 		r.processIntervalYield(b)

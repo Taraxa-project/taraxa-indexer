@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
@@ -98,6 +99,7 @@ func (i *Indexer) init() error {
 }
 
 func (i *Indexer) syncPeriod(p uint64) error {
+	defer common.LogExecutionTimeFn(fmt.Sprintf("syncPeriod %v", p))()
 	blk, b_err := i.client.GetBlockByNumber(p)
 	if b_err != nil {
 		return b_err
