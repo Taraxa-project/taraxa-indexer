@@ -3,6 +3,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -182,6 +183,10 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error 
 func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
 	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
+	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
+	if pbft_count < block_num {
+		return fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+	}
 	resp := models.YieldResponse{
 		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
 		ToBlock:   block_num,
@@ -193,6 +198,10 @@ func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, par
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams) error {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
 	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.TotalYieldSavingInterval)
+	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
+	if pbft_count < block_num {
+		return fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+	}
 	resp := models.YieldResponse{
 		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
 		ToBlock:   block_num,

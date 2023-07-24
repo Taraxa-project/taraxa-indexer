@@ -4,6 +4,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -78,8 +79,10 @@ func main() {
 	e := echo.New()
 
 	e.Use(middleware.OapiRequestValidator(swagger))
-	// It is logging every incoming request. Do we need this?
-	// e.Use(echomiddleware.Logger())
+	// Add http error handler to return a proper error JSON on request error
+	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
+		_ = ctx.JSON(http.StatusInternalServerError, map[string]any{"message": err.Error()})
+	}
 
 	c := common.DefaultConfig()
 	c.TotalYieldSavingInterval = uint64(*yield_saving_interval)
