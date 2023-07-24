@@ -96,17 +96,8 @@ func (a *Balances) UpdateEvents(logs []models.EventLog) error {
 			return err
 		}
 		for _, event := range rewards_events {
-			to_account := a.FindBalance(event.Account)
-			if to_account == nil {
-				to_account = a.RegisterBalance(event.Account)
-			}
-			to_account.Balance.Add(to_account.Balance, event.Value)
-
-			from_account := a.FindBalance(common.DposContractAddress)
-			if from_account == nil {
-				from_account = a.RegisterBalance(event.Account)
-			}
-			from_account.Balance.Sub(from_account.Balance, event.Value)
+			a.AddToBalance(common.DposContractAddress, big.NewInt(0).Neg(event.Value))
+			a.AddToBalance(event.Account, event.Value)
 		}
 	}
 	return nil

@@ -13,8 +13,11 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-const commissionRewardsClaimedName = "CommissionRewardsClaimed(address,address,uint256)"
-const rewardsClaimedName = "RewardsClaimed(address,address,uint256)"
+var rewardTopics = map[string]bool{
+	"CommissionRewardsClaimed(address,address,uint256)": true,
+	"RewardsClaimed(address,address,uint256)":           true,
+	"UndelegateConfirmed(address,address,uint256)":      true,
+}
 
 func DecodeEventDynamic(log models.EventLog) (string, any, error) {
 	relevantAbi := contracts.ContractABIs[strings.ToLower(log.Address)]
@@ -67,7 +70,7 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 			return nil, err
 		}
 		decoded := d.([]interface{})
-		if name == rewardsClaimedName || name == commissionRewardsClaimedName {
+		if rewardTopics[name] {
 			account := ethcommon.HexToAddress(log.Topics[1])
 			validator := ethcommon.HexToAddress(log.Topics[2])
 			value, _ := big.NewInt(0).SetString(fmt.Sprintf("%v", decoded[0]), 10)
