@@ -93,7 +93,7 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards m
 	return
 }
 
-func calculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData) *big.Int {
+func CalculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData) *big.Int {
 	totalStake := big.NewInt(0)
 	for _, v := range validators {
 		totalStake.Add(totalStake, v.Info.TotalStake)
@@ -101,19 +101,15 @@ func calculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData)
 	return totalStake
 }
 
-func getValidatorsYield(rewards map[string]*big.Int, totalStake *big.Int, validators []dpos_interface.DposInterfaceValidatorData) []storage.ValidatorYield {
-	ret := make([]storage.ValidatorYield, len(validators))
-	i := 0
+func GetValidatorsYield(rewards map[string]*big.Int, validators []dpos_interface.DposInterfaceValidatorData, is_eligible func(*big.Int) bool) []storage.ValidatorYield {
+	ret := make([]storage.ValidatorYield, 0, len(validators))
 	for _, v := range validators {
 		validator := strings.ToLower(v.Account.Hex())
-		ret[i] = storage.ValidatorYield{Validator: validator, Yield: big.NewInt(0)}
 		if rewards[validator] != nil {
-			ret[i].Yield.Add(ret[i].Yield, getMultipliedYield(rewards[validator], v.Info.TotalStake))
+			ret = append(ret, storage.ValidatorYield{Validator: validator, Yield: GetMultipliedYield(rewards[validator], v.Info.TotalStake)})
+		} else if is_eligible(v.Info.TotalStake) {
+			ret = append(ret, storage.ValidatorYield{Validator: validator, Yield: big.NewInt(0)})
 		}
-		i++
-	}
-	if len(ret) != len(validators) {
-		log.WithFields(log.Fields{"i": i, "len(ret)": len(ret), "len(rewards)": len(rewards)}).Fatal("getValidatorsYield failed")
 	}
 
 	return ret
@@ -122,18 +118,17 @@ func getValidatorsYield(rewards map[string]*big.Int, totalStake *big.Int, valida
 func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []models.Transaction, votes chain.VotesResponse, validators []dpos_interface.DposInterfaceValidatorData) {
 	r.addTotalMinted(total_minted)
 
-	totalStake := calculateTotalStake(validators)
+	totalStake := CalculateTotalStake(validators)
 	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
 		log.WithFields(log.Fields{"total_stake": totalStake}).Info("totalStake")
 	}
 	rewards, total_reward := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
-	validators_yield := getValidatorsYield(rewards, totalStake, validators)
+	validators_yield := GetValidatorsYield(rewards, validators, r.config.IsEligible)
 	if total_reward.Cmp(total_minted) != 0 {
 		log.WithFields(log.Fields{"total_reward_check": total_reward, "total_minted": total_minted}).Fatal("Total reward check failed")
 	}
-
 	r.batch.AddToBatchSingleKey(storage.ValidatorsYield{Yields: validators_yield}, storage.FormatIntToKey(r.blockNum))
-	r.batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: getMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
+	r.batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: GetMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
 }
 
 func (r *Rewards) AfterCommit() {
@@ -148,45 +143,48 @@ func (r *Rewards) AfterCommit() {
 }
 
 func (r *Rewards) processIntervalYield(batch storage.Batch) {
-	yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, r.blockNum-r.config.TotalYieldSavingInterval)
 	sum := big.NewInt(0)
-	for k, y := range yields {
+	storage.ProcessIntervalData(r.storage, r.blockNum-r.config.TotalYieldSavingInterval, func(key string, o storage.MultipliedYield) (stop bool) {
+		sum.Add(sum, o.Yield)
+		batch.Remove(key)
+		return false
+	})
 
-		sum.Add(sum, y.Yield)
-		batch.Remove(k)
-	}
-
-	yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.TotalYieldSavingInterval))
+	yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.TotalYieldSavingInterval))
 	batch.AddToBatchSingleKey(&storage.Yield{Yield: common.FormatFloat(yield)}, storage.FormatIntToKey(r.blockNum))
 }
 
 func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
-	yields := storage.GetIntervalData[storage.ValidatorsYield](r.storage, r.blockNum-r.config.TotalYieldSavingInterval)
+	start := uint64(0)
+	if r.blockNum > r.config.TotalYieldSavingInterval {
+		start = r.blockNum - r.config.TotalYieldSavingInterval
+	}
+
 	sum_by_validator := make(map[string]*big.Int)
 	count_by_validator := make(map[string]int64)
-	for k, y := range yields {
-		for _, y := range y.Yields {
+
+	storage.ProcessIntervalData(r.storage, start, func(key string, o storage.ValidatorsYield) (stop bool) {
+		for _, y := range o.Yields {
 			if sum_by_validator[y.Validator] == nil {
 				sum_by_validator[y.Validator] = big.NewInt(0)
 			}
 			sum_by_validator[y.Validator].Add(sum_by_validator[y.Validator], y.Yield)
 			count_by_validator[y.Validator]++
 		}
-		batch.Remove(k)
-	}
+		batch.Remove(string(key))
+		return false
+	})
 
 	for val, sum := range sum_by_validator {
-		yield := getYieldForInterval(sum, r.config.Chain.BlocksPerYear, count_by_validator[val])
-		if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
-			log.WithFields(log.Fields{"validator": val, "yield": yield}).Info("processValidatorsIntervalYield")
-		}
+		yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, count_by_validator[val])
+		log.WithFields(log.Fields{"validator": val, "yield": yield}).Info("processValidatorsIntervalYield")
 		batch.AddToBatch(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
 	}
 }
 
-func getYieldForInterval(yield, blocks_per_year *big.Int, elem_count int64) float64 {
+func GetYieldForInterval(yields_sum, blocks_per_year *big.Int, elem_count int64) float64 {
 	res := big.NewInt(0)
-	res.Mul(yield, blocks_per_year)
+	res.Mul(yields_sum, blocks_per_year)
 	res.Mul(res, percentage_multiplier)
 	res.Div(res, big.NewInt(int64(elem_count)))
 	res.Div(res, multiplier)
@@ -196,7 +194,7 @@ func getYieldForInterval(yield, blocks_per_year *big.Int, elem_count int64) floa
 	return ret
 }
 
-func getMultipliedYield(reward, stake *big.Int) *big.Int {
+func GetMultipliedYield(reward, stake *big.Int) *big.Int {
 	r := big.NewInt(0)
 	r.Mul(reward, multiplier)
 	r.Div(r, stake)

@@ -251,7 +251,7 @@ func TestYieldsCalculation(t *testing.T) {
 		{Account: ce.HexToAddress("0x4"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(20000000)}},
 		{Account: ce.HexToAddress("0x5"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(25000000)}},
 	}
-	totalStake := calculateTotalStake(validators)
+	totalStake := CalculateTotalStake(validators)
 
 	config := common.DefaultConfig()
 	config.Chain.BlocksPerYear = big.NewInt(10)
@@ -267,11 +267,11 @@ func TestYieldsCalculation(t *testing.T) {
 	}
 	assert.Equal(t, uint64(total_minted), total_check)
 
-	validators_yield := getValidatorsYield(rewards, totalStake, validators)
+	validators_yield := GetValidatorsYield(rewards, validators, config.IsEligible)
 
 	perc := float64(0)
 	for _, y := range validators_yield {
-		perc = getYieldForInterval(y.Yield, big.NewInt(1), 1)
+		perc = GetYieldForInterval(y.Yield, big.NewInt(1), 1)
 	}
 	assert.Equal(t, float64(total_minted)/float64(totalStake.Int64()), perc)
 }
@@ -284,7 +284,7 @@ func TestTotalYieldSaving(t *testing.T) {
 
 	batch := st.NewBatch()
 	// 10% yield per block
-	multiplied_yield := getMultipliedYield(big.NewInt(10), big.NewInt(1000))
+	multiplied_yield := GetMultipliedYield(big.NewInt(10), big.NewInt(1000))
 	for i := 1; i <= 10; i++ {
 		batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
 	}
@@ -294,20 +294,28 @@ func TestTotalYieldSaving(t *testing.T) {
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
-		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
-		assert.Equal(t, 10, len(yields))
+		count := 0
+		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key string, o storage.MultipliedYield) (stop bool) {
+			count++
+			return false
+		})
+		assert.Equal(t, 10, count)
 	}
 	r.processIntervalYield(b)
 	b.CommitBatch()
 	// check that this data was removed
 	{
-		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
-		assert.Equal(t, 0, len(yields))
+		count := 0
+		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key string, o storage.MultipliedYield) (stop bool) {
+			count++
+			return false
+		})
+		assert.Equal(t, 0, count)
 	}
 
 	// 10% yield per block will be equal to 100% for 10 blocks
 	yield := st.GetTotalYield(10)
-	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
+	assert.Equal(t, common.FormatFloat(10*GetYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
 }
 
 func TestValidatorsYieldSaving(t *testing.T) {
@@ -318,7 +326,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 
 	batch := st.NewBatch()
 	// 10% yield per block
-	multiplied_yield := getMultipliedYield(big.NewInt(10), big.NewInt(1000))
+	multiplied_yield := GetMultipliedYield(big.NewInt(10), big.NewInt(1000))
 	for i := 1; i <= 10; i++ {
 		batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
 	}
@@ -328,18 +336,26 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
-		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
-		assert.Equal(t, 10, len(yields))
+		count := 0
+		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key string, o storage.MultipliedYield) (stop bool) {
+			count++
+			return false
+		})
+		assert.Equal(t, 10, count)
 	}
 	r.processIntervalYield(b)
 	b.CommitBatch()
 	// check that this data was removed
 	{
-		yields := storage.GetIntervalData[storage.MultipliedYield](r.storage, 1)
-		assert.Equal(t, 0, len(yields))
+		count := 0
+		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key string, o storage.MultipliedYield) (stop bool) {
+			count++
+			return false
+		})
+		assert.Equal(t, 0, count)
 	}
 
 	// 10% yield per block will be equal to 100% for 10 blocks
 	yield := st.GetTotalYield(10)
-	assert.Equal(t, common.FormatFloat(10*getYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
+	assert.Equal(t, common.FormatFloat(10*GetYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
 }

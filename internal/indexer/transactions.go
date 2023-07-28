@@ -81,7 +81,10 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
 		bc.SaveTransaction(internal)
-		bc.balances.UpdateBalances(internal.From, internal.To, internal.Value)
+		// TODO: hotfix, remove after fix in taraxa-node
+		if entry.Action.CallType != "delegatecall" {
+			bc.balances.UpdateBalances(internal.From, internal.To, internal.Value)
+		}
 	}
 	return
 }
@@ -112,7 +115,7 @@ func makeInternal(trx models.Transaction, entry chain.TraceEntry) (internal mode
 	internal.From = entry.Action.From
 	internal.To = entry.Action.To
 	internal.Value = entry.Action.Value
-	internal.GasUsed = chain.ParseUInt(entry.Result.GasUsed)
+	internal.GasUsed = common.ParseUInt(entry.Result.GasUsed)
 	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
 	internal.BlockNumber = trx.BlockNumber
 	return
