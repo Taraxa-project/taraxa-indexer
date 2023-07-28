@@ -73,7 +73,6 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 		return
 	}
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
 	total_minted := common.ParseStringToBigInt(raw.TotalReward)
 	bc.balances.AddToBalance(common.DposContractAddress, total_minted)
 
@@ -85,6 +84,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	}
 	bc.Batch.SaveAccounts(bc.balances)
 
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
 	if total_minted.Cmp(big.NewInt(0)) == 1 {
 		r.Process(total_minted, bc.dags, bc.transactions, *votes, validators)
 	}
