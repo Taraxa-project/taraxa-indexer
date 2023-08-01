@@ -79,7 +79,7 @@ func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, par
 
 // GetAddressPbfts returns all PBFT blocks produced by the selected address
 func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, params GetAddressPbftsParams) error {
-	return ctx.JSON(http.StatusOK, GetAddressDataPage[Pbft](a, address, &params.Pagination))
+	return ctx.JSON(http.StatusOK, GetAddressDataPage[PbftResponse](a, address, &params.Pagination))
 }
 
 // GetAddressTransactions returns all transactions from and to the selected address
