@@ -80,7 +80,7 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return ParseUInt(blk.Number), err
+	return common.ParseUInt(blk.Number), err
 }
 
 func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {

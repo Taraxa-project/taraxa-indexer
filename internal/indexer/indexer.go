@@ -154,7 +154,7 @@ func (i *Indexer) run() error {
 		case err := <-sub.Err():
 			return err
 		case blk := <-ch:
-			p := chain.ParseUInt(blk.Number)
+			p := common.ParseUInt(blk.Number)
 			finalized_period := i.storage.GetFinalizationData().PbftCount
 			if p != finalized_period+1 {
 				err := i.sync()

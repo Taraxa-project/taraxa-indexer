@@ -2,9 +2,11 @@ package common
 
 import (
 	"fmt"
+	"log"
 	"math/big"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -17,6 +19,42 @@ const DposContractAddress = "0x00000000000000000000000000000000000000fe"
 // isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
 func MakeThreadPool() pool.Pool {
 	return pool.New(uint(runtime.NumCPU()))
+}
+
+func ParseUInt(s string) (v uint64) {
+	if len(s) == 0 {
+		return
+	}
+	v, err := strconv.ParseUint(s, 0, 64)
+	if err != nil {
+		debug.PrintStack()
+		log.Fatal(s, "ParseUInt ", err)
+	}
+	return v
+}
+
+func ParseInt(s string) (v int64) {
+	if len(s) == 0 {
+		return
+	}
+	v, err := strconv.ParseInt(s, 0, 64)
+	if err != nil {
+		debug.PrintStack()
+		log.Fatal(s, "ParseUInt ", err)
+	}
+	return v
+}
+
+func ParseBool(s string) (v bool) {
+	if len(s) == 0 {
+		return
+	}
+	i, err := strconv.ParseUint(s, 0, 64)
+	if err != nil {
+		debug.PrintStack()
+		log.Fatal("parseBool ", v)
+	}
+	return i > 0
 }
 
 func ParseStringToBigInt(v string) *big.Int {
