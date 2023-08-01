@@ -112,7 +112,7 @@ func makeInternal(trx models.Transaction, entry chain.TraceEntry) (internal mode
 	internal.From = entry.Action.From
 	internal.To = entry.Action.To
 	internal.Value = entry.Action.Value
-	internal.GasUsed = chain.ParseUInt(entry.Result.GasUsed)
+	internal.Fee = chain.ParseUInt(entry.Result.GasUsed)
 	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
 	internal.BlockNumber = trx.BlockNumber
 	return

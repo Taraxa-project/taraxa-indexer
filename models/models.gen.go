@@ -127,20 +127,17 @@ type Timestamp = uint64
 
 // Transaction defines model for Transaction.
 type Transaction struct {
-	BlockNumber      Counter         `json:"blockNumber"`
-	Calldata         *CallData       `json:"calldata,omitempty" rlp:"nil"`
-	From             Address         `json:"from"`
-	GasPrice         Counter         `json:"gasPrice"`
-	GasUsed          Counter         `json:"gasUsed"`
-	Hash             Hash            `json:"hash"`
-	Input            string          `json:"input"`
-	Nonce            Counter         `json:"nonce"`
-	Status           bool            `json:"status"`
-	Timestamp        Timestamp       `json:"timestamp"`
-	To               Address         `json:"to"`
-	TransactionIndex Counter         `json:"transactionIndex"`
-	Type             TransactionType `json:"type"`
-	Value            string          `json:"value"`
+	BlockNumber Counter         `json:"blockNumber"`
+	Calldata    *CallData       `json:"calldata,omitempty" rlp:"nil"`
+	Fee         Counter         `json:"fee"`
+	From        Address         `json:"from"`
+	Hash        Hash            `json:"hash"`
+	Input       string          `json:"input"`
+	Status      bool            `json:"status"`
+	Timestamp   Timestamp       `json:"timestamp"`
+	To          Address         `json:"to"`
+	Type        TransactionType `json:"type"`
+	Value       string          `json:"value"`
 }
 
 // TransactionType defines model for Transaction.Type.

@@ -120,10 +120,7 @@ func GetTransactionType(to, input string, internal bool) models.TransactionType 
 func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transaction) {
 	trx = t.Transaction
 	trx.BlockNumber = ParseUInt(t.BlockNumber)
-	trx.Nonce = ParseUInt(t.Nonce)
-	trx.GasPrice = ParseUInt(t.GasPrice)
-	trx.GasUsed = ParseUInt(t.GasUsed)
-	trx.TransactionIndex = ParseUInt(t.TransactionIndex)
+	trx.Fee = ParseUInt(t.GasPrice) * ParseUInt(t.GasUsed)
 	trx.Status = parseBool(t.Status)
 	trx.Type = GetTransactionType(trx.To, t.Input, false)
 	if trx.Type == models.ContractCreation {
