@@ -532,14 +532,11 @@ components:
     Dag:
       type: object
       required:
-        - sender
         - hash
         - level
         - transactionCount
         - timestamp
       properties:
-        sender:
-          $ref: "#/components/schemas/Address"
         hash:
           $ref: "#/components/schemas/Hash"
         level:

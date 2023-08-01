@@ -150,7 +150,7 @@ func (bc *blockContext) processDags() (err error) {
 	bc.dags = make([]chain.DagBlock, len(dag_blocks))
 	for i, dag := range dag_blocks {
 		bc.dags[i] = dag
-		bc.saveDag(dag.ToModel())
+		bc.saveDag(&dag)
 	}
 	return
 }
@@ -175,14 +175,15 @@ func (bc *blockContext) processDag(hash string) (dag chain.DagBlock, err error) 
 	if err != nil {
 		return chain.DagBlock{}, err
 	}
-	bc.saveDag(dag.ToModel())
+	bc.saveDag(&dag)
 	return
 }
 
-func (bc *blockContext) saveDag(dag *models.Dag) {
+func (bc *blockContext) saveDag(dag *chain.DagBlock) {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
-	dag_index := bc.getAddress(bc.Storage, dag.Sender).AddDag(dag.Timestamp)
-	bc.Batch.AddToBatch(dag, dag.Sender, dag_index)
+	dagModel := dag.ToModel()
+	dag_index := bc.getAddress(bc.Storage, dag.Sender).AddDag(dagModel.Timestamp)
+	bc.Batch.AddToBatch(dagModel, dag.Sender, dag_index)
 }
 
 func (bc *blockContext) getAddress(s storage.Storage, addr string) *storage.AddressStats {
