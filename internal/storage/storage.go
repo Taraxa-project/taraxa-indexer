@@ -93,18 +93,16 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagina
 	}
 	return
 }
-func GetIntervalData[T Yields](s Storage, start uint64) map[string]T {
+
+func ProcessIntervalData[T Yields](s Storage, start uint64, fn func(string, T) (stop bool)) {
 	var o T
-	ret := make(map[string]T)
 	s.ForEach(&o, "", &start, func(key, res []byte) bool {
 		err := rlp.DecodeBytes(res, &o)
-		ret[string(key)] = o
 		if err != nil {
 			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")
 		}
-		return false
+		return fn(string(key), o)
 	})
-	return ret
 }
 
 func GetUIntKey(key uint64) string {

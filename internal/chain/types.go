@@ -1,48 +1,11 @@
 package chain
 
 import (
-	"log"
 	"math/big"
-	"runtime/debug"
-	"strconv"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
-
-func ParseUInt(s string) (v uint64) {
-	if len(s) == 0 {
-		return
-	}
-	v, err := strconv.ParseUint(s, 0, 64)
-	if err != nil {
-		debug.PrintStack()
-		log.Fatal(s, "ParseUInt ", err)
-	}
-	return v
-}
-
-func ParseInt(s string) (v int64) {
-	if len(s) == 0 {
-		return
-	}
-	v, err := strconv.ParseInt(s, 0, 64)
-	if err != nil {
-		debug.PrintStack()
-		log.Fatal(s, "ParseUInt ", err)
-	}
-	return v
-}
-
-func parseBool(s string) (v bool) {
-	if len(s) == 0 {
-		return
-	}
-	i, err := strconv.ParseUint(s, 0, 64)
-	if err != nil {
-		log.Fatal("parseBool ", v)
-	}
-	return i > 0
-}
 
 type Block struct {
 	models.Pbft
@@ -54,8 +17,8 @@ type Block struct {
 
 func (b *Block) ToModel() (pbft *models.Pbft) {
 	pbft = &b.Pbft
-	pbft.Timestamp = ParseUInt(b.Timestamp)
-	pbft.Number = ParseUInt(b.Number)
+	pbft.Timestamp = common.ParseUInt(b.Timestamp)
+	pbft.Number = common.ParseUInt(b.Number)
 	pbft.TransactionCount = uint64(len(b.Transactions))
 
 	return
@@ -71,8 +34,8 @@ type DagBlock struct {
 
 func (b *DagBlock) ToModel() (dag *models.Dag) {
 	dag = &b.Dag
-	dag.Timestamp = ParseUInt(b.Timestamp)
-	dag.Level = ParseUInt(b.Level)
+	dag.Timestamp = common.ParseUInt(b.Timestamp)
+	dag.Level = common.ParseUInt(b.Level)
 	dag.TransactionCount = uint64(len(b.Transactions))
 
 	return
@@ -120,12 +83,12 @@ func GetTransactionType(to, input string, internal bool) models.TransactionType 
 
 func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transaction) {
 	trx = t.Transaction
-	trx.BlockNumber = ParseUInt(t.BlockNumber)
-	trx.Nonce = ParseUInt(t.Nonce)
-	trx.GasPrice = ParseUInt(t.GasPrice)
-	trx.GasUsed = ParseUInt(t.GasUsed)
-	trx.TransactionIndex = ParseUInt(t.TransactionIndex)
-	trx.Status = parseBool(t.Status)
+	trx.BlockNumber = common.ParseUInt(t.BlockNumber)
+	trx.Nonce = common.ParseUInt(t.Nonce)
+	trx.GasPrice = common.ParseUInt(t.GasPrice)
+	trx.GasUsed = common.ParseUInt(t.GasUsed)
+	trx.TransactionIndex = common.ParseUInt(t.TransactionIndex)
+	trx.Status = common.ParseBool(t.Status)
 	trx.Type = GetTransactionType(trx.To, t.Input, false)
 	if trx.Type == models.ContractCreation {
 		trx.To = t.ContractAddress
@@ -146,13 +109,13 @@ func (t *Transaction) ExtractLogs() (logs []models.EventLog) {
 		eLog := models.EventLog{
 			Address:          log.Address,
 			Data:             log.Data,
-			LogIndex:         ParseUInt(log.LogIndex),
+			LogIndex:         common.ParseUInt(log.LogIndex),
 			Name:             "",
 			Params:           []string{},
 			Removed:          log.Removed,
 			Topics:           log.Topics,
 			TransactionHash:  log.TransactionHash,
-			TransactionIndex: ParseUInt(log.TransactionIndex),
+			TransactionIndex: common.ParseUInt(log.TransactionIndex),
 		}
 		logs = append(logs, eLog)
 	}
