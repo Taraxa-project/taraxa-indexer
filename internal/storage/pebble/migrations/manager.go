@@ -50,7 +50,7 @@ func (m *Manager) ApplyAll() error {
 			b.CommitBatch()
 			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Applied migration")
 		} else {
-			log.WithField("migration: ", migration.GetId()).Info("skipping migration")
+			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Skipping migration")
 		}
 	}
 	log.Info("Migration Manager: Applied all migrations")
