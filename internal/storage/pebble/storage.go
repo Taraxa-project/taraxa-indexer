@@ -156,7 +156,9 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 func (s *Storage) forEach(o interface{}, prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	iter := s.find(prefix)
 	defer iter.Close()
-	iter.SeekGE(start_key)
+	if len(start_key) > 0 {
+		iter.SeekGE(start_key)
+	}
 
 	for ; iter.Valid(); navigate(iter) {
 		if fn(iter.Key(), iter.Value()) {

@@ -26,7 +26,7 @@ func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
 	var done = false
 
 	for !done {
-		var o pebble.OldDag
+		var o models.Dag
 		count := 0
 		s.ForEachFromKey(&o, last_key, func(key, res []byte) bool {
 			err := rlp.DecodeBytes(res, &o)

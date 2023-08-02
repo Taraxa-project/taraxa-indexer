@@ -36,8 +36,10 @@ func (m *Manager) IsApplied(migration Migration) bool {
 }
 
 func (m *Manager) ApplyAll() error {
+	log.Info("Migration Manager: Running migrations")
 	for _, migration := range m.migrations {
-		if !m.IsApplied(migration) {
+		isApplied := m.IsApplied(migration)
+		if !isApplied {
 			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Running migration")
 			err := migration.Apply(m.s)
 			if err != nil {
@@ -47,7 +49,10 @@ func (m *Manager) ApplyAll() error {
 			b.AddToBatchFullKey(migration.GetId(), []byte(migration_prefix+migration.GetId()))
 			b.CommitBatch()
 			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Applied migration")
+		} else {
+			log.WithField("migration: ", migration.GetId()).Info("skipping migration")
 		}
 	}
+	log.Info("Migration Manager: Applied all migrations")
 	return nil
 }
