@@ -2,7 +2,7 @@ package migration
 
 import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
-	"github.com/ethereum/go-ethereum/common"
+	log "github.com/sirupsen/logrus"
 )
 
 const migration_prefix = "mm"
@@ -17,7 +17,7 @@ type Manager struct {
 	migrations []Migration
 }
 
-func NewManager(s *pebble.Storage, nodeAddr common.Address) *Manager {
+func NewManager(s *pebble.Storage) *Manager {
 	m := Manager{
 		s: s,
 	}
@@ -38,6 +38,7 @@ func (m *Manager) IsApplied(migration Migration) bool {
 func (m *Manager) ApplyAll() error {
 	for _, migration := range m.migrations {
 		if !m.IsApplied(migration) {
+			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Running migration")
 			err := migration.Apply(m.s)
 			if err != nil {
 				return err
@@ -45,6 +46,7 @@ func (m *Manager) ApplyAll() error {
 			b := m.s.NewBatch()
 			b.AddToBatchFullKey(migration.GetId(), []byte(migration_prefix+migration.GetId()))
 			b.CommitBatch()
+			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Applied migration")
 		}
 	}
 	return nil

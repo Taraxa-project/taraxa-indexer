@@ -19,6 +19,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
+	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
@@ -72,6 +73,12 @@ func main() {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		log.WithError(err).Fatal("Error loading swagger spec")
+	}
+
+	manager := migration.NewManager(st)
+	err = manager.ApplyAll()
+	if err != nil {
+		log.WithError(err).Fatal("Error applying migrations")
 	}
 
 	swagger.Servers = nil

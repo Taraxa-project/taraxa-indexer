@@ -7,14 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type OldDag struct {
-	Hash             models.Hash      `json:"hash"`
-	Sender           models.Address   `json:"sender"`
-	Level            models.Counter   `json:"level"`
-	Timestamp        models.Timestamp `json:"timestamp"`
-	TransactionCount models.Counter   `json:"transactionCount"`
-}
-
 // RemoveSenderMigration is a migration that removes the Sender attribute from the Dag struct.
 type RemoveSenderMigration struct {
 	id string
@@ -34,7 +26,7 @@ func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
 	var done = false
 
 	for !done {
-		var o OldDag
+		var o pebble.OldDag
 		count := 0
 		s.ForEachFromKey(&o, last_key, func(key, res []byte) bool {
 			err := rlp.DecodeBytes(res, &o)

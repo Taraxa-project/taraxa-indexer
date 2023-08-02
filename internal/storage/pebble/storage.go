@@ -88,7 +88,7 @@ func getPrefix(o interface{}) (ret string) {
 		ret = "t"
 	case *models.Pbft, models.Pbft:
 		ret = "p"
-	case *models.Dag, models.Dag:
+	case *models.Dag, models.Dag, *OldDag, OldDag:
 		ret = "d"
 	case *storage.AddressStats, storage.AddressStats:
 		ret = "s"
