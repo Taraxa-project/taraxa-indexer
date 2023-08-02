@@ -35,18 +35,21 @@ func (m *Manager) IsApplied(migration Migration) bool {
 	return err == nil
 }
 
-func (m *Manager) ApplyAll() error {
+func (m *Manager) ApplyAll() (err error) {
 	log.Info("Migration Manager: Running migrations")
 	for _, migration := range m.migrations {
 		isApplied := m.IsApplied(migration)
 		if !isApplied {
 			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Running migration")
-			err := migration.Apply(m.s)
+			err = migration.Apply(m.s)
 			if err != nil {
-				return err
+				return
 			}
 			b := m.s.NewBatch()
-			b.AddToBatchFullKey(migration.GetId(), []byte(migration_prefix+migration.GetId()))
+			err = b.AddToBatchFullKey(migration.GetId(), []byte(migration_prefix+migration.GetId()))
+			if err != nil {
+				return
+			}
 			b.CommitBatch()
 			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Applied migration")
 		} else {

@@ -39,19 +39,19 @@ func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
 				Timestamp:        o.Timestamp,
 				TransactionCount: o.TransactionCount,
 			}
-			batch.AddToBatchFullKey(&dag, key)
+			err = batch.AddToBatchFullKey(&dag, key)
+
+			if err != nil {
+				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding Dag to batch")
+			}
 
 			last_key = key
 			count++
-			if count == DAG_BATCH_THRESHOLD {
-				return true
-			}
-			return false
+			return count == DAG_BATCH_THRESHOLD
 		})
 
 		if count < DAG_BATCH_THRESHOLD {
 			batch.CommitBatch()
-			done = true
 			break
 		}
 	}
