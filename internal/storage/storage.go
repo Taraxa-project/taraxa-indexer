@@ -13,6 +13,7 @@ type Storage interface {
 	Close() error
 	ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
 	ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
+	ForEachFromKey(o interface{}, start_key []byte, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
 	GetAccounts() []Account

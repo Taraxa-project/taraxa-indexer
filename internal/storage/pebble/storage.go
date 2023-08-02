@@ -153,12 +153,7 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-func (s *Storage) forEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
-	prefix := getPrefixKey(getPrefix(&o), key_prefix)
-	start_key := prefix
-	if start != nil {
-		start_key = getKey(getPrefix(&o), key_prefix, *start)
-	}
+func (s *Storage) forEach(o interface{}, prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	iter := s.find(prefix)
 	defer iter.Close()
 	iter.SeekGE(start_key)
@@ -170,12 +165,26 @@ func (s *Storage) forEach(o interface{}, key_prefix string, start *uint64, fn fu
 	}
 }
 
+func (s *Storage) ForEachFromKey(o interface{}, start_key []byte, fn func(key, res []byte) (stop bool)) {
+	prefix := []byte(getPrefix(o))
+	s.forEach(o, prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Next() })
+}
+
+func (s *Storage) forEachPrefix(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
+	prefix := getPrefixKey(getPrefix(&o), key_prefix)
+	start_key := prefix
+	if start != nil {
+		start_key = getKey(getPrefix(&o), key_prefix, *start)
+	}
+	s.forEach(o, prefix, start_key, fn, navigate)
+}
+
 func (s *Storage) ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool)) {
-	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Next() })
+	s.forEachPrefix(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Next() })
 }
 
 func (s *Storage) ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool)) {
-	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
+	s.forEachPrefix(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
 }
 
 func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {
@@ -194,7 +203,7 @@ func (s *Storage) addToDB(key []byte, o interface{}) error {
 
 func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 	ptr := big.NewInt(0)
-	err := s.getFromDB(ptr, []byte(getPrefix((*storage.TotalSupply)(ptr))))
+	err := s.GetFromDB(ptr, []byte(getPrefix((*storage.TotalSupply)(ptr))))
 	if err != nil {
 		log.Fatal("GetTotalSupply ", err)
 	}
@@ -203,7 +212,7 @@ func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 
 func (s *Storage) GetAccounts() []storage.Account {
 	ptr := new([]storage.Account)
-	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), ""))
+	err := s.GetFromDB(ptr, getPrefixKey(getPrefix(ptr), ""))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAccounts failed: ", err)
 	}
@@ -213,7 +222,7 @@ func (s *Storage) GetAccounts() []storage.Account {
 func (s *Storage) GetWeekStats(year, week int32) storage.WeekStats {
 	ptr := storage.MakeEmptyWeekStats()
 	ptr.Key = []byte(getWeekKey(getPrefix(ptr), year, week))
-	err := s.getFromDB(ptr, ptr.Key)
+	err := s.GetFromDB(ptr, ptr.Key)
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetWeekStats failed")
 	}
@@ -222,7 +231,7 @@ func (s *Storage) GetWeekStats(year, week int32) storage.WeekStats {
 
 func (s *Storage) GetFinalizationData() *storage.FinalizationData {
 	ptr := new(storage.FinalizationData)
-	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
+	err := s.GetFromDB(ptr, []byte(getPrefix(ptr)))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetFinalizationData failed")
 	}
@@ -231,7 +240,7 @@ func (s *Storage) GetFinalizationData() *storage.FinalizationData {
 
 func (s *Storage) GetAddressStats(addr string) *storage.AddressStats {
 	ptr := storage.MakeEmptyAddressStats(addr)
-	err := s.getFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
+	err := s.GetFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAddressStats ", err)
 	}
@@ -240,13 +249,13 @@ func (s *Storage) GetAddressStats(addr string) *storage.AddressStats {
 
 func (s *Storage) GenesisHashExist() bool {
 	ptr := new(storage.GenesisHash)
-	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
+	err := s.GetFromDB(ptr, []byte(getPrefix(ptr)))
 	return err == nil
 }
 
 func (s *Storage) GetGenesisHash() storage.GenesisHash {
 	ptr := new(storage.GenesisHash)
-	err := s.getFromDB(ptr, []byte(getPrefix(ptr)))
+	err := s.GetFromDB(ptr, []byte(getPrefix(ptr)))
 	if err != nil {
 		log.WithError(err).Fatal("GetGenesisHash failed")
 	}
@@ -255,7 +264,7 @@ func (s *Storage) GetGenesisHash() storage.GenesisHash {
 
 func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactionsResponse {
 	ptr := new(models.InternalTransactionsResponse)
-	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
+	err := s.GetFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetInternalTransactions failed")
 	}
@@ -264,7 +273,7 @@ func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactio
 
 func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse {
 	ptr := new(models.TransactionLogsResponse)
-	err := s.getFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
+	err := s.GetFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
 	for i, eventLog := range ptr.Data {
 		name, params, err := events.DecodeEventDynamic(eventLog)
 		if err != nil {
@@ -281,7 +290,7 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 }
 
 func (s *Storage) GetValidatorYield(validator string, block uint64) (res storage.Yield) {
-	err := s.getFromDB(&res, getKey(getPrefix(&res), validator, block))
+	err := s.GetFromDB(&res, getKey(getPrefix(&res), validator, block))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetValidatorYield failed")
 	}
@@ -294,22 +303,14 @@ func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
 }
 
 func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
-	err := s.getFromDB(&res, getPrefixKey(getPrefix(&res), strings.ToLower(hash)))
+	err := s.GetFromDB(&res, getPrefixKey(getPrefix(&res), strings.ToLower(hash)))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetTransactionByHash failed")
 	}
 	return
 }
 
-func (s *Storage) GetMigration(id string) (res string) {
-	err := s.getFromDB(&res, getPrefixKey("mm", strings.ToLower(id)))
-	if err != nil && err != pebble.ErrNotFound {
-		log.WithError(err).Fatal("GetMigration failed")
-	}
-	return
-}
-
-func (s *Storage) getFromDB(o interface{}, key []byte) error {
+func (s *Storage) GetFromDB(o interface{}, key []byte) error {
 	value, closer, err := s.get(key)
 	if err != nil {
 		return err

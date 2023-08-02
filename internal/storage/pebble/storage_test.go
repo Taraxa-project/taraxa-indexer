@@ -135,7 +135,7 @@ func TestCleanStorage(t *testing.T) {
 		t.Error(err)
 	}
 
-	err := st.getFromDB(stats, getKey(getPrefix(stats), "test", 0))
+	err := st.GetFromDB(stats, getKey(getPrefix(stats), "test", 0))
 
 	if err == nil {
 		t.Error("Clean DB does not work")

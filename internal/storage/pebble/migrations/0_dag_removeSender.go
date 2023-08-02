@@ -34,33 +34,31 @@ func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
 	var done = false
 
 	for !done {
-
 		var o OldDag
-		ret := make(map[string]OldDag)
-
-		s.ForEach(&o, "", nil, func(key, res []byte) bool {
+		count := 0
+		s.ForEachFromKey(&o, last_key, func(key, res []byte) bool {
 			err := rlp.DecodeBytes(res, &o)
-			ret[string(key)] = o
-			var d models.Dag
-			d.Hash = o.Hash
-			d.Level = o.Level
-			d.Timestamp = o.Timestamp
-			d.TransactionCount = o.TransactionCount
-			batch.AddToBatchFullKey(&d, key)
-
 			if err != nil {
 				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding Dag")
 			}
+			dag := models.Dag{
+				Hash:             o.Hash,
+				Level:            o.Level,
+				Timestamp:        o.Timestamp,
+				TransactionCount: o.TransactionCount,
+			}
+			batch.AddToBatchFullKey(&dag, key)
 
 			last_key = key
-			if uint64(len(ret)) == DAG_BATCH_THRESHOLD {
-				batch.CommitBatch()
+			count++
+			if count == DAG_BATCH_THRESHOLD {
 				return true
 			}
 			return false
 		})
 
-		if len(ret) < DAG_BATCH_THRESHOLD {
+		if count < DAG_BATCH_THRESHOLD {
+			batch.CommitBatch()
 			done = true
 			break
 		}
