@@ -153,9 +153,12 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-func (s *Storage) forEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
+func (s *Storage) forEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	prefix := getPrefixKey(getPrefix(&o), key_prefix)
-	start_key := getKey(getPrefix(&o), key_prefix, start)
+	start_key := prefix
+	if start != nil {
+		start_key = getKey(getPrefix(&o), key_prefix, *start)
+	}
 	iter := s.find(prefix)
 	defer iter.Close()
 	iter.SeekGE(start_key)
@@ -167,11 +170,11 @@ func (s *Storage) forEach(o interface{}, key_prefix string, start uint64, fn fun
 	}
 }
 
-func (s *Storage) ForEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool)) {
+func (s *Storage) ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool)) {
 	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Next() })
 }
 
-func (s *Storage) ForEachBackwards(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool)) {
+func (s *Storage) ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool)) {
 	s.forEach(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
 }
 
@@ -294,6 +297,14 @@ func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
 	err := s.getFromDB(&res, getPrefixKey(getPrefix(&res), strings.ToLower(hash)))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetTransactionByHash failed")
+	}
+	return
+}
+
+func (s *Storage) GetMigration(id string) (res string) {
+	err := s.getFromDB(&res, getPrefixKey("mm", strings.ToLower(id)))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetMigration failed")
 	}
 	return
 }

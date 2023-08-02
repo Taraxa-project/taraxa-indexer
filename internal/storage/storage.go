@@ -11,8 +11,8 @@ import (
 type Storage interface {
 	Clean() error
 	Close() error
-	ForEach(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool))
-	ForEachBackwards(o interface{}, key_prefix string, start uint64, fn func(key, res []byte) (stop bool))
+	ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
+	ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
 	GetAccounts() []Account
@@ -59,7 +59,8 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 	pagination.End = end
 
 	ret = make([]T, 0, count)
-	s.ForEachBackwards(&o, address, pagination.Total-from, func(_, res []byte) (stop bool) {
+	start := pagination.Total - from
+	s.ForEachBackwards(&o, address, &start, func(_, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &o)
 		if err != nil {
 			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")
@@ -94,7 +95,7 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagina
 func GetIntervalData[T Yields](s Storage, start uint64) map[string]T {
 	var o T
 	ret := make(map[string]T)
-	s.ForEach(&o, "", start, func(key, res []byte) bool {
+	s.ForEach(&o, "", &start, func(key, res []byte) bool {
 		err := rlp.DecodeBytes(res, &o)
 		ret[string(key)] = o
 		if err != nil {
