@@ -7,59 +7,61 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type OldDag struct {
+type OldPbft struct {
+	Author           models.Address   `json:"author"`
 	Hash             models.Hash      `json:"hash"`
-	Level            models.Counter   `json:"level"`
-	Sender           models.Address   `json:"sender"`
+	Number           models.Counter   `json:"number"`
+	PbftHash         models.Hash      `json:"pbftHash"`
 	Timestamp        models.Timestamp `json:"timestamp"`
 	TransactionCount models.Counter   `json:"transactionCount"`
 }
 
 // RemoveSenderMigration is a migration that removes the Sender attribute from the Dag struct.
-type RemoveSenderMigration struct {
+type RemovePbftHashMigration struct {
 	id string
 }
 
-func (m *RemoveSenderMigration) GetId() string {
+func (m *RemovePbftHashMigration) GetId() string {
 	return m.id
 }
 
 // Apply is the implementation of the Migration interface for the RemoveSenderMigration.
-func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
-	const DAG_BATCH_THRESHOLD = 1000
+func (m *RemovePbftHashMigration) Apply(s *pebble.Storage) error {
+	const PBFT_BATCH_THRESHOLD = 1000
 	batch := s.NewBatch()
 	var last_key []byte
 
 	for {
-		var o OldDag
+		var o OldPbft
 		count := 0
-		s.ForEachFromKey([]byte(pebble.DagsPrefix), last_key, func(key, res []byte) (stop bool) {
+		s.ForEachFromKey([]byte(pebble.PbftPrefix), last_key, func(key, res []byte) (stop bool) {
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
-				if err.Error() == "rlp: too few elements for migration.OldDag" {
+				if err.Error() == "rlp: too few elements for migration.OldPbft" {
 					return false
 				}
-				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding Dag")
+				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding Pbft")
 			}
-			dag := models.Dag{
+			pbft := models.Pbft{
+				Author:           o.Author,
 				Hash:             o.Hash,
-				Level:            o.Level,
+				Number:           o.Number,
 				Timestamp:        o.Timestamp,
 				TransactionCount: o.TransactionCount,
 			}
-			err = batch.AddToBatchFullKey(&dag, key)
+			err = batch.AddToBatchFullKey(&pbft, key)
 
 			if err != nil {
-				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding Dag to batch")
+				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding Pbft to batch")
 			}
 
 			last_key = key
 			count++
-			return count == DAG_BATCH_THRESHOLD
+			return count == PBFT_BATCH_THRESHOLD
 		})
 		batch.CommitBatch()
 		batch = s.NewBatch()
-		if count < DAG_BATCH_THRESHOLD {
+		if count < PBFT_BATCH_THRESHOLD {
 			break
 		}
 	}

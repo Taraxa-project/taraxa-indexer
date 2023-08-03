@@ -160,8 +160,6 @@ func (bc *blockContext) processDagsOld() (err error) {
 	if err != nil {
 		return
 	}
-	bc.block.PbftHash = block_with_dags.BlockHash
-
 	tp := common.MakeThreadPool()
 	for i, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
 		tp.Go(common.MakeTaskWithResult(bc.processDag, dag_hash, &bc.dags[i], &err).Run)
