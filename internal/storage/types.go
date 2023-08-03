@@ -14,7 +14,7 @@ import (
 type TotalSupply = big.Int
 
 type Paginated interface {
-	models.Transaction | models.Dag | models.PbftResponse
+	models.Transaction | models.Dag | models.Pbft
 }
 
 type Yields interface {
