@@ -17,6 +17,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const AccountPrefix = "b"
+const LogsPrefix = "e"
+const TransactionPrefix = "t"
+const PbftPrefix = "p"
+const DagsPrefix = "d"
+const StatsPrefix = "s"
+const FinalizationDataPrefix = "f"
+const GenesisHashPrefix = "g"
+const WeekStatsPrefix = "w"
+const TotalSupplyPrefix = "ts"
+const InternalTransactionsPrefix = "i"
+const YieldPrefix = "y"
+const ValidatorsYieldPrefix = "vy"
+const MultipliedYieldPrefix = "my"
+
 type Storage struct {
 	db   *pebble.DB
 	path string
@@ -81,33 +96,33 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 func getPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
 	case *[]storage.Account, []storage.Account:
-		ret = "b"
+		ret = AccountPrefix
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
-		ret = "e"
+		ret = LogsPrefix
 	case *models.Transaction, models.Transaction:
-		ret = "t"
+		ret = TransactionPrefix
 	case *models.Pbft, models.Pbft:
-		ret = "p"
+		ret = PbftPrefix
 	case *models.Dag, models.Dag:
-		ret = "d"
+		ret = DagsPrefix
 	case *storage.AddressStats, storage.AddressStats:
-		ret = "s"
+		ret = StatsPrefix
 	case *storage.FinalizationData, storage.FinalizationData:
-		ret = "f"
+		ret = FinalizationDataPrefix
 	case *storage.GenesisHash, storage.GenesisHash:
-		ret = "g"
+		ret = GenesisHashPrefix
 	case *storage.WeekStats, storage.WeekStats:
-		ret = "w"
+		ret = WeekStatsPrefix
 	case *storage.TotalSupply, storage.TotalSupply:
-		ret = "ts"
+		ret = TotalSupplyPrefix
 	case *models.InternalTransactionsResponse, models.InternalTransactionsResponse:
-		ret = "i"
+		ret = InternalTransactionsPrefix
 	case *storage.Yield, storage.Yield:
-		ret = "y"
+		ret = YieldPrefix
 	case *storage.ValidatorsYield, storage.ValidatorsYield:
-		ret = "vy"
+		ret = ValidatorsYieldPrefix
 	case *storage.MultipliedYield, storage.MultipliedYield:
-		ret = "my"
+		ret = MultipliedYieldPrefix
 	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
 		ret = getPrefix(*o.(*interface{}))

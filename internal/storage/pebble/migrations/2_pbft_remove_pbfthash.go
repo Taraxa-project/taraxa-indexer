@@ -34,7 +34,7 @@ func (m *RemovePbftHashMigration) Apply(s *pebble.Storage) error {
 	for {
 		var o OldPbft
 		count := 0
-		s.ForEachFromKey([]byte("d"), last_key, func(key, res []byte) (stop bool) {
+		s.ForEachFromKey([]byte(pebble.PbftPrefix), last_key, func(key, res []byte) (stop bool) {
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
 				if err.Error() == "rlp: too few elements for migration.OldPbft" {
