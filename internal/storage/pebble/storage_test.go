@@ -45,7 +45,7 @@ func TestGetObjects(t *testing.T) {
 	}
 
 	for i := uint64(1); i <= count; i++ {
-		block := models.Dag{Timestamp: i, Hash: "test" + strconv.FormatUint(i, 10), Level: 0, Sender: sender, TransactionCount: 0}
+		block := models.Dag{Timestamp: i, Hash: "test" + strconv.FormatUint(i, 10), Level: 0, TransactionCount: 0}
 		if err := st.addToDBTest(&block, sender, block.Timestamp); err != nil {
 			t.Error(err)
 		}
@@ -135,7 +135,7 @@ func TestCleanStorage(t *testing.T) {
 		t.Error(err)
 	}
 
-	err := st.getFromDB(stats, getKey(getPrefix(stats), "test", 0))
+	err := st.GetFromDB(stats, getKey(getPrefix(stats), "test", 0))
 
 	if err == nil {
 		t.Error("Clean DB does not work")
