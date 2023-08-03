@@ -57,7 +57,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 			return err
 		}
 
-		if internal_transactions := bc.processInternalTransactions(traces[t_idx], t_idx); internal_transactions != nil {
+		if internal_transactions := bc.processInternalTransactions(traces[t_idx], t_idx, common.ParseUInt(transactions[t_idx].GasPrice)); internal_transactions != nil {
 			bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
 		}
 	}
@@ -66,7 +66,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 	return
 }
 
-func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace, t_idx int) (internal_transactions *models.InternalTransactionsResponse) {
+func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace, t_idx int, gasPrice uint64) (internal_transactions *models.InternalTransactionsResponse) {
 	if len(trace.Trace) <= 1 {
 		return
 	}
@@ -77,7 +77,7 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		if e_idx == 0 {
 			continue
 		}
-		internal := makeInternal(bc.transactions[t_idx], entry)
+		internal := makeInternal(bc.transactions[t_idx], entry, gasPrice)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
 		bc.SaveTransaction(internal)
@@ -110,12 +110,12 @@ func (bc *blockContext) getTransactionsOld(trxHashes []string) (trxs []chain.Tra
 	return
 }
 
-func makeInternal(trx models.Transaction, entry chain.TraceEntry) (internal models.Transaction) {
+func makeInternal(trx models.Transaction, entry chain.TraceEntry, gasCost uint64) (internal models.Transaction) {
 	internal = trx
 	internal.From = entry.Action.From
 	internal.To = entry.Action.To
 	internal.Value = entry.Action.Value
-	internal.Fee = common.ParseUInt(entry.Result.GasUsed)
+	internal.Fee = common.ParseUInt(entry.Result.GasUsed) * gasCost
 	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
 	internal.BlockNumber = trx.BlockNumber
 	return
