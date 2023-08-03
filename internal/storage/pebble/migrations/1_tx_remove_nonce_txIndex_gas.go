@@ -42,7 +42,7 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 	for {
 		var o OldTransaction
 		count := 0
-		s.ForEachFromKey([]byte("t"), last_key, func(key, res []byte) (stop bool) {
+		s.ForEachFromKey([]byte(pebble.TransactionPrefix), last_key, func(key, res []byte) (stop bool) {
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
 				if err.Error() == "rlp: too few elements for migration.OldTransaction" {

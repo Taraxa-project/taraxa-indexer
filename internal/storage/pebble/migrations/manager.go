@@ -23,6 +23,7 @@ func NewManager(s *pebble.Storage) *Manager {
 	}
 	m.RegisterMigration(&RemoveSenderMigration{id: "0_dag_removeSender"})
 	m.RegisterMigration(&RemoveNonceTxIndexAddFeeMigration{id: "1_tx_remove_nonce_txIndex_gas"})
+	m.RegisterMigration(&RemovePbftHashMigration{id: "2_pbft_removePbftHash"})
 	return &m
 }
 
