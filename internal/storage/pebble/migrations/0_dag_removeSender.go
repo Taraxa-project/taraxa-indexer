@@ -7,6 +7,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type OldDag struct {
+	Hash             models.Hash      `json:"hash"`
+	Level            models.Counter   `json:"level"`
+	Sender           models.Address   `json:"sender"`
+	Timestamp        models.Timestamp `json:"timestamp"`
+	TransactionCount models.Counter   `json:"transactionCount"`
+}
+
 // RemoveSenderMigration is a migration that removes the Sender attribute from the Dag struct.
 type RemoveSenderMigration struct {
 	id string
@@ -18,19 +26,19 @@ func (m *RemoveSenderMigration) GetId() string {
 
 // Apply is the implementation of the Migration interface for the RemoveSenderMigration.
 func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
-	// Retrieve all Dags from the database
 	const DAG_BATCH_THRESHOLD = 1000
 	batch := s.NewBatch()
 	var last_key []byte
 
-	var done = false
-
-	for !done {
-		var o models.Dag
+	for {
+		var o OldDag
 		count := 0
-		s.ForEachFromKey(&o, last_key, func(key, res []byte) bool {
+		s.ForEachFromKey([]byte("d"), last_key, func(key, res []byte) (stop bool) {
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
+				if err.Error() == "rlp: too few elements for migration.OldDag" {
+					return false
+				}
 				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding Dag")
 			}
 			dag := models.Dag{
@@ -49,9 +57,9 @@ func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
 			count++
 			return count == DAG_BATCH_THRESHOLD
 		})
-
+		batch.CommitBatch()
+		batch = s.NewBatch()
 		if count < DAG_BATCH_THRESHOLD {
-			batch.CommitBatch()
 			break
 		}
 	}

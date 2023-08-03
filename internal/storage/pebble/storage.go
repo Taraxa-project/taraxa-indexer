@@ -88,7 +88,7 @@ func getPrefix(o interface{}) (ret string) {
 		ret = "t"
 	case *models.Pbft, models.Pbft:
 		ret = "p"
-	case *models.Dag, models.Dag, *OldDag, OldDag:
+	case *models.Dag, models.Dag:
 		ret = "d"
 	case *storage.AddressStats, storage.AddressStats:
 		ret = "s"
@@ -153,12 +153,13 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-func (s *Storage) forEach(o interface{}, prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
+func (s *Storage) forEach(prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	iter := s.find(prefix)
 	defer iter.Close()
-	if len(start_key) > 0 {
-		iter.SeekGE(start_key)
+	if len(start_key) == 0 {
+		start_key = prefix
 	}
+	iter.SeekGE(start_key)
 
 	for ; iter.Valid(); navigate(iter) {
 		if fn(iter.Key(), iter.Value()) {
@@ -167,9 +168,8 @@ func (s *Storage) forEach(o interface{}, prefix, start_key []byte, fn func(key, 
 	}
 }
 
-func (s *Storage) ForEachFromKey(o interface{}, start_key []byte, fn func(key, res []byte) (stop bool)) {
-	prefix := []byte(getPrefix(o))
-	s.forEach(o, prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Next() })
+func (s *Storage) ForEachFromKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool)) {
+	s.forEach(prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Next() })
 }
 
 func (s *Storage) forEachPrefix(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
@@ -178,7 +178,7 @@ func (s *Storage) forEachPrefix(o interface{}, key_prefix string, start *uint64,
 	if start != nil {
 		start_key = getKey(getPrefix(&o), key_prefix, *start)
 	}
-	s.forEach(o, prefix, start_key, fn, navigate)
+	s.forEach(prefix, start_key, fn, navigate)
 }
 
 func (s *Storage) ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool)) {

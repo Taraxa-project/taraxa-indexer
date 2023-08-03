@@ -96,7 +96,7 @@ func main() {
 	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
 
 	fin := st.GetFinalizationData()
-	log.WithFields(log.Fields{"pbft_count": fin.PbftCount}).Info("Loaded db with")
+	log.WithFields(log.Fields{"pbft_count": fin.PbftCount, "dag_count": fin.DagCount, "trx_count": fin.TrxCount}).Info("Loaded db with")
 
 	apiHandler := api.NewApiHandler(st, c)
 	api.RegisterHandlers(e, apiHandler)

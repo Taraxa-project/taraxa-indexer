@@ -13,13 +13,13 @@ type Migration interface {
 }
 
 type Manager struct {
-	s          *pebble.Storage
+	storage    *pebble.Storage
 	migrations []Migration
 }
 
 func NewManager(s *pebble.Storage) *Manager {
 	m := Manager{
-		s: s,
+		storage: s,
 	}
 	m.RegisterMigration(&RemoveSenderMigration{id: "0_dag_removeSender"})
 	return &m
@@ -31,7 +31,7 @@ func (m *Manager) RegisterMigration(migration Migration) {
 
 func (m *Manager) IsApplied(migration Migration) bool {
 	migrationId := ""
-	err := m.s.GetFromDB(&migrationId, []byte(migration_prefix+migration.GetId()))
+	err := m.storage.GetFromDB(&migrationId, []byte(migration_prefix+migration.GetId()))
 	return err == nil
 }
 
@@ -41,11 +41,11 @@ func (m *Manager) ApplyAll() (err error) {
 		isApplied := m.IsApplied(migration)
 		if !isApplied {
 			log.WithFields(log.Fields{"migration": migration.GetId()}).Info("Running migration")
-			err = migration.Apply(m.s)
+			err = migration.Apply(m.storage)
 			if err != nil {
 				return
 			}
-			b := m.s.NewBatch()
+			b := m.storage.NewBatch()
 			err = b.AddToBatchFullKey(migration.GetId(), []byte(migration_prefix+migration.GetId()))
 			if err != nil {
 				return
