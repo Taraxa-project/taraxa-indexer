@@ -35,7 +35,7 @@ func (m *RemoveNonceTxIndexAddFeeMigration) GetId() string {
 
 // Apply is the implementation of the Migration interface for the RemoveSenderMigration.
 func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
-	const DAG_TX_THRESHOLD = 1000
+	const MAX_TX_THRESHOLD = 1000
 	batch := s.NewBatch()
 	var last_key []byte
 
@@ -71,11 +71,11 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 
 			last_key = key
 			count++
-			return count == DAG_TX_THRESHOLD
+			return count == MAX_TX_THRESHOLD
 		})
 		batch.CommitBatch()
 		batch = s.NewBatch()
-		if count < DAG_TX_THRESHOLD {
+		if count < MAX_TX_THRESHOLD {
 			break
 		}
 	}
