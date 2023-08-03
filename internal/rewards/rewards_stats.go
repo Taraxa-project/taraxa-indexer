@@ -47,7 +47,7 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.T
 	for _, v := range votes.Votes {
 		voter := strings.ToLower(v.Voter)
 		entry := s.ValidatorStats[voter]
-		entry.voteWeight = int64(chain.ParseInt(v.Weight))
+		entry.voteWeight = int64(common.ParseInt(v.Weight))
 		s.TotalVotesWeight += entry.voteWeight
 
 		s.ValidatorStats[voter] = entry

@@ -73,7 +73,6 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 		return
 	}
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
 	total_minted := common.ParseStringToBigInt(raw.TotalReward)
 	bc.balances.AddToBalance(common.DposContractAddress, total_minted)
 
@@ -85,6 +84,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	}
 	bc.Batch.SaveAccounts(bc.balances)
 
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
 	if total_minted.Cmp(big.NewInt(0)) == 1 {
 		r.Process(total_minted, bc.dags, bc.transactions, *votes, validators)
 	}
@@ -150,7 +150,7 @@ func (bc *blockContext) processDags() (err error) {
 	bc.dags = make([]chain.DagBlock, len(dag_blocks))
 	for i, dag := range dag_blocks {
 		bc.dags[i] = dag
-		bc.saveDag(dag.ToModel())
+		bc.saveDag(&dag)
 	}
 	return
 }
@@ -175,14 +175,15 @@ func (bc *blockContext) processDag(hash string) (dag chain.DagBlock, err error) 
 	if err != nil {
 		return chain.DagBlock{}, err
 	}
-	bc.saveDag(dag.ToModel())
+	bc.saveDag(&dag)
 	return
 }
 
-func (bc *blockContext) saveDag(dag *models.Dag) {
+func (bc *blockContext) saveDag(dag *chain.DagBlock) {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
-	dag_index := bc.getAddress(bc.Storage, dag.Sender).AddDag(dag.Timestamp)
-	bc.Batch.AddToBatch(dag, dag.Sender, dag_index)
+	dagModel := dag.ToModel()
+	dag_index := bc.getAddress(bc.Storage, dag.Sender).AddDag(dagModel.Timestamp)
+	bc.Batch.AddToBatch(dagModel, dag.Sender, dag_index)
 }
 
 func (bc *blockContext) getAddress(s storage.Storage, addr string) *storage.AddressStats {

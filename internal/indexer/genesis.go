@@ -34,7 +34,7 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) (trx models.Transaction
 	trx.To = addr
 	trx.Value = value
 	trx.BlockNumber = 0
-	trx.Timestamp = chain.ParseUInt(g.genesis.DagGenesisBlock.Timestamp)
+	trx.Timestamp = common.ParseUInt(g.genesis.DagGenesisBlock.Timestamp)
 	trx.Status = true
 	return
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
+	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
@@ -74,6 +75,12 @@ func main() {
 		log.WithError(err).Fatal("Error loading swagger spec")
 	}
 
+	manager := migration.NewManager(st)
+	err = manager.ApplyAll()
+	if err != nil {
+		log.WithError(err).Fatal("Error applying migrations")
+	}
+
 	swagger.Servers = nil
 
 	e := echo.New()
@@ -89,7 +96,7 @@ func main() {
 	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
 
 	fin := st.GetFinalizationData()
-	log.WithFields(log.Fields{"pbft_count": fin.PbftCount}).Info("Loaded db with")
+	log.WithFields(log.Fields{"pbft_count": fin.PbftCount, "dag_count": fin.DagCount, "trx_count": fin.TrxCount}).Info("Loaded db with")
 
 	apiHandler := api.NewApiHandler(st, c)
 	api.RegisterHandlers(e, apiHandler)
