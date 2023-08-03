@@ -66,7 +66,7 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 			err = batch.AddToBatchFullKey(&tx, key)
 
 			if err != nil {
-				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding Dag to batch")
+				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding Transaction to batch")
 			}
 
 			last_key = key
