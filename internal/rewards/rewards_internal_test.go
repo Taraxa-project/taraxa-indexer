@@ -28,7 +28,7 @@ func makeDags(ac AddressCount) (dags []chain.DagBlock) {
 	total_count := 0
 	for addr, c := range ac {
 		for i := 0; i < c; i++ {
-			dags = append(dags, chain.DagBlock{Dag: models.Dag{Sender: addr, Hash: fmt.Sprintf("0x%x", total_count)}, Transactions: []string{fmt.Sprintf("0x%x", total_count)}})
+			dags = append(dags, chain.DagBlock{Dag: models.Dag{Hash: fmt.Sprintf("0x%x", total_count)}, Sender: addr, Transactions: []string{fmt.Sprintf("0x%x", total_count)}})
 			total_count++
 		}
 	}

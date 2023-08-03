@@ -43,7 +43,6 @@ type Counter = uint64
 type Dag struct {
 	Hash             Hash      `json:"hash"`
 	Level            Counter   `json:"level"`
-	Sender           Address   `json:"sender"`
 	Timestamp        Timestamp `json:"timestamp"`
 	TransactionCount Counter   `json:"transactionCount"`
 }

@@ -26,6 +26,7 @@ func (b *Block) ToModel() (pbft *models.Pbft) {
 
 type DagBlock struct {
 	models.Dag
+	Sender       string   `json:"sender"`
 	Level        string   `json:"level"`
 	Timestamp    string   `json:"timestamp"`
 	Transactions []string `json:"transactions"`
