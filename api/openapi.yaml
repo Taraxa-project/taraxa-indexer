@@ -477,7 +477,7 @@ components:
         - from
         - to
         - value
-        - fee
+        - gasCost
         - timestamp
         - status
         - type
@@ -500,7 +500,7 @@ components:
         value:
           type: string
           example: "0"
-        fee:
+        gasCost:
           $ref: "#/components/schemas/Counter"
         timestamp:
           $ref: "#/components/schemas/Timestamp"

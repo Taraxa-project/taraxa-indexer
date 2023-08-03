@@ -128,8 +128,8 @@ type Timestamp = uint64
 type Transaction struct {
 	BlockNumber Counter         `json:"blockNumber"`
 	Calldata    *CallData       `json:"calldata,omitempty" rlp:"nil"`
-	Fee         Counter         `json:"fee"`
 	From        Address         `json:"from"`
+	GasCost     Counter         `json:"gasCost"`
 	Hash        Hash            `json:"hash"`
 	Input       string          `json:"input"`
 	Status      bool            `json:"status"`
