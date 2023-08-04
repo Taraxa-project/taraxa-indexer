@@ -1,6 +1,8 @@
 package migration
 
 import (
+	"bytes"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -40,19 +42,16 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 	var last_key []byte
 
 	for {
-		var o OldTransaction
 		count := 0
 		s.ForEachFromKey([]byte(pebble.TransactionPrefix), last_key, func(key, res []byte) (stop bool) {
-			if len(res) < 100 {
+			// don't apply it second time on the same key and don't apply it on total supply as its starting with the same prefix
+			if bytes.Equal(key, last_key) || bytes.Equal(key, []byte(pebble.TotalSupplyPrefix)) {
 				return false
 			}
+			var o OldTransaction
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
 				if err.Error() == "rlp: too few elements for migration.OldTransaction" {
-					return false
-				}
-				// These two errors happen on GENESIS transaction and in that case we don't need to migrate it
-				if err.Error() == "rlp: input string too long for uint64, decoding into (migration.OldTransaction).GasUsed" {
 					return false
 				}
 				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding Transaction")
@@ -71,7 +70,6 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 				Value:       o.Value,
 			}
 			err = batch.AddToBatchFullKey(&tx, key)
-
 			if err != nil {
 				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding Transaction to batch")
 			}
