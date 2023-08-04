@@ -283,7 +283,6 @@ func TestTraceParsing(t *testing.T) {
 
 	for addr, count := range addr_trx_count {
 		res, _ := storage.GetObjectsPage[models.Transaction](bc.Storage, addr, 0, 20)
-
-		assert.Equal(t, len(res), count)
+		assert.Equal(t, len(res), count, addr)
 	}
 }

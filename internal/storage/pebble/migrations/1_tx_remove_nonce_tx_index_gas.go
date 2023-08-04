@@ -43,9 +43,9 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 
 	for {
 		count := 0
-		s.ForEachFromKey([]byte(pebble.TransactionPrefix), last_key, func(key, res []byte) (stop bool) {
+		s.ForEachFromKey([]byte(pebble.GetPrefix(models.Transaction{})), last_key, func(key, res []byte) (stop bool) {
 			// don't apply it second time on the same key and don't apply it on total supply as its starting with the same prefix
-			if bytes.Equal(key, last_key) || bytes.Equal(key, []byte(pebble.TotalSupplyPrefix)) {
+			if bytes.Equal(key, last_key) {
 				return false
 			}
 			var o OldTransaction

@@ -25,21 +25,21 @@ func (b *Batch) CommitBatch() {
 }
 
 func (b *Batch) SetTotalSupply(s *storage.TotalSupply) {
-	err := b.AddToBatchFullKey(s, []byte(getPrefix((*storage.TotalSupply)(s))))
+	err := b.AddToBatchFullKey(s, []byte(GetPrefix((*storage.TotalSupply)(s))))
 	if err != nil {
 		log.WithError(err).Fatal("SetTotalSupply failed")
 	}
 }
 
 func (b *Batch) SetFinalizationData(f *storage.FinalizationData) {
-	err := b.AddToBatchFullKey(f, []byte(getPrefix(f)))
+	err := b.AddToBatchFullKey(f, []byte(GetPrefix(f)))
 	if err != nil {
 		log.WithError(err).Fatal("SetFinalizationData failed")
 	}
 }
 
 func (b *Batch) SetGenesisHash(h storage.GenesisHash) {
-	err := b.AddToBatchFullKey(&h, []byte(getPrefix(&h)))
+	err := b.AddToBatchFullKey(&h, []byte(GetPrefix(&h)))
 	if err != nil {
 		log.WithError(err).Fatal("SetGenesisHash failed")
 	}
@@ -58,14 +58,14 @@ func (b *Batch) SaveAccounts(a *storage.Balances) {
 }
 
 func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {
-	err := b.AddToBatchFullKey(o, getKey(getPrefix(o), key1, key2))
+	err := b.AddToBatchFullKey(o, getKey(GetPrefix(o), key1, key2))
 	if err != nil {
 		log.WithError(err).Fatal("AddToBatch failed")
 	}
 }
 
 func (b *Batch) AddToBatchSingleKey(o interface{}, key string) {
-	err := b.AddToBatchFullKey(o, getPrefixKey(getPrefix(o), key))
+	err := b.AddToBatchFullKey(o, getPrefixKey(GetPrefix(o), key))
 	if err != nil {
 		log.WithError(err).Fatal("AddToBatchSingleKey failed")
 	}
