@@ -33,7 +33,7 @@ func (m *RemoveSenderMigration) Apply(s *pebble.Storage) error {
 	for {
 		var o OldDag
 		count := 0
-		s.ForEachFromKey([]byte(pebble.DagsPrefix), last_key, func(key, res []byte) (stop bool) {
+		s.ForEachFromKey([]byte(pebble.GetPrefix(models.Dag{})), last_key, func(key, res []byte) (stop bool) {
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
 				if err.Error() == "rlp: too few elements for migration.OldDag" {

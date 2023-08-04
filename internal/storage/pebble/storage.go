@@ -17,20 +17,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const AccountPrefix = "b"
-const LogsPrefix = "e"
-const TransactionPrefix = "t"
-const PbftPrefix = "p"
-const DagsPrefix = "d"
-const StatsPrefix = "s"
-const FinalizationDataPrefix = "f"
-const GenesisHashPrefix = "g"
-const WeekStatsPrefix = "w"
-const TotalSupplyPrefix = "ts"
-const InternalTransactionsPrefix = "i"
-const YieldPrefix = "y"
-const ValidatorsYieldPrefix = "vy"
-const MultipliedYieldPrefix = "my"
+const prefixSeparator = "|"
+const accountPrefix = "b"
+const logsPrefix = "e"
+const transactionPrefix = "t"
+const pbftPrefix = "p"
+const dagsPrefix = "d"
+const statsPrefix = "s"
+const finalizationDataPrefix = "f"
+const genesisHashPrefix = "g"
+const weekStatsPrefix = "w"
+const totalSupplyPrefix = "ts"
+const internalTransactionsPrefix = "i"
+const yieldPrefix = "y"
+const validatorsYieldPrefix = "vy"
+const multipliedYieldPrefix = "my"
 
 type Storage struct {
 	db   *pebble.DB
@@ -93,42 +94,45 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 	return value, closer, nil
 }
 
-func getPrefix(o interface{}) (ret string) {
+func GetPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
 	case *[]storage.Account, []storage.Account:
-		ret = AccountPrefix
+		ret = accountPrefix
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
-		ret = LogsPrefix
+		ret = logsPrefix
 	case *models.Transaction, models.Transaction:
-		ret = TransactionPrefix
+		ret = transactionPrefix
 	case *models.Pbft, models.Pbft:
-		ret = PbftPrefix
+		ret = pbftPrefix
 	case *models.Dag, models.Dag:
-		ret = DagsPrefix
+		ret = dagsPrefix
 	case *storage.AddressStats, storage.AddressStats:
-		ret = StatsPrefix
+		ret = statsPrefix
 	case *storage.FinalizationData, storage.FinalizationData:
-		ret = FinalizationDataPrefix
+		ret = finalizationDataPrefix
 	case *storage.GenesisHash, storage.GenesisHash:
-		ret = GenesisHashPrefix
+		ret = genesisHashPrefix
 	case *storage.WeekStats, storage.WeekStats:
-		ret = WeekStatsPrefix
+		ret = weekStatsPrefix
 	case *storage.TotalSupply, storage.TotalSupply:
-		ret = TotalSupplyPrefix
+		ret = totalSupplyPrefix
 	case *models.InternalTransactionsResponse, models.InternalTransactionsResponse:
-		ret = InternalTransactionsPrefix
+		ret = internalTransactionsPrefix
 	case *storage.Yield, storage.Yield:
-		ret = YieldPrefix
+		ret = yieldPrefix
 	case *storage.ValidatorsYield, storage.ValidatorsYield:
-		ret = ValidatorsYieldPrefix
+		ret = validatorsYieldPrefix
 	case *storage.MultipliedYield, storage.MultipliedYield:
-		ret = MultipliedYieldPrefix
+		ret = multipliedYieldPrefix
 	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
-		ret = getPrefix(*o.(*interface{}))
+		ret = GetPrefix(*o.(*interface{}))
+		// We don't need to add separator in this case, so return from here
+		return
 	default:
 		log.WithFields(log.Fields{"type": tt, "value": o}).Fatalf("getPrefix: Unexpected type %T", tt)
 	}
+	ret += prefixSeparator
 	return
 }
 
@@ -188,10 +192,10 @@ func (s *Storage) ForEachFromKey(prefix, start_key []byte, fn func(key, res []by
 }
 
 func (s *Storage) forEachPrefix(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
-	prefix := getPrefixKey(getPrefix(&o), key_prefix)
+	prefix := getPrefixKey(GetPrefix(&o), key_prefix)
 	start_key := prefix
 	if start != nil {
-		start_key = getKey(getPrefix(&o), key_prefix, *start)
+		start_key = getKey(GetPrefix(&o), key_prefix, *start)
 	}
 	s.forEach(prefix, start_key, fn, navigate)
 }
@@ -205,7 +209,7 @@ func (s *Storage) ForEachBackwards(o interface{}, key_prefix string, start *uint
 }
 
 func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {
-	return s.addToDB(getKey(getPrefix(o), key1, key2), o)
+	return s.addToDB(getKey(GetPrefix(o), key1, key2), o)
 }
 
 func (s *Storage) addToDB(key []byte, o interface{}) error {
@@ -220,7 +224,7 @@ func (s *Storage) addToDB(key []byte, o interface{}) error {
 
 func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 	ptr := big.NewInt(0)
-	err := s.GetFromDB(ptr, []byte(getPrefix((*storage.TotalSupply)(ptr))))
+	err := s.GetFromDB(ptr, []byte(GetPrefix((*storage.TotalSupply)(ptr))))
 	if err != nil {
 		log.Fatal("GetTotalSupply ", err)
 	}
@@ -229,7 +233,7 @@ func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 
 func (s *Storage) GetAccounts() []storage.Account {
 	ptr := new([]storage.Account)
-	err := s.GetFromDB(ptr, getPrefixKey(getPrefix(ptr), ""))
+	err := s.GetFromDB(ptr, getPrefixKey(GetPrefix(ptr), ""))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAccounts failed: ", err)
 	}
@@ -238,7 +242,7 @@ func (s *Storage) GetAccounts() []storage.Account {
 
 func (s *Storage) GetWeekStats(year, week int32) storage.WeekStats {
 	ptr := storage.MakeEmptyWeekStats()
-	ptr.Key = []byte(getWeekKey(getPrefix(ptr), year, week))
+	ptr.Key = []byte(getWeekKey(GetPrefix(ptr), year, week))
 	err := s.GetFromDB(ptr, ptr.Key)
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetWeekStats failed")
@@ -248,7 +252,7 @@ func (s *Storage) GetWeekStats(year, week int32) storage.WeekStats {
 
 func (s *Storage) GetFinalizationData() *storage.FinalizationData {
 	ptr := new(storage.FinalizationData)
-	err := s.GetFromDB(ptr, []byte(getPrefix(ptr)))
+	err := s.GetFromDB(ptr, []byte(GetPrefix(ptr)))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetFinalizationData failed")
 	}
@@ -257,7 +261,7 @@ func (s *Storage) GetFinalizationData() *storage.FinalizationData {
 
 func (s *Storage) GetAddressStats(addr string) *storage.AddressStats {
 	ptr := storage.MakeEmptyAddressStats(addr)
-	err := s.GetFromDB(ptr, getKey(getPrefix(ptr), addr, 0))
+	err := s.GetFromDB(ptr, getKey(GetPrefix(ptr), addr, 0))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAddressStats ", err)
 	}
@@ -266,13 +270,13 @@ func (s *Storage) GetAddressStats(addr string) *storage.AddressStats {
 
 func (s *Storage) GenesisHashExist() bool {
 	ptr := new(storage.GenesisHash)
-	err := s.GetFromDB(ptr, []byte(getPrefix(ptr)))
+	err := s.GetFromDB(ptr, []byte(GetPrefix(ptr)))
 	return err == nil
 }
 
 func (s *Storage) GetGenesisHash() storage.GenesisHash {
 	ptr := new(storage.GenesisHash)
-	err := s.GetFromDB(ptr, []byte(getPrefix(ptr)))
+	err := s.GetFromDB(ptr, []byte(GetPrefix(ptr)))
 	if err != nil {
 		log.WithError(err).Fatal("GetGenesisHash failed")
 	}
@@ -281,7 +285,7 @@ func (s *Storage) GetGenesisHash() storage.GenesisHash {
 
 func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactionsResponse {
 	ptr := new(models.InternalTransactionsResponse)
-	err := s.GetFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
+	err := s.GetFromDB(ptr, getPrefixKey(GetPrefix(ptr), hash))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetInternalTransactions failed")
 	}
@@ -290,7 +294,7 @@ func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactio
 
 func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse {
 	ptr := new(models.TransactionLogsResponse)
-	err := s.GetFromDB(ptr, getPrefixKey(getPrefix(ptr), hash))
+	err := s.GetFromDB(ptr, getPrefixKey(GetPrefix(ptr), hash))
 	for i, eventLog := range ptr.Data {
 		name, params, err := events.DecodeEventDynamic(eventLog)
 		if err != nil {
@@ -307,7 +311,7 @@ func (s *Storage) GetTransactionLogs(hash string) models.TransactionLogsResponse
 }
 
 func (s *Storage) GetValidatorYield(validator string, block uint64) (res storage.Yield) {
-	err := s.GetFromDB(&res, getKey(getPrefix(&res), validator, block))
+	err := s.GetFromDB(&res, getKey(GetPrefix(&res), validator, block))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetValidatorYield failed")
 	}
@@ -320,7 +324,7 @@ func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
 }
 
 func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
-	err := s.GetFromDB(&res, getPrefixKey(getPrefix(&res), strings.ToLower(hash)))
+	err := s.GetFromDB(&res, getPrefixKey(GetPrefix(&res), strings.ToLower(hash)))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetTransactionByHash failed")
 	}
