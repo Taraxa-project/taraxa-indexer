@@ -474,13 +474,10 @@ components:
       required:
         - hash
         - blockNumber
-        - transactionIndex
         - from
         - to
         - value
-        - gasUsed
-        - gasPrice
-        - nonce
+        - gasCost
         - timestamp
         - status
         - type
@@ -496,8 +493,6 @@ components:
           $ref: "#/components/schemas/CallData"
         input:
           type: string
-        transactionIndex:
-          $ref: "#/components/schemas/Counter"
         from:
           $ref: "#/components/schemas/Address"
         to:
@@ -505,11 +500,7 @@ components:
         value:
           type: string
           example: "0"
-        gasUsed:
-          $ref: "#/components/schemas/Counter"
-        gasPrice:
-          $ref: "#/components/schemas/Counter"
-        nonce:
+        gasCost:
           $ref: "#/components/schemas/Counter"
         timestamp:
           $ref: "#/components/schemas/Timestamp"

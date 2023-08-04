@@ -23,11 +23,10 @@ func TestUpdateBalancesInternal(t *testing.T) {
 		},
 	}}
 	trx := models.Transaction{
-		From:     "0x1111111111111111111111111111111111111111",
-		To:       "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-		GasPrice: uint64(1),
-		GasUsed:  uint64(1),
-		Value:    "20",
+		From:    "0x1111111111111111111111111111111111111111",
+		To:      "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
+		GasCost: uint64(1),
+		Value:   "20",
 	}
 
 	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
