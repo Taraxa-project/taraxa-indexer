@@ -43,6 +43,9 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 		var o OldTransaction
 		count := 0
 		s.ForEachFromKey([]byte(pebble.TransactionPrefix), last_key, func(key, res []byte) (stop bool) {
+			if len(res) < 100 {
+				return false
+			}
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
 				if err.Error() == "rlp: too few elements for migration.OldTransaction" {
@@ -50,9 +53,6 @@ func (m *RemoveNonceTxIndexAddFeeMigration) Apply(s *pebble.Storage) error {
 				}
 				// These two errors happen on GENESIS transaction and in that case we don't need to migrate it
 				if err.Error() == "rlp: input string too long for uint64, decoding into (migration.OldTransaction).GasUsed" {
-					return false
-				}
-				if err.Error() == "rlp: expected input list for migration.OldTransaction" {
 					return false
 				}
 				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding Transaction")
