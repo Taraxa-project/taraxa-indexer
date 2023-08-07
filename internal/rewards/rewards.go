@@ -104,6 +104,9 @@ func CalculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData)
 func GetValidatorsYield(rewards map[string]*big.Int, validators []dpos_interface.DposInterfaceValidatorData, is_eligible func(*big.Int) bool) []storage.ValidatorYield {
 	ret := make([]storage.ValidatorYield, 0, len(validators))
 	for _, v := range validators {
+		if v.Info.TotalStake.Cmp(big.NewInt(0)) == 0 {
+			continue
+		}
 		validator := strings.ToLower(v.Account.Hex())
 		if rewards[validator] != nil {
 			ret = append(ret, storage.ValidatorYield{Validator: validator, Yield: GetMultipliedYield(rewards[validator], v.Info.TotalStake)})
