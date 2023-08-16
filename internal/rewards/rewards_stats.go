@@ -23,6 +23,13 @@ type totalRewards struct {
 	bonus *big.Int
 }
 
+func ZeroTotalRewards() (tr totalRewards) {
+	tr.dags = big.NewInt(0)
+	tr.votes = big.NewInt(0)
+	tr.bonus = big.NewInt(0)
+	return
+}
+
 type stats struct {
 	TotalVotesWeight int64
 	MaxVotesWeight   int64
@@ -80,20 +87,26 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.T
 	return
 }
 
-func calculateTotalRewards(config *common.ChainConfig, totalStake *big.Int) (tr totalRewards) {
+func calculateTotalRewards(config *common.ChainConfig, totalStake *big.Int, noVotes bool) (tr totalRewards) {
 	// calculate total rewards
 	totalRewards := big.NewInt(0).Mul(totalStake, config.YieldPercentage)
 	totalRewards.Div(totalRewards, big.NewInt(0).Mul(big.NewInt(100), config.BlocksPerYear))
+
+	tr = ZeroTotalRewards()
+
+	// Should only happen for block 1, so we are distributing all rewards to dag blocks producers
+	if noVotes {
+		tr.dags = totalRewards
+		return
+	}
+
 	// calculate dags rewards
-	tr.dags = big.NewInt(0)
 	tr.dags.Mul(totalRewards, config.DagProposersReward).Div(tr.dags, big.NewInt(100))
 
 	// calculate bonus reward
-	tr.bonus = big.NewInt(0)
 	tr.bonus.Div(big.NewInt(0).Mul(totalRewards, config.MaxBlockAuthorReward), big.NewInt(100))
 
 	// calculate votes rewards
-	tr.votes = big.NewInt(0)
 	tr.votes.Sub(totalRewards, tr.dags)
 	tr.votes.Sub(tr.votes, tr.bonus)
 
