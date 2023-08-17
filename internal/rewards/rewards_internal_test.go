@@ -88,9 +88,14 @@ func TestCalculateTotalRewards(t *testing.T) {
 	votes_reward := big.NewInt(0)
 	votes_reward.Mul(blockReward, votes_rewards_part).Div(votes_reward, big.NewInt(100))
 
-	totalRewards := calculateTotalRewards(config, totalStake)
+	totalRewards := calculateTotalRewards(config, totalStake, false)
 	assert.Equal(t, dags_reward, totalRewards.dags)
 	assert.Equal(t, votes_reward, totalRewards.votes)
+
+	totalRewards = calculateTotalRewards(config, totalStake, true)
+
+	assert.Equal(t, blockReward, totalRewards.dags)
+	assert.Equal(t, big.NewInt(0), totalRewards.votes)
 }
 
 func TestRewards(t *testing.T) {
@@ -149,7 +154,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 8
 
 		// Expected block reward
-		totalRewards := calculateTotalRewards(r.config.Chain, total_stake)
+		totalRewards := calculateTotalRewards(r.config.Chain, total_stake, false)
 		rewards, _ := r.rewardsFromStats(total_stake, &rewardsStats)
 		// We have 1 out of 2 bonus votes, so block author should get half of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(totalRewards.bonus, big.NewInt(2)), rewards[r.blockAuthor])
@@ -175,7 +180,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 13
 
 		// Expected block reward
-		totalRewards := calculateTotalRewards(r.config.Chain, total_stake)
+		totalRewards := calculateTotalRewards(r.config.Chain, total_stake, false)
 		rewards, _ := r.rewardsFromStats(total_stake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(totalRewards.bonus, big.NewInt(4)), rewards[r.blockAuthor])

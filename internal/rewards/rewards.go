@@ -45,7 +45,7 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards m
 	rewards = make(map[string]*big.Int)
 	total_reward = big.NewInt(0)
 
-	totalRewards := calculateTotalRewards(r.config.Chain, totalStake)
+	totalRewards := calculateTotalRewards(r.config.Chain, totalStake, stats.TotalVotesWeight == 0)
 	for addr, s := range stats.ValidatorStats {
 		if rewards[addr] == nil {
 			rewards[addr] = big.NewInt(0)
