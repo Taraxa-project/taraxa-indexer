@@ -66,13 +66,22 @@ type Transaction struct {
 const emptyInput = "0x"
 const emptyReceiver = ""
 
-func GetTransactionType(to, input string, internal bool) models.TransactionType {
+func GetInternalTransactionTarget(trace TraceEntry) string {
+	if trace.Action.To != "" {
+		return trace.Action.To
+	}
+	return trace.Result.Address
+}
+
+func GetTransactionType(to, input, txType string, internal bool) models.TransactionType {
 	trx_type := 0
 	// add offset if transaction is internal
 	if internal {
 		trx_type = 3
+		if txType == "create" {
+			return models.InternalContractCreation
+		}
 	}
-
 	if to == emptyReceiver {
 		trx_type += int(models.ContractCreation)
 	} else if input != emptyInput {
@@ -86,7 +95,7 @@ func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transac
 	trx.BlockNumber = common.ParseUInt(t.BlockNumber)
 	trx.GasCost = common.ParseUInt(t.GasPrice) * common.ParseUInt(t.GasUsed)
 	trx.Status = common.ParseBool(t.Status)
-	trx.Type = GetTransactionType(trx.To, t.Input, false)
+	trx.Type = GetTransactionType(trx.To, t.Input, "", false)
 	if trx.Type == models.ContractCreation {
 		trx.To = t.ContractAddress
 	}
@@ -134,6 +143,7 @@ type TransactionTrace struct {
 type TraceEntryResult struct {
 	Output  string `json:"output"`
 	GasUsed string `json:"gasUsed"`
+	Address string `json:"address,omitempty"`
 }
 
 type TraceEntry struct {
