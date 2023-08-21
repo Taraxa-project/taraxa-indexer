@@ -74,33 +74,21 @@ func GetInternalTransactionTarget(trace TraceEntry) string {
 }
 
 func GetTransactionType(to, input, txType string, internal bool) models.TransactionType {
-	trx_type := 0
-	// add offset if transaction is internal
 	if internal {
-		trx_type = 3
-		if internal {
-			trx_type = 3
-			if txType == "create" {
-				return models.InternalContractCreation
-			} else if txType == "call" {
-				return models.InternalContractCall
-			}
-			return models.InternalTransfer
-		} else {
-			if to == emptyReceiver {
-				return models.ContractCreation
-			} else if input != emptyInput {
-				return models.ContractCall
-			}
-			return models.Transfer
+		if txType == "create" {
+			return models.InternalContractCreation
+		} else if txType == "call" && input != emptyInput {
+			return models.InternalContractCall
 		}
+		return models.InternalTransfer
+	} else {
+		if to == emptyReceiver {
+			return models.ContractCreation
+		} else if input != emptyInput {
+			return models.ContractCall
+		}
+		return models.Transfer
 	}
-	if to == emptyReceiver {
-		trx_type += int(models.ContractCreation)
-	} else if input != emptyInput {
-		trx_type += int(models.ContractCall)
-	}
-	return models.TransactionType(trx_type)
 }
 
 func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transaction) {
