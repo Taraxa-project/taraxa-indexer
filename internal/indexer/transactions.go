@@ -113,10 +113,10 @@ func (bc *blockContext) getTransactionsOld(trxHashes []string) (trxs []chain.Tra
 func makeInternal(trx models.Transaction, entry chain.TraceEntry, gasCost uint64) (internal models.Transaction) {
 	internal = trx
 	internal.From = entry.Action.From
-	internal.To = entry.Action.To
+	internal.To = chain.GetInternalTransactionTarget(entry)
 	internal.Value = entry.Action.Value
 	internal.GasCost = common.ParseUInt(entry.Result.GasUsed) * gasCost
-	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, true)
+	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, entry.Type, true)
 	internal.BlockNumber = trx.BlockNumber
 	return
 }
