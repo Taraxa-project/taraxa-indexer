@@ -422,6 +422,7 @@ components:
         - rank
         - address
         - pbftCount
+        - yield
       properties:
         rank:
           type: integer
@@ -433,6 +434,12 @@ components:
           $ref: "#/components/schemas/Address"
         pbftCount:
           $ref: "#/components/schemas/Counter"
+        yield:
+          type: string
+          example: "0,1999"
+          x-oapi-codegen-extra-tags:
+            rlp: "-"
+            json: "yield,omitempty"
     EventLog:
       type: object
       required:
