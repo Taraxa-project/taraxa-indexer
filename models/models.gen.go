@@ -154,6 +154,7 @@ type Validator struct {
 	Address   Address `json:"address"`
 	PbftCount Counter `json:"pbftCount"`
 	Rank      uint64  `json:"rank" rlp:"-"`
+	Yield     string  `json:"yield,omitempty" rlp:"-"`
 }
 
 // ValidatorsPaginatedResponse defines model for ValidatorsPaginatedResponse.

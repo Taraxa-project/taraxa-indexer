@@ -116,6 +116,17 @@ func (a *ApiHandler) GetValidators(ctx echo.Context, params GetValidatorsParams)
 		HasNext:   tn.ISOWeekYear() != int(year) || tn.ISOWeek() != int(week),
 	}
 
+	// return last yield only for the last week stats
+	last_year, last_week := getYearWeek(nil)
+	if last_week == week && last_year == year {
+		for i := 0; i < len(ret); i++ {
+			resp, err := a.getAddressYield(ret[i].Address, nil)
+			if err == nil {
+				ret[i].Yield = resp.Yield
+			}
+		}
+	}
+
 	response := struct {
 		ValidatorsPaginatedResponse
 		Data []Validator  `json:"data"`
@@ -165,6 +176,14 @@ func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params
 		}
 	}
 
+	last_year, last_week := getYearWeek(nil)
+	if last_week == week && last_year == year {
+		resp, err := a.getAddressYield(address, nil)
+		if err == nil {
+			validator.Yield = resp.Yield
+		}
+	}
+
 	return ctx.JSON(http.StatusOK, validator)
 }
 
@@ -180,17 +199,25 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error 
 	return ctx.JSON(http.StatusOK, a.storage.GetTransactionLogs(hash))
 }
 
-func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
+func (a *ApiHandler) getAddressYield(address AddressParam, block *uint64) (resp *models.YieldResponse, err error) {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
-	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.ValidatorsYieldSavingInterval)
+	block_num := common.GetYieldIntervalEnd(pbft_count, block, a.config.ValidatorsYieldSavingInterval)
 	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
 	if pbft_count < block_num {
-		return fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+		err = fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+		return
 	}
-	resp := models.YieldResponse{
+	return &models.YieldResponse{
 		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
 		ToBlock:   block_num,
 		Yield:     a.storage.GetValidatorYield(address, block_num).Yield,
+	}, nil
+}
+
+func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
+	resp, err := a.getAddressYield(address, params.BlockNumber)
+	if err != nil {
+		return err
 	}
 	return ctx.JSON(http.StatusOK, resp)
 }
