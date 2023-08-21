@@ -118,6 +118,7 @@ type StatsResponse struct {
 	LastTransactionTimestamp *LastTimestamp `json:"lastTransactionTimestamp" rlp:"nil"`
 	PbftCount                Counter        `json:"pbftCount"`
 	TransactionsCount        Counter        `json:"transactionsCount"`
+	Yield                    string         `json:"yield"`
 }
 
 // Timestamp defines model for Timestamp.

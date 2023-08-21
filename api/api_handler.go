@@ -92,6 +92,9 @@ func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) er
 	log.WithField("address", address).Debug("GetAddressStats")
 
 	addr := a.storage.GetAddressStats(address)
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, nil, a.config.ValidatorsYieldSavingInterval)
+	addr.Yield = a.storage.GetTotalYield(block_num).Yield
 	return ctx.JSON(http.StatusOK, addr.StatsResponse)
 }
 

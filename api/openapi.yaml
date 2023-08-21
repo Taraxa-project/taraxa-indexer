@@ -570,6 +570,7 @@ components:
     StatsResponse:
       type: object
       required:
+        - yield
         - pbftCount
         - dagsCount
         - transactionsCount
@@ -577,6 +578,9 @@ components:
         - lastDagTimestamp
         - lastTransactionTimestamp
       properties:
+        yield:
+          type: string
+          example: "0,1999"
         pbftCount:
           $ref: "#/components/schemas/Counter"
         dagsCount:
