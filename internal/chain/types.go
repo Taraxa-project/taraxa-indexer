@@ -78,9 +78,22 @@ func GetTransactionType(to, input, txType string, internal bool) models.Transact
 	// add offset if transaction is internal
 	if internal {
 		trx_type = 3
-		if txType == "create" {
-			return models.InternalContractCreation
-		}
+if internal {
+	trx_type = 3
+	if txType == "create" {
+		return models.InternalContractCreation
+	} else if txType = "call" {
+	    return models.InternalContractCall
+	}
+	return models.InternalContractTransfer
+} else {
+	if to == emptyReceiver {
+		return models.ContractCreation
+	} else if input != emptyInput {
+		return models.ContractCall
+	}
+	return models.Transfer
+}
 	}
 	if to == emptyReceiver {
 		trx_type += int(models.ContractCreation)
