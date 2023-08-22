@@ -15,18 +15,61 @@ import (
 var multiplier = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
 var percentage_multiplier = big.NewInt(10000)
 
+type Validators struct {
+	config     *common.Config
+	validators map[string]dpos_interface.DposInterfaceValidatorBasicInfo
+}
+
+func MakeValidators(config *common.Config, validators []dpos_interface.DposInterfaceValidatorData) *Validators {
+	v := Validators{config, make(map[string]dpos_interface.DposInterfaceValidatorBasicInfo)}
+	for _, val := range validators {
+		v.validators[strings.ToLower(val.Account.Hex())] = val.Info
+	}
+	return &v
+}
+
+func (v *Validators) IsEligible(address string) bool {
+	validator, ok := v.validators[strings.ToLower(address)]
+	if ok {
+		return v.config.IsEligible(validator.TotalStake)
+	}
+	return false
+}
+
+func (v *Validators) Exists(address string) bool {
+	_, ok := v.validators[strings.ToLower(address)]
+	return ok
+}
+
 type Rewards struct {
-	storage storage.Storage
-	batch   storage.Batch
-	config  *common.Config
+	storage    storage.Storage
+	batch      storage.Batch
+	config     *common.Config
+	validators *Validators
 
 	blockNum    uint64
 	blockAuthor string
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block_num uint64, block_author string) *Rewards {
-	r := Rewards{storage, batch, config, block_num, block_author}
+func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *models.Pbft, validators []dpos_interface.DposInterfaceValidatorData) *Rewards {
+	r := Rewards{storage, batch, config, MakeValidators(config, validators), block.Number, strings.ToLower(block.Author)}
 	return &r
+}
+
+func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []models.Transaction, votes chain.VotesResponse) {
+	r.addTotalMinted(total_minted)
+
+	totalStake := CalculateTotalStake(r.validators)
+	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
+		log.WithFields(log.Fields{"total_stake": totalStake}).Info("totalStake")
+	}
+	rewards, total_reward := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
+	validators_yield := GetValidatorsYield(rewards, r.validators)
+	if total_reward.Cmp(total_minted) != 0 {
+		log.WithFields(log.Fields{"total_reward_check": total_reward, "total_minted": total_minted}).Fatal("Total reward check failed")
+	}
+	r.batch.AddToBatchSingleKey(storage.ValidatorsYield{Yields: validators_yield}, storage.FormatIntToKey(r.blockNum))
+	r.batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: GetMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
 }
 
 func (r *Rewards) addTotalMinted(amount *big.Int) {
@@ -47,6 +90,9 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards m
 
 	totalRewards := calculateTotalRewards(r.config.Chain, totalStake, stats.TotalVotesWeight == 0)
 	for addr, s := range stats.ValidatorStats {
+		if !r.validators.Exists(addr) {
+			continue
+		}
 		if rewards[addr] == nil {
 			rewards[addr] = big.NewInt(0)
 		}
@@ -93,45 +139,28 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards m
 	return
 }
 
-func CalculateTotalStake(validators []dpos_interface.DposInterfaceValidatorData) *big.Int {
+func CalculateTotalStake(validators *Validators) *big.Int {
 	totalStake := big.NewInt(0)
-	for _, v := range validators {
-		totalStake.Add(totalStake, v.Info.TotalStake)
+	for _, v := range validators.validators {
+		totalStake.Add(totalStake, v.TotalStake)
 	}
 	return totalStake
 }
 
-func GetValidatorsYield(rewards map[string]*big.Int, validators []dpos_interface.DposInterfaceValidatorData, is_eligible func(*big.Int) bool) []storage.ValidatorYield {
-	ret := make([]storage.ValidatorYield, 0, len(validators))
-	for _, v := range validators {
-		if v.Info.TotalStake.Cmp(big.NewInt(0)) == 0 {
+func GetValidatorsYield(rewards map[string]*big.Int, validators *Validators) []storage.ValidatorYield {
+	ret := make([]storage.ValidatorYield, 0, len(validators.validators))
+	for v_addr, v := range validators.validators {
+		if v.TotalStake.Cmp(big.NewInt(0)) == 0 {
 			continue
 		}
-		validator := strings.ToLower(v.Account.Hex())
-		if rewards[validator] != nil {
-			ret = append(ret, storage.ValidatorYield{Validator: validator, Yield: GetMultipliedYield(rewards[validator], v.Info.TotalStake)})
-		} else if is_eligible(v.Info.TotalStake) {
-			ret = append(ret, storage.ValidatorYield{Validator: validator, Yield: big.NewInt(0)})
+		if rewards[v_addr] != nil {
+			ret = append(ret, storage.ValidatorYield{Validator: v_addr, Yield: GetMultipliedYield(rewards[v_addr], v.TotalStake)})
+		} else if validators.IsEligible(v_addr) {
+			ret = append(ret, storage.ValidatorYield{Validator: v_addr, Yield: big.NewInt(0)})
 		}
 	}
 
 	return ret
-}
-
-func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []models.Transaction, votes chain.VotesResponse, validators []dpos_interface.DposInterfaceValidatorData) {
-	r.addTotalMinted(total_minted)
-
-	totalStake := CalculateTotalStake(validators)
-	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
-		log.WithFields(log.Fields{"total_stake": totalStake}).Info("totalStake")
-	}
-	rewards, total_reward := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
-	validators_yield := GetValidatorsYield(rewards, validators, r.config.IsEligible)
-	if total_reward.Cmp(total_minted) != 0 {
-		log.WithFields(log.Fields{"total_reward_check": total_reward, "total_minted": total_minted}).Fatal("Total reward check failed")
-	}
-	r.batch.AddToBatchSingleKey(storage.ValidatorsYield{Yields: validators_yield}, storage.FormatIntToKey(r.blockNum))
-	r.batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: GetMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
 }
 
 func (r *Rewards) AfterCommit() {
