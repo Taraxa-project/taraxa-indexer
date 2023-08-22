@@ -3,6 +3,7 @@ package rewards
 import (
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
@@ -100,14 +101,25 @@ func TestCalculateTotalRewards(t *testing.T) {
 
 func TestRewards(t *testing.T) {
 	config := makeTestConfig()
+	validator1_addr := strings.ToLower(ce.HexToAddress("0x1").Hex())
+	validator2_addr := strings.ToLower(ce.HexToAddress("0x2").Hex())
+	validator3_addr := strings.ToLower(ce.HexToAddress("0x3").Hex())
+	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
+
+	validators_list := []dpos_interface.DposInterfaceValidatorData{
+		{Account: ce.HexToAddress(validator1_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress(validator2_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress(validator3_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress(validator4_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+	}
 
 	st := pebble.NewStorage("")
-
-	r := MakeRewards(st, st.NewBatch(), config, 1, "0x4")
+	block := models.Pbft{Number: 1, Author: validator4_addr}
+	r := MakeRewards(st, st.NewBatch(), config, &block, validators_list)
 
 	trxs := makeTransactions(5)
-	dags := makeDags(AddressCount{"0x1": 1, "0x2": 2, "0x3": 2})
-	votes := makeVotes(AddressCount{"0x1": 1, "0x2": 2, "0x3": 2})
+	dags := makeDags(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
+	votes := makeVotes(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
 	assert.Equal(t, 5, len(dags))
 	assert.Equal(t, 3, len(votes.Votes))
 	assert.Equal(t, 5, len(trxs))
@@ -122,25 +134,35 @@ func TestRewards(t *testing.T) {
 	reward1_vote_part := (total_reward * (100 - config.Chain.DagProposersReward.Int64() - config.Chain.MaxBlockAuthorReward.Int64()) / 100) / votes.PeriodTotalVotesCount
 	// Calculate total reward for validator
 	reward1 := big.NewInt(reward1_dag_part + reward1_vote_part)
-	assert.Equal(t, reward1, rewards["0x1"])
+	assert.Equal(t, reward1, rewards[validator1_addr])
 	// validator 2 and 3 should have the same reward that is two times bigger than reward1, because they have two times more dags and votes
-	assert.Equal(t, big.NewInt(0).Mul(reward1, big.NewInt(2)), rewards["0x2"])
-	assert.Equal(t, big.NewInt(0).Mul(reward1, big.NewInt(2)), rewards["0x3"])
+	assert.Equal(t, big.NewInt(0).Mul(reward1, big.NewInt(2)), rewards[validator2_addr])
+	assert.Equal(t, big.NewInt(0).Mul(reward1, big.NewInt(2)), rewards[validator3_addr])
 }
 
 func TestRewardsWithNodeData(t *testing.T) {
 	config := common.DefaultConfig()
+	st := pebble.NewStorage("")
 
 	TaraPrecision := big.NewInt(1e+18)
 	DefaultMinimumDeposit := big.NewInt(0).Mul(big.NewInt(1000), TaraPrecision)
 
+	validator1_addr := strings.ToLower(ce.HexToAddress("0x1").Hex())
+	validator2_addr := strings.ToLower(ce.HexToAddress("0x2").Hex())
+	validator3_addr := strings.ToLower(ce.HexToAddress("0x3").Hex())
+	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
+	validator5_addr := strings.ToLower(ce.HexToAddress("0x5").Hex())
+	validators_list := []dpos_interface.DposInterfaceValidatorData{
+		{Account: ce.HexToAddress(validator1_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress(validator2_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress(validator3_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress(validator4_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+		{Account: ce.HexToAddress(validator5_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+	}
+
 	// Simulated rewards statistics
-	validator1_addr := "0x1"
-	validator2_addr := "0x2"
-	validator4_addr := "0x4"
-	validator5_addr := "0x5"
-	st := pebble.NewStorage("")
-	r := MakeRewards(st, st.NewBatch(), config, 1, "0x3")
+	block := models.Pbft{Number: 1, Author: validator3_addr}
+	r := MakeRewards(st, st.NewBatch(), config, &block, validators_list)
 	total_stake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
 	{
 		rewardsStats := stats{}
@@ -248,31 +270,30 @@ func TestRewardsWithNodeData(t *testing.T) {
 }
 
 func TestYieldsCalculation(t *testing.T) {
+	config := common.DefaultConfig()
+	config.Chain.BlocksPerYear = big.NewInt(10)
+
 	total_minted := int64(15000000)
-	validators := []dpos_interface.DposInterfaceValidatorData{
+	validators_list := []dpos_interface.DposInterfaceValidatorData{
 		{Account: ce.HexToAddress("0x1"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
 		{Account: ce.HexToAddress("0x2"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(10000000)}},
 		{Account: ce.HexToAddress("0x3"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(15000000)}},
 		{Account: ce.HexToAddress("0x4"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(20000000)}},
 		{Account: ce.HexToAddress("0x5"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(25000000)}},
 	}
+	validators := MakeValidators(config, validators_list)
 	totalStake := CalculateTotalStake(validators)
-
-	config := common.DefaultConfig()
-	config.Chain.BlocksPerYear = big.NewInt(10)
-
 	rewards := make(map[string]*big.Int)
 
 	total_check := uint64(0)
-	for _, v := range validators {
-		a := v.Account.Hex()
-		rewards[a] = big.NewInt(0).Mul(big.NewInt(int64(total_minted)), v.Info.TotalStake)
+	for a, v := range validators.validators {
+		rewards[a] = big.NewInt(0).Mul(big.NewInt(int64(total_minted)), v.TotalStake)
 		rewards[a].Div(rewards[a], totalStake)
 		total_check += rewards[a].Uint64()
 	}
 	assert.Equal(t, uint64(total_minted), total_check)
 
-	validators_yield := GetValidatorsYield(rewards, validators, config.IsEligible)
+	validators_yield := GetValidatorsYield(rewards, validators)
 
 	perc := float64(0)
 	for _, y := range validators_yield {
@@ -295,7 +316,8 @@ func TestTotalYieldSaving(t *testing.T) {
 	}
 	batch.CommitBatch()
 
-	r := MakeRewards(st, st.NewBatch(), config, 10, "0x4")
+	block := models.Pbft{Number: 10, Author: "0x4"}
+	r := MakeRewards(st, st.NewBatch(), config, &block, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -337,7 +359,8 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	}
 	batch.CommitBatch()
 
-	r := MakeRewards(st, st.NewBatch(), config, 10, "0x4")
+	block := models.Pbft{Number: 10, Author: "0x4"}
+	r := MakeRewards(st, st.NewBatch(), config, &block, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{

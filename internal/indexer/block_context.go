@@ -74,6 +74,12 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	}
 
 	total_minted := common.ParseStringToBigInt(raw.TotalReward)
+
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, validators)
+	if total_minted.Cmp(big.NewInt(0)) == 1 {
+		r.Process(total_minted, bc.dags, bc.transactions, *votes)
+	}
+
 	bc.balances.AddToBalance(common.DposContractAddress, total_minted)
 
 	if bc.block.Number%1000 == 0 {
@@ -83,11 +89,6 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 		}
 	}
 	bc.Batch.SaveAccounts(bc.balances)
-
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block.Number, bc.block.Author)
-	if total_minted.Cmp(big.NewInt(0)) == 1 {
-		r.Process(total_minted, bc.dags, bc.transactions, *votes, validators)
-	}
 
 	dags_count = uint64(len(bc.dags))
 	trx_count = bc.block.TransactionCount
@@ -160,7 +161,6 @@ func (bc *blockContext) processDagsOld() (err error) {
 	if err != nil {
 		return
 	}
-	bc.dags = make([]chain.DagBlock, len(block_with_dags.Schedule.DagBlocksOrder))
 	tp := common.MakeThreadPool()
 	for i, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
 		tp.Go(common.MakeTaskWithResult(bc.processDag, dag_hash, &bc.dags[i], &err).Run)
