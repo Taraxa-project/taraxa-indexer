@@ -36,7 +36,7 @@ func (v *Validators) IsEligible(address string) bool {
 	return false
 }
 
-func (v *Validators) IsExists(address string) bool {
+func (v *Validators) Exists(address string) bool {
 	_, ok := v.validators[strings.ToLower(address)]
 	return ok
 }
@@ -90,7 +90,7 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards m
 
 	totalRewards := calculateTotalRewards(r.config.Chain, totalStake, stats.TotalVotesWeight == 0)
 	for addr, s := range stats.ValidatorStats {
-		if !r.validators.IsExists(addr) {
+		if !r.validators.Exists(addr) {
 			continue
 		}
 		if rewards[addr] == nil {
