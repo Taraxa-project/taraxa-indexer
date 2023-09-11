@@ -155,8 +155,6 @@ func GetValidatorsYield(rewards map[string]*big.Int, validators *Validators) []s
 		}
 		if rewards[v_addr] != nil {
 			ret = append(ret, storage.ValidatorYield{Validator: v_addr, Yield: GetMultipliedYield(rewards[v_addr], v.TotalStake)})
-		} else if validators.IsEligible(v_addr) {
-			ret = append(ret, storage.ValidatorYield{Validator: v_addr, Yield: big.NewInt(0)})
 		}
 	}
 
@@ -189,12 +187,11 @@ func (r *Rewards) processIntervalYield(batch storage.Batch) {
 
 func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 	start := uint64(0)
-	if r.blockNum > r.config.TotalYieldSavingInterval {
-		start = r.blockNum - r.config.TotalYieldSavingInterval
+	if r.blockNum > r.config.ValidatorsYieldSavingInterval {
+		start = r.blockNum - r.config.ValidatorsYieldSavingInterval
 	}
 
 	sum_by_validator := make(map[string]*big.Int)
-	count_by_validator := make(map[string]int64)
 
 	storage.ProcessIntervalData(r.storage, start, func(key string, o storage.ValidatorsYield) (stop bool) {
 		for _, y := range o.Yields {
@@ -202,14 +199,13 @@ func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 				sum_by_validator[y.Validator] = big.NewInt(0)
 			}
 			sum_by_validator[y.Validator].Add(sum_by_validator[y.Validator], y.Yield)
-			count_by_validator[y.Validator]++
 		}
 		batch.Remove(string(key))
 		return false
 	})
 
 	for val, sum := range sum_by_validator {
-		yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, count_by_validator[val])
+		yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.ValidatorsYieldSavingInterval))
 		log.WithFields(log.Fields{"validator": val, "yield": yield}).Info("processValidatorsIntervalYield")
 		batch.AddToBatch(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
 	}
