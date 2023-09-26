@@ -152,10 +152,11 @@ type TransactionsPaginatedResponse = PaginatedResponse
 
 // Validator defines model for Validator.
 type Validator struct {
-	Address   Address `json:"address"`
-	PbftCount Counter `json:"pbftCount"`
-	Rank      uint64  `json:"rank" rlp:"-"`
-	Yield     string  `json:"yield,omitempty" rlp:"-"`
+	Address           Address `json:"address"`
+	PbftCount         Counter `json:"pbftCount"`
+	Rank              uint64  `json:"rank" rlp:"-"`
+	RegistrationBlock *uint64 `json:"registrationBlock" rlp:"nil"`
+	Yield             string  `json:"yield,omitempty" rlp:"-"`
 }
 
 // ValidatorsPaginatedResponse defines model for ValidatorsPaginatedResponse.

@@ -184,6 +184,9 @@ func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params
 		}
 	}
 
+	statsResponse := a.storage.GetAddressStats(address).StatsResponse
+	validator.RegistrationBlock = statsResponse.ValidatorRegisteredBlock
+
 	return ctx.JSON(http.StatusOK, validator)
 }
 

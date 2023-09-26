@@ -423,6 +423,7 @@ components:
         - address
         - pbftCount
         - yield
+        - registrationBlock
       properties:
         rank:
           type: integer
@@ -440,6 +441,14 @@ components:
           x-oapi-codegen-extra-tags:
             rlp: "-"
             json: "yield,omitempty"
+        registrationBlock:
+          type: integer
+          format: uint64
+          example: 1676682705
+          nullable: true
+          # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
+          x-oapi-codegen-extra-tags:
+            rlp: "nil"
     EventLog:
       type: object
       required:
