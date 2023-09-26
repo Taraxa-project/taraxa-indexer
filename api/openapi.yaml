@@ -583,6 +583,7 @@ components:
         - lastPbftTimestamp
         - lastDagTimestamp
         - lastTransactionTimestamp
+        - validatorRegisteredBlock
       properties:
         pbftCount:
           $ref: "#/components/schemas/Counter"
@@ -596,6 +597,14 @@ components:
           $ref: "#/components/schemas/LastTimestamp"
         lastTransactionTimestamp:
           $ref: "#/components/schemas/LastTimestamp"
+        validatorRegisteredBlock:
+          type: integer
+          format: uint64
+          example: 1676682705
+          nullable: true
+          # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
+          x-oapi-codegen-extra-tags:
+            rlp: "nil"
     PaginatedResponse:
       type: object
       required:
