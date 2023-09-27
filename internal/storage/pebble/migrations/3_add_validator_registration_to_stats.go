@@ -3,6 +3,7 @@ package migration
 import (
 	"context"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/events"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
@@ -12,7 +13,8 @@ import (
 )
 
 type AddValidatorRegistrationBlock struct {
-	id string
+	id            string
+	blockchain_ws string
 }
 
 func (m *AddValidatorRegistrationBlock) GetId() string {
@@ -38,7 +40,8 @@ func getCurrentBlockNumber() uint64 {
 
 func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 	// Ethereum node URL
-	ethereumURL := "https://rpc.mainnet.taraxa.io"
+	// Create an Ethereum client
+	client, err := chain.NewWsClient(m.blockchain_ws)
 
 	startBlock := uint64(0)
 	endBlock := uint64(999)
