@@ -1,14 +1,10 @@
 package migration
 
 import (
-	"context"
-
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
-	"github.com/Taraxa-project/taraxa-indexer/internal/events"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
-	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,17 +17,9 @@ func (m *AddValidatorRegistrationBlock) GetId() string {
 	return m.id
 }
 
-func getCurrentBlockNumber() uint64 {
+func getCurrentBlockNumber(client *chain.WsClient) uint64 {
 	// Ethereum node URL
-	ethereumURL := "https://rpc.mainnet.taraxa.io"
-	// Create an Ethereum client
-	client, err := ethclient.Dial(ethereumURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Get the current block number
-	blockNumber, err := client.BlockNumber(context.Background())
+	blockNumber, err := client.GetLatestPeriod()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,12 +31,16 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 	// Create an Ethereum client
 	client, err := chain.NewWsClient(m.blockchain_ws)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	startBlock := uint64(0)
 	endBlock := uint64(999)
-	current := getCurrentBlockNumber()
+	current := getCurrentBlockNumber(client)
 
 	for {
-		validators, err := events.GetValidatorsRegisteredInBlock(ethereumURL, startBlock, endBlock)
+		validators, err := GetValidatorsRegisteredInBlock(client, startBlock, endBlock)
 		if err != nil {
 			log.Fatal(err)
 		}
