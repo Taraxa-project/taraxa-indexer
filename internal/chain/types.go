@@ -49,6 +49,7 @@ type EventLog struct {
 	Topics           []string `json:"topics"`
 	TransactionHash  string   `json:"transactionHash"`
 	TransactionIndex string   `json:"transactionIndex"`
+	BlockNumber      string   `json:"blockNumber"`
 }
 
 type Transaction struct {
