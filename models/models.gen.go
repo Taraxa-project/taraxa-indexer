@@ -77,6 +77,9 @@ type InternalTransactionsResponse struct {
 // LastTimestamp defines model for LastTimestamp.
 type LastTimestamp = uint64
 
+// NilableUint64 defines model for NilableUint64.
+type NilableUint64 = uint64
+
 // PaginatedResponse defines model for PaginatedResponse.
 type PaginatedResponse struct {
 	End     Counter `json:"end"`
@@ -152,11 +155,11 @@ type TransactionsPaginatedResponse = PaginatedResponse
 
 // Validator defines model for Validator.
 type Validator struct {
-	Address           Address `json:"address"`
-	PbftCount         Counter `json:"pbftCount"`
-	Rank              uint64  `json:"rank" rlp:"-"`
-	RegistrationBlock *uint64 `json:"registrationBlock" rlp:"nil"`
-	Yield             string  `json:"yield,omitempty" rlp:"-"`
+	Address           Address        `json:"address"`
+	PbftCount         Counter        `json:"pbftCount"`
+	Rank              uint64         `json:"rank" rlp:"-"`
+	RegistrationBlock *NilableUint64 `json:"registrationBlock" rlp:"nil"`
+	Yield             string         `json:"yield,omitempty" rlp:"-"`
 }
 
 // ValidatorsPaginatedResponse defines model for ValidatorsPaginatedResponse.

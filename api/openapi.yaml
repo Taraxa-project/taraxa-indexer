@@ -360,6 +360,13 @@ components:
       type: integer
       format: uint64
       example: 1676682705
+    NilableUint64:
+      type: integer
+      format: uint64
+      nullable: true
+      # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
+      x-oapi-codegen-extra-tags:
+        rlp: "nil"
     Week:
       type: object
       properties:
@@ -442,13 +449,7 @@ components:
             rlp: "-"
             json: "yield,omitempty"
         registrationBlock:
-          type: integer
-          format: uint64
-          example: 1676682705
-          nullable: true
-          # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
-          x-oapi-codegen-extra-tags:
-            rlp: "nil"
+          $ref: "#/components/schemas/NilableUint64"
     EventLog:
       type: object
       required:

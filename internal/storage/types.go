@@ -122,10 +122,6 @@ type Yield struct {
 	Yield string `json:"yield"`
 }
 
-type ValidatorRegistration struct {
-	Block uint64 `json:"block"`
-}
-
 func FormatIntToKey(i uint64) string {
 	return fmt.Sprintf("%020d", i)
 }
