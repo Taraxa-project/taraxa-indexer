@@ -9,6 +9,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,6 +44,8 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 
 	step := uint64(1000)
 
+	batch := s.NewBatch()
+
 	for startBlock := uint64(0); startBlock < currentHead; startBlock += step {
 		endBlock := startBlock + step
 		validators, err := GetValidatorsRegisteredInBlock(client, startBlock, endBlock)
@@ -62,8 +65,10 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 			} else {
 				addressStats.ValidatorRegisteredBlock = &validator.BlockHeight
 			}
+			batch.AddToBatch(addressStats, addressStats.Address, 0)
 		}
 	}
+	batch.CommitBatch()
 	return nil
 }
 
@@ -85,7 +90,7 @@ func GetValidatorsRegisteredInBlock(client *chain.WsClient, from, to uint64) ([]
 			Validator string `json:"validator"`
 		}{}
 
-		event.Validator = strings.ToLower(eLog.Topics[1])
+		event.Validator = strings.ToLower(ethcommon.HexToAddress(eLog.Topics[1]).Hex())
 		validators = append(validators, ValidatorRegistration{Validator: event.Validator, BlockHeight: common.ParseUInt(eLog.BlockNumber)})
 		log.Infof("Found validator %s registered in block %d", event.Validator, common.ParseUInt(eLog.BlockNumber))
 	}
