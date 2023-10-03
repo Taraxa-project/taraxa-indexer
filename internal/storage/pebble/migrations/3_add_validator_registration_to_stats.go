@@ -42,7 +42,7 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 		return nil
 	}
 
-	step := uint64(1000)
+	step := uint64(100000)
 
 	batch := s.NewBatch()
 
