@@ -364,6 +364,7 @@ components:
       type: integer
       format: uint64
       nullable: true
+      example: 1676682705
       # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
       x-oapi-codegen-extra-tags:
         rlp: "nil"
@@ -430,6 +431,7 @@ components:
         - address
         - pbftCount
         - yield
+      optional:
         - registrationBlock
       properties:
         rank:
@@ -608,13 +610,7 @@ components:
         lastTransactionTimestamp:
           $ref: "#/components/schemas/LastTimestamp"
         validatorRegisteredBlock:
-          type: integer
-          format: uint64
-          example: 1676682705
-          nullable: true
-          # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
-          x-oapi-codegen-extra-tags:
-            rlp: "nil"
+          $ref: "#/components/schemas/NilableUint64"
     PaginatedResponse:
       type: object
       required:
