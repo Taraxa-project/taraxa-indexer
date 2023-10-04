@@ -71,6 +71,10 @@ func (c *ClientMock) GetGenesis() (genesis GenesisObject, err error) {
 	return GenesisObject{}, ErrNotImplemented
 }
 
+func (c *ClientMock) GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error) {
+	return nil, ErrNotImplemented
+}
+
 func (c *ClientMock) GetChainStats() (ns storage.FinalizationData, err error) {
 	return storage.FinalizationData{}, ErrNotImplemented
 }

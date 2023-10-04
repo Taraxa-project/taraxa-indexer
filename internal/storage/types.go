@@ -35,6 +35,13 @@ type AddressStats struct {
 	mutex   sync.RWMutex `rlp:"-"`
 }
 
+func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) uint64 {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.ValidatorRegisteredBlock = &blockHeight
+	return *a.ValidatorRegisteredBlock
+}
+
 func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()

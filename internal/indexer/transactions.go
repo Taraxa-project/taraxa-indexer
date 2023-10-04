@@ -48,13 +48,9 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		bc.balances.UpdateBalances(transactions[t_idx].From, receiver, transactions[t_idx].Value)
 
 		// process logs
-		logs := models.TransactionLogsResponse{
-			Data: transactions[t_idx].ExtractLogs(),
-		}
-		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
-		err = bc.balances.UpdateEvents(logs.Data)
+		err = bc.processTransactionLogs(transactions[t_idx])
 		if err != nil {
-			return err
+			return
 		}
 
 		if internal_transactions := bc.processInternalTransactions(traces[t_idx], t_idx, common.ParseUInt(transactions[t_idx].GasPrice)); internal_transactions != nil {

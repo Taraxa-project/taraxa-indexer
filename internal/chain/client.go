@@ -21,6 +21,7 @@ type Client interface {
 	GetChainStats() (ns storage.FinalizationData, err error)
 	SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error)
 	GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error)
+	GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error)
 	// Close disconnects from the node
 	Close()
 }

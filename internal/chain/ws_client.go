@@ -149,6 +149,17 @@ func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr VotesRespon
 	return
 }
 
+func (client *WsClient) GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error) {
+	err = client.rpc.Call(&logs, "eth_getLogs", map[string]interface{}{
+		"fromBlock": fmt.Sprintf("0x%x", fromBlock),
+		"toBlock":   fmt.Sprintf("0x%x", toBlock),
+		"address":   addresses,
+		"topics":    topics,
+	})
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
 func (client *WsClient) GetValidatorsAtBlock(block_num uint64) (validators []dpos_interface.DposInterfaceValidatorData, err error) {
 	return client.dpos.GetValidatorsAtBlock(big.NewInt(0).SetUint64(block_num))
 }
