@@ -348,14 +348,6 @@ components:
       type: integer
       format: uint64
       example: 123
-    LastTimestamp:
-      type: integer
-      format: uint64
-      example: 1676682705
-      nullable: true
-      # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
-      x-oapi-codegen-extra-tags:
-        rlp: "nil"
     Timestamp:
       type: integer
       format: uint64
@@ -604,11 +596,11 @@ components:
         transactionsCount:
           $ref: "#/components/schemas/Counter"
         lastPbftTimestamp:
-          $ref: "#/components/schemas/LastTimestamp"
+          $ref: "#/components/schemas/NilableUint64"
         lastDagTimestamp:
-          $ref: "#/components/schemas/LastTimestamp"
+          $ref: "#/components/schemas/NilableUint64"
         lastTransactionTimestamp:
-          $ref: "#/components/schemas/LastTimestamp"
+          $ref: "#/components/schemas/NilableUint64"
         validatorRegisteredBlock:
           $ref: "#/components/schemas/NilableUint64"
     PaginatedResponse:

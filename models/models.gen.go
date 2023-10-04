@@ -74,9 +74,6 @@ type InternalTransactionsResponse struct {
 	Data []Transaction `json:"data"`
 }
 
-// LastTimestamp defines model for LastTimestamp.
-type LastTimestamp = uint64
-
 // NilableUint64 defines model for NilableUint64.
 type NilableUint64 = uint64
 
@@ -116,9 +113,9 @@ type Period struct {
 // StatsResponse defines model for StatsResponse.
 type StatsResponse struct {
 	DagsCount                Counter        `json:"dagsCount"`
-	LastDagTimestamp         *LastTimestamp `json:"lastDagTimestamp" rlp:"nil"`
-	LastPbftTimestamp        *LastTimestamp `json:"lastPbftTimestamp" rlp:"nil"`
-	LastTransactionTimestamp *LastTimestamp `json:"lastTransactionTimestamp" rlp:"nil"`
+	LastDagTimestamp         *NilableUint64 `json:"lastDagTimestamp" rlp:"nil"`
+	LastPbftTimestamp        *NilableUint64 `json:"lastPbftTimestamp" rlp:"nil"`
+	LastTransactionTimestamp *NilableUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
 	PbftCount                Counter        `json:"pbftCount"`
 	TransactionsCount        Counter        `json:"transactionsCount"`
 	ValidatorRegisteredBlock *NilableUint64 `json:"validatorRegisteredBlock" rlp:"nil"`
