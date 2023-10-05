@@ -91,7 +91,7 @@ func TestTraceInternalCreationParsing(t *testing.T) {
 	internal_count := 1
 	assert.Equal(t, trx_count, len(transactions_trace))
 	assert.Equal(t, trx_count+internal_count, len(transactions_trace[0].Trace))
-
+	bc.block = &models.Pbft{Number: trx.BlockNumber}
 	err := bc.processTransactions([]string{trx.Hash})
 
 	assert.Equal(t, err, nil)

@@ -122,6 +122,17 @@ type Yield struct {
 	Yield string `json:"yield"`
 }
 
+type ValidatorReward struct {
+	Validator string   `json:"validator"`
+	Reward    *big.Int `json:"reward"`
+}
+
+type PeriodRewards struct {
+	ValidatorRewards []ValidatorReward
+	TotalReward      *big.Int
+	BlockFee         *big.Int
+}
+
 func FormatIntToKey(i uint64) string {
 	return fmt.Sprintf("%020d", i)
 }

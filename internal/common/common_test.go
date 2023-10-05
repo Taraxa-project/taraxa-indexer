@@ -32,3 +32,14 @@ func TestIntervalEnd(t *testing.T) {
 		assert.Equal(t, uint64(100), end)
 	}
 }
+
+func TestDistributionFrequency(t *testing.T) {
+	config := HardforksConfig{RewardsDistributionFrequency: map[uint64]uint32{100: 10, 1000: 20, 2000: 30}}
+	for period, frequency := range map[uint64]uint32{50: 1, 99: 1, 100: 10, 101: 10, 1000: 20, 2000: 30, 10001: 30} {
+		df := config.GetDistributionFrequency(period)
+		if frequency != df {
+			t.Errorf("Expected frequency %d for period %d, but got %d", frequency, period, df)
+		}
+	}
+
+}

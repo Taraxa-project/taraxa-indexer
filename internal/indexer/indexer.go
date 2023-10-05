@@ -1,6 +1,8 @@
 package indexer
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
@@ -83,6 +85,8 @@ func (i *Indexer) init() error {
 		log.WithError(err).Fatal("GetGenesis error")
 	}
 	i.config.Chain = chain_genesis.ToChainConfig()
+	cj, _ := json.Marshal(i.config.Chain)
+	fmt.Println("chain config", string(cj))
 
 	// Process genesis if db is clean
 	if db_clean {
