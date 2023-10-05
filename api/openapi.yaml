@@ -443,7 +443,13 @@ components:
             rlp: "-"
             json: "yield,omitempty"
         registrationBlock:
-          $ref: "#/components/schemas/NilableUint64"
+          type: integer
+          format: uint64
+          nullable: true
+          example: 1676682705
+          x-oapi-codegen-extra-tags:
+            rlp: "-"
+            json: "registrationBlock,omitempty"
     EventLog:
       type: object
       required:
