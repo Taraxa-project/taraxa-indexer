@@ -9,7 +9,7 @@ import (
 
 const MinimumProtocolVersion = "1.5.0"
 
-func versionStringToInts(version string) (int64, int64, int64) {
+func versionStringToInts(version string) (major, minor, patch int64) {
 	v := strings.Split(version, ".")
 	if len(v) != 3 {
 		log.WithFields(log.Fields{"version": version}).Error("Invalid version string")
