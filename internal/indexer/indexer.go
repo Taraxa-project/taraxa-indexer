@@ -42,25 +42,29 @@ func (i *Indexer) connect(url string) {
 	for {
 		i.client, err = chain.NewWsClient(url)
 		if err == nil {
-			err = i.init()
-		}
-		if err == nil {
-			_, stats_err := i.client.GetChainStats()
-			i.consistency_check_available = stats_err == nil
-			if !i.consistency_check_available {
-				log.WithError(stats_err).Warn("Method for consistency check isn't available")
-			}
 			break
 		}
 		log.WithError(err).Error("Can't connect to chain")
 		time.Sleep(i.retry_time)
 	}
+
+	version, err := i.client.GetVersion()
+	if err != nil || !chain.CheckProtocolVersion(version) {
+		log.WithFields(log.Fields{"version": version, "minimum": chain.MinimumProtocolVersion}).Fatal("Unsupported protocol version")
+	}
+	i.init()
+	_, stats_err := i.client.GetChainStats()
+	i.consistency_check_available = (stats_err == nil)
+	if !i.consistency_check_available {
+		log.WithError(stats_err).Warn("Method for consistency check isn't available")
+	}
 }
 
-func (i *Indexer) init() error {
+func (i *Indexer) init() {
 	genesis_blk, err := i.client.GetBlockByNumber(0)
 	if err != nil {
-		return err
+		log.WithError(err).Fatal("GetBlockByNumber error")
+		return
 	}
 
 	remote_hash := storage.GenesisHash(genesis_blk.Hash)
@@ -86,15 +90,11 @@ func (i *Indexer) init() error {
 
 	// Process genesis if db is clean
 	if db_clean {
-		genesis, err := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash)
-		if err != nil {
-			return err
-		}
+		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash)
 		// Genesis hash and finalized period(0) is set inside
 		genesis.process()
 	}
 
-	return nil
 }
 
 func (i *Indexer) syncPeriod(p uint64) error {
