@@ -137,6 +137,14 @@ func (client *WsClient) GetGenesis() (genesis GenesisObject, err error) {
 	return
 }
 
+func (client *WsClient) GetVersion() (version string, err error) {
+	versionResponse := make(map[string]string)
+	err = client.rpc.Call(&versionResponse, "taraxa_getVersion")
+	version = versionResponse["version"]
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
 func (client *WsClient) GetChainStats() (fd storage.FinalizationData, err error) {
 	err = client.rpc.Call(&fd, "taraxa_getChainStats")
 	metrics.RpcCallsCounter.Inc()
