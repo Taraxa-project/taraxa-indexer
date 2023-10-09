@@ -61,9 +61,8 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 	tp := common.MakeThreadPool()
 	tp.Go(func() { bc.updateValidatorStats(bc.block) })
-	tp.Go(func() { err = bc.processDags() })
-	tp.Go(func() { err = bc.processTransactions(raw.Transactions) })
-
+	tp.Go(common.MakeTaskWithoutParams(bc.processDags, &err).Run)
+	tp.Go(common.MakeTask(bc.processTransactions, raw.Transactions, &err).Run)
 	votes := new(chain.VotesResponse)
 	tp.Go(common.MakeTaskWithResult(bc.Client.GetPreviousBlockCertVotes, bc.block.Number, votes, &err).Run)
 
