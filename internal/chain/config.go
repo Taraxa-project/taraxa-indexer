@@ -24,10 +24,11 @@ type PbftConfig struct {
 }
 
 type GenesisObject struct {
-	DagGenesisBlock DagBlock          `json:"dag_genesis_block"`
-	InitialBalances map[string]string `json:"initial_balances"`
-	Pbft            PbftConfig        `json:"pbft"`
-	Dpos            DposConfig        `json:"dpos"`
+	DagGenesisBlock DagBlock               `json:"dag_genesis_block"`
+	InitialBalances map[string]string      `json:"initial_balances"`
+	Pbft            PbftConfig             `json:"pbft"`
+	Dpos            DposConfig             `json:"dpos"`
+	Hardforks       common.HardforksConfig `json:"hardforks"`
 }
 
 func (g *GenesisObject) ToChainConfig() (c *common.ChainConfig) {
@@ -38,5 +39,6 @@ func (g *GenesisObject) ToChainConfig() (c *common.ChainConfig) {
 	c.DagProposersReward = common.ParseStringToBigInt(g.Dpos.DagProposersReward)
 	c.MaxBlockAuthorReward = common.ParseStringToBigInt(g.Dpos.MaxBlockAuthorReward)
 	c.EligibilityBalanceThreshold = common.ParseStringToBigInt(g.Dpos.EligibilityBalanceThreshold)
+	c.Hardforks = g.Hardforks
 	return
 }

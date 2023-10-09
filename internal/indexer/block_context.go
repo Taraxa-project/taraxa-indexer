@@ -30,6 +30,7 @@ type blockContext struct {
 	statsMutex   sync.RWMutex
 	addressStats map[string]*storage.AddressStats
 	balances     *storage.Balances
+	blockFee     *big.Int
 }
 
 func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
@@ -41,6 +42,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 	bc.finalized = s.GetFinalizationData()
 	bc.Config = config
 	bc.balances = &storage.Balances{Accounts: bc.Storage.GetAccounts()}
+	bc.blockFee = big.NewInt(0)
 
 	return &bc
 }
@@ -73,14 +75,15 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 		return
 	}
 
-	total_minted := common.ParseStringToBigInt(raw.TotalReward)
+	totalReward := common.ParseStringToBigInt(raw.TotalReward)
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, validators)
-	if total_minted.Cmp(big.NewInt(0)) == 1 {
-		r.Process(total_minted, bc.dags, bc.transactions, *votes)
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, bc.blockFee, validators)
+	blockFee := r.Process(totalReward, bc.dags, bc.transactions, *votes)
+	if blockFee != nil {
+		bc.balances.AddToBalance(common.DposContractAddress, blockFee)
 	}
 
-	bc.balances.AddToBalance(common.DposContractAddress, total_minted)
+	bc.balances.AddToBalance(common.DposContractAddress, totalReward)
 
 	if bc.block.Number%1000 == 0 {
 		err = bc.checkIndexedBalances()
