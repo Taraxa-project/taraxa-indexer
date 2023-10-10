@@ -10,6 +10,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,11 +24,70 @@ type ValidatorRegistration struct {
 	BlockHeight uint64
 }
 
+type OldStatsResponse struct {
+	DagsCount                models.Counter        `json:"dagsCount"`
+	LastDagTimestamp         *models.NilableUint64 `json:"lastDagTimestamp" rlp:"nil"`
+	LastPbftTimestamp        *models.NilableUint64 `json:"lastPbftTimestamp" rlp:"nil"`
+	LastTransactionTimestamp *models.NilableUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
+	PbftCount                models.Counter        `json:"pbftCount"`
+	TransactionsCount        models.Counter        `json:"transactionsCount"`
+}
+
+type OldAddressStats struct {
+	OldStatsResponse
+	Address string `json:"address"`
+}
+
 func (m *AddValidatorRegistrationBlock) GetId() string {
 	return m.id
 }
 
+func (m *AddValidatorRegistrationBlock) migrateStats(s *pebble.Storage) {
+	const STATS_BATCH_THRESHOLD = 1000
+	batch := s.NewBatch()
+	var last_key []byte
+
+	for {
+		var o OldAddressStats
+		count := 0
+		s.ForEachFromKey([]byte(pebble.GetPrefix(storage.AddressStats{})), last_key, func(key []byte, res []byte) bool {
+			err := rlp.DecodeBytes(res, &o)
+			if err != nil {
+				if err.Error() == "rlp: too few elements for migration.OldAddressStats" {
+					return false
+				}
+				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding OldAddressStats")
+			}
+
+			sr := models.StatsResponse{
+				DagsCount:                o.DagsCount,
+				LastDagTimestamp:         o.LastDagTimestamp,
+				LastPbftTimestamp:        o.LastPbftTimestamp,
+				LastTransactionTimestamp: o.LastTransactionTimestamp,
+				PbftCount:                o.PbftCount,
+				TransactionsCount:        o.TransactionsCount,
+			}
+			err = batch.AddToBatchFullKey(&storage.AddressStats{Address: o.Address, StatsResponse: sr}, key)
+
+			if err != nil {
+				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding AddressStats to batch")
+			}
+
+			last_key = key
+			count++
+			return count == STATS_BATCH_THRESHOLD
+		})
+		batch.CommitBatch()
+		batch = s.NewBatch()
+		if count < STATS_BATCH_THRESHOLD {
+			break
+		}
+	}
+
+}
+
 func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
+	m.migrateStats(s)
 	client, err := chain.NewWsClient(m.blockchain_ws)
 	if err != nil {
 		log.Fatal(err)
