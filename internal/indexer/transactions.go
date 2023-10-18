@@ -56,7 +56,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		}
 	}
 	// add total fee from the block to block producer balance
-	if bc.Config.Chain != nil && (bc.block.Number <= bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
+	if bc.Config.Chain != nil && (bc.block.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
 		bc.balances.AddToBalance(bc.block.Author, bc.blockFee)
 	}
 	return
