@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -83,7 +82,7 @@ func (c *ClientMock) GetPreviousBlockCertVotes(period uint64) (vr VotesResponse,
 	return VotesResponse{}, ErrNotImplemented
 }
 
-func (c *ClientMock) GetValidatorsAtBlock(uint64) (validators []dpos_interface.DposInterfaceValidatorData, err error) {
+func (c *ClientMock) GetValidatorsAtBlock(uint64) (validators []Validator, err error) {
 	return nil, ErrNotImplemented
 }
 

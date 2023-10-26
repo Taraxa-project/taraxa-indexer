@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -106,11 +105,11 @@ func TestRewards(t *testing.T) {
 	validator3_addr := strings.ToLower(ce.HexToAddress("0x3").Hex())
 	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
 
-	validators_list := []dpos_interface.DposInterfaceValidatorData{
-		{Account: ce.HexToAddress(validator1_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress(validator2_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress(validator3_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress(validator4_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+	validators_list := []chain.Validator{
+		{Address: validator1_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator2_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator3_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator4_addr, TotalStake: big.NewInt(5000000)},
 	}
 
 	st := pebble.NewStorage("")
@@ -152,12 +151,12 @@ func TestRewardsWithNodeData(t *testing.T) {
 	validator3_addr := strings.ToLower(ce.HexToAddress("0x3").Hex())
 	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
 	validator5_addr := strings.ToLower(ce.HexToAddress("0x5").Hex())
-	validators_list := []dpos_interface.DposInterfaceValidatorData{
-		{Account: ce.HexToAddress(validator1_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress(validator2_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress(validator3_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress(validator4_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress(validator5_addr), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
+	validators_list := []chain.Validator{
+		{Address: validator1_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator2_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator3_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator4_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator5_addr, TotalStake: big.NewInt(5000000)},
 	}
 
 	// Simulated rewards statistics
@@ -274,12 +273,12 @@ func TestYieldsCalculation(t *testing.T) {
 	config.Chain.BlocksPerYear = big.NewInt(10)
 
 	total_minted := int64(15000000)
-	validators_list := []dpos_interface.DposInterfaceValidatorData{
-		{Account: ce.HexToAddress("0x1"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(5000000)}},
-		{Account: ce.HexToAddress("0x2"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(10000000)}},
-		{Account: ce.HexToAddress("0x3"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(15000000)}},
-		{Account: ce.HexToAddress("0x4"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(20000000)}},
-		{Account: ce.HexToAddress("0x5"), Info: dpos_interface.DposInterfaceValidatorBasicInfo{TotalStake: big.NewInt(25000000)}},
+	validators_list := []chain.Validator{
+		{Address: "0x1", TotalStake: big.NewInt(5000000)},
+		{Address: "0x2", TotalStake: big.NewInt(10000000)},
+		{Address: "0x3", TotalStake: big.NewInt(15000000)},
+		{Address: "0x4", TotalStake: big.NewInt(20000000)},
+		{Address: "0x5", TotalStake: big.NewInt(25000000)},
 	}
 	validators := MakeValidators(config, validators_list)
 	totalStake := CalculateTotalStake(validators)
