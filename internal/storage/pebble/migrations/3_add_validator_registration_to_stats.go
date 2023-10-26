@@ -53,7 +53,13 @@ func (m *AddValidatorRegistrationBlock) migrateStats(s *pebble.Storage) {
 		s.ForEachFromKey([]byte(pebble.GetPrefix(storage.AddressStats{})), last_key, func(key []byte, res []byte) bool {
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
-				if err.Error() == "rlp: too few elements for migration.OldAddressStats" {
+				if err.Error() == "rlp: input list has too many elements for migration.OldStatsResponse, decoding into (migration.OldAddressStats).OldStatsResponse" {
+					// Check if it's really already migrated
+					var o storage.AddressStats
+					err := rlp.DecodeBytes(res, &o)
+					if err != nil {
+						log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding AddressStats")
+					}
 					return false
 				}
 				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding OldAddressStats")
