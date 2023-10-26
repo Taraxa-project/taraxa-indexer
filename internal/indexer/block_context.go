@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
@@ -66,7 +65,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	votes := new(chain.VotesResponse)
 	tp.Go(common.MakeTaskWithResult(bc.Client.GetPreviousBlockCertVotes, bc.block.Number, votes, &err).Run)
 
-	validators := make([]dpos_interface.DposInterfaceValidatorData, 0)
+	validators := make([]chain.Validator, 0)
 	tp.Go(common.MakeTaskWithResult(bc.Client.GetValidatorsAtBlock, bc.block.Number, &validators, &err).Run)
 
 	tp.Wait()

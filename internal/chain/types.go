@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"encoding/json"
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -173,4 +174,23 @@ type VotesResponse struct {
 type Vote struct {
 	Voter  string `json:"voter"`
 	Weight string `json:"weight"`
+}
+
+type Validator struct {
+	Address    string   `json:"address"`
+	TotalStake *big.Int `json:"stake"`
+}
+
+func (v *Validator) UnmarshalJSON(data []byte) error {
+	var res map[string]string
+
+	if err := json.Unmarshal(data, &res); err != nil {
+		return err
+	}
+
+	v.Address = res["address"]
+	v.TotalStake = big.NewInt(0)
+	v.TotalStake.SetString(res["total_stake"], 10)
+
+	return nil
 }

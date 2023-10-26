@@ -3,19 +3,19 @@ package rewards
 import (
 	"strings"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
+	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 )
 
 type Validators struct {
 	config     *common.Config
-	validators map[string]dpos_interface.DposInterfaceValidatorBasicInfo
+	validators map[string]chain.Validator
 }
 
-func MakeValidators(config *common.Config, validators []dpos_interface.DposInterfaceValidatorData) *Validators {
-	v := Validators{config, make(map[string]dpos_interface.DposInterfaceValidatorBasicInfo)}
+func MakeValidators(config *common.Config, validators []chain.Validator) *Validators {
+	v := Validators{config, make(map[string]chain.Validator)}
 	for _, val := range validators {
-		v.validators[strings.ToLower(val.Account.Hex())] = val.Info
+		v.validators[strings.ToLower(val.Address)] = val
 	}
 	return &v
 }

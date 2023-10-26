@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -26,7 +25,7 @@ type Rewards struct {
 	blockFee    *big.Int
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *models.Pbft, blockFee *big.Int, validators []dpos_interface.DposInterfaceValidatorData) *Rewards {
+func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *models.Pbft, blockFee *big.Int, validators []chain.Validator) *Rewards {
 	r := Rewards{storage, batch, config, MakeValidators(config, validators), block.Number, strings.ToLower(block.Author), blockFee}
 	return &r
 }
@@ -199,6 +198,8 @@ func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 		batch.Remove(key)
 		return false
 	})
+
+	log.WithFields(log.Fields{"validators": len(sum_by_validator)}).Info("processValidatorsIntervalYield")
 
 	for val, sum := range sum_by_validator {
 		yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.ValidatorsYieldSavingInterval))
