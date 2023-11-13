@@ -25,8 +25,6 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		return
 	}
 
-	block_fee := big.NewInt(0)
-
 	bc.transactions = make([]models.Transaction, len(transactions))
 	for t_idx := 0; t_idx < len(transactions); t_idx++ {
 		bc.transactions[t_idx] = transactions[t_idx].ToModelWithTimestamp(bc.block.Timestamp)
@@ -34,7 +32,7 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		bc.SaveTransaction(bc.transactions[t_idx])
 
 		trx_fee := transactions[t_idx].GetFee()
-		block_fee.Add(block_fee, trx_fee)
+		bc.blockFee.Add(bc.blockFee, trx_fee)
 		// Remove fee from sender balance
 		bc.balances.AddToBalance(transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
 		if transactions[t_idx].Status == "0x0" {
@@ -48,13 +46,9 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		bc.balances.UpdateBalances(transactions[t_idx].From, receiver, transactions[t_idx].Value)
 
 		// process logs
-		logs := models.TransactionLogsResponse{
-			Data: transactions[t_idx].ExtractLogs(),
-		}
-		bc.Batch.AddToBatchSingleKey(logs, bc.transactions[t_idx].Hash)
-		err = bc.balances.UpdateEvents(logs.Data)
+		err = bc.processTransactionLogs(transactions[t_idx])
 		if err != nil {
-			return err
+			return
 		}
 
 		if internal_transactions := bc.processInternalTransactions(traces[t_idx], t_idx, common.ParseUInt(transactions[t_idx].GasPrice)); internal_transactions != nil {
@@ -62,7 +56,9 @@ func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
 		}
 	}
 	// add total fee from the block to block producer balance
-	bc.balances.AddToBalance(bc.block.Author, block_fee)
+	if bc.Config.Chain != nil && (bc.block.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
+		bc.balances.AddToBalance(bc.block.Author, bc.blockFee)
+	}
 	return
 }
 

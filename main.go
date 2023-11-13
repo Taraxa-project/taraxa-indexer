@@ -75,7 +75,7 @@ func main() {
 		log.WithError(err).Fatal("Error loading swagger spec")
 	}
 
-	manager := migration.NewManager(st)
+	manager := migration.NewManager(st, *blockchain_ws)
 	err = manager.ApplyAll()
 	if err != nil {
 		log.WithError(err).Fatal("Error applying migrations")

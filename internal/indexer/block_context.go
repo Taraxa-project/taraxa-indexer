@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
@@ -30,6 +29,7 @@ type blockContext struct {
 	statsMutex   sync.RWMutex
 	addressStats map[string]*storage.AddressStats
 	balances     *storage.Balances
+	blockFee     *big.Int
 }
 
 func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
@@ -41,6 +41,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 	bc.finalized = s.GetFinalizationData()
 	bc.Config = config
 	bc.balances = &storage.Balances{Accounts: bc.Storage.GetAccounts()}
+	bc.blockFee = big.NewInt(0)
 
 	return &bc
 }
@@ -59,13 +60,12 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 	tp := common.MakeThreadPool()
 	tp.Go(func() { bc.updateValidatorStats(bc.block) })
-	tp.Go(func() { err = bc.processDags() })
-	tp.Go(func() { err = bc.processTransactions(raw.Transactions) })
-
+	tp.Go(common.MakeTaskWithoutParams(bc.processDags, &err).Run)
+	tp.Go(common.MakeTask(bc.processTransactions, raw.Transactions, &err).Run)
 	votes := new(chain.VotesResponse)
 	tp.Go(common.MakeTaskWithResult(bc.Client.GetPreviousBlockCertVotes, bc.block.Number, votes, &err).Run)
 
-	validators := make([]dpos_interface.DposInterfaceValidatorData, 0)
+	validators := make([]chain.Validator, 0)
 	tp.Go(common.MakeTaskWithResult(bc.Client.GetValidatorsAtBlock, bc.block.Number, &validators, &err).Run)
 
 	tp.Wait()
@@ -73,14 +73,15 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 		return
 	}
 
-	total_minted := common.ParseStringToBigInt(raw.TotalReward)
+	totalReward := common.ParseStringToBigInt(raw.TotalReward)
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, validators)
-	if total_minted.Cmp(big.NewInt(0)) == 1 {
-		r.Process(total_minted, bc.dags, bc.transactions, *votes)
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, bc.blockFee, validators)
+	blockFee := r.Process(totalReward, bc.dags, bc.transactions, *votes)
+	if blockFee != nil {
+		bc.balances.AddToBalance(common.DposContractAddress, blockFee)
 	}
 
-	bc.balances.AddToBalance(common.DposContractAddress, total_minted)
+	bc.balances.AddToBalance(common.DposContractAddress, totalReward)
 
 	if bc.block.Number%1000 == 0 {
 		err = bc.checkIndexedBalances()

@@ -37,6 +37,9 @@ func (w *WeekStats) AddPbftBlock(block *models.Pbft) {
 func (w *WeekStats) GetPaginated(from, count uint64) ([]models.Validator, *models.PaginatedResponse) {
 	pagination := new(models.PaginatedResponse)
 	pagination.Total = uint64(len(w.Validators))
+	if from > pagination.Total {
+		from = pagination.Total
+	}
 	pagination.Start = from
 	end := from + count
 	pagination.HasNext = (end < pagination.Total)

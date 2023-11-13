@@ -35,6 +35,13 @@ type AddressStats struct {
 	mutex   sync.RWMutex `rlp:"-"`
 }
 
+func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) uint64 {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.ValidatorRegisteredBlock = &blockHeight
+	return *a.ValidatorRegisteredBlock
+}
+
 func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
@@ -113,6 +120,18 @@ type MultipliedYield struct {
 
 type Yield struct {
 	Yield string `json:"yield"`
+}
+
+type ValidatorReward struct {
+	Validator string   `json:"validator"`
+	Reward    *big.Int `json:"reward"`
+}
+
+// map can't be serialized to rlp, so we need to use slice of structs
+type PeriodRewards struct {
+	ValidatorRewards []ValidatorReward
+	TotalReward      *big.Int
+	BlockFee         *big.Int
 }
 
 func FormatIntToKey(i uint64) string {

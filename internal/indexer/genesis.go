@@ -17,15 +17,14 @@ type Genesis struct {
 	hash    string
 }
 
-func MakeGenesis(s storage.Storage, c *chain.WsClient, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) (*Genesis, error) {
+func MakeGenesis(s storage.Storage, c *chain.WsClient, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) *Genesis {
 	var genesis Genesis
-	var err error
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
 	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()})
 
-	return &genesis, err
+	return &genesis
 }
 
 func (g *Genesis) makeInitBalanceTrx(addr, value string) (trx models.Transaction) {

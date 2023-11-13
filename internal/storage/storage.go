@@ -13,6 +13,7 @@ type Storage interface {
 	Close() error
 	ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
 	ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
+	ForEachFromKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
 	GetAccounts() []Account
@@ -93,14 +94,14 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagina
 	return
 }
 
-func ProcessIntervalData[T Yields](s Storage, start uint64, fn func(string, T) (stop bool)) {
+func ProcessIntervalData[T Yields](s Storage, start uint64, fn func([]byte, T) (stop bool)) {
 	var o T
 	s.ForEach(&o, "", &start, func(key, res []byte) bool {
 		err := rlp.DecodeBytes(res, &o)
 		if err != nil {
 			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")
 		}
-		return fn(string(key), o)
+		return fn(key, o)
 	})
 }
 

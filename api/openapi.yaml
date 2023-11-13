@@ -348,18 +348,18 @@ components:
       type: integer
       format: uint64
       example: 123
-    LastTimestamp:
-      type: integer
-      format: uint64
-      example: 1676682705
-      nullable: true
-      # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
-      x-oapi-codegen-extra-tags:
-        rlp: "nil"
     Timestamp:
       type: integer
       format: uint64
       example: 1676682705
+    NilableUint64:
+      type: integer
+      format: uint64
+      nullable: true
+      example: 1676682705
+      # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
+      x-oapi-codegen-extra-tags:
+        rlp: "nil"
     Week:
       type: object
       properties:
@@ -423,6 +423,8 @@ components:
         - address
         - pbftCount
         - yield
+      optional:
+        - registrationBlock
       properties:
         rank:
           type: integer
@@ -440,6 +442,15 @@ components:
           x-oapi-codegen-extra-tags:
             rlp: "-"
             json: "yield,omitempty"
+        registrationBlock:
+          type: integer
+          format: uint64
+          nullable: true
+          example: 1676682705
+          # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
+          x-oapi-codegen-extra-tags:
+            rlp: "-"
+            json: "registrationBlock,omitempty"
     EventLog:
       type: object
       required:
@@ -583,6 +594,7 @@ components:
         - lastPbftTimestamp
         - lastDagTimestamp
         - lastTransactionTimestamp
+        - validatorRegisteredBlock
       properties:
         pbftCount:
           $ref: "#/components/schemas/Counter"
@@ -591,11 +603,13 @@ components:
         transactionsCount:
           $ref: "#/components/schemas/Counter"
         lastPbftTimestamp:
-          $ref: "#/components/schemas/LastTimestamp"
+          $ref: "#/components/schemas/NilableUint64"
         lastDagTimestamp:
-          $ref: "#/components/schemas/LastTimestamp"
+          $ref: "#/components/schemas/NilableUint64"
         lastTransactionTimestamp:
-          $ref: "#/components/schemas/LastTimestamp"
+          $ref: "#/components/schemas/NilableUint64"
+        validatorRegisteredBlock:
+          $ref: "#/components/schemas/NilableUint64"
     PaginatedResponse:
       type: object
       required:
