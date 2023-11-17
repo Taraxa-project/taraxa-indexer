@@ -37,6 +37,10 @@ func NewWsClient(url string) (*WsClient, error) {
 	return client, nil
 }
 
+func (client *WsClient) Call(result interface{}, method string, args ...interface{}) error {
+	return client.rpc.CallContext(client.ctx, result, method, args...)
+}
+
 func (client *WsClient) GetChainId() *big.Int {
 	if client.ChainId != nil {
 		return client.ChainId
