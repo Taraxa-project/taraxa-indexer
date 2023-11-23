@@ -32,8 +32,6 @@ type YieldedValidator struct {
 }
 
 func pushDataToContract(ws, signingKey, oracleAddress string, chainID int64, client *ethclient.Client, storage storage.Storage) {
-	// Set up a connection to the Ethereum node
-
 	// Load your private key (securely)
 	privateKey, err := crypto.HexToECDSA(signingKey)
 	if err != nil {
@@ -71,6 +69,8 @@ func pushDataToContract(ws, signingKey, oracleAddress string, chainID int64, cli
 	contractInstance := bind.NewBoundContract(contractAddress, oracleAbi, client, client, client)
 
 	validators := getValidatorDatas(storage, client)
+
+	log.Infof("Pushing  amount of validator data to contract: %d", len(validators))
 
 	validatorAddresses := make([]common.Address, 0)
 

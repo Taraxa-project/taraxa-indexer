@@ -150,7 +150,7 @@ func GetCommissionChangesInBlock(client *chain.WsClient, from, to uint64) ([]Val
 		log.Fatal(err)
 	}
 
-	log.Infof("Found %d validator registrations in blocks %d-%d", len(logs), from, to)
+	log.Infof("Found %d validator commission changes in blocks %d-%d", len(logs), from, to)
 
 	var validators []ValidatorCommission
 	for _, eLog := range logs {
