@@ -93,13 +93,16 @@ func RegisterOracleCron(blockchain_ws, signing_key, oracle_address string, yield
 	}
 
 	_, err = s.Every(yield_saving_interval * 4).Seconds().Do(func() {
+		log.Info("Oracle cron started")
 		pushDataToContract(blockchain_ws, signing_key, oracle_address, int64(chainId), client, storage)
 	})
 	if err != nil {
 		log.Fatalf("Failed to schedule cron: %v", err)
 	}
-	s.StartBlocking()
-	log.Info("Oracle cron started")
+	// check if job was successfully ran
+	_, t := s.NextRun()
+	log.Info("Oracle cron scheduled at ", t)
+	s.StartAsync()
 }
 
 func getValidatorDatas(storage storage.Storage, client *ethclient.Client) []YieldedValidator {

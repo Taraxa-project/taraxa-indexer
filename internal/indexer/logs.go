@@ -2,12 +2,13 @@ package indexer
 
 import (
 	"fmt"
-	"strconv"
+	"math/big"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error) {
@@ -62,9 +63,8 @@ func (bc *blockContext) handleValidatorCommissionChange(logs []models.EventLog) 
 		if strings.Compare(log.Topics[0], commissionSetTopic) != 0 && strings.Compare(log.Address, "0x00000000000000000000000000000000000000fe") != 0 {
 			continue
 		}
-		commissionHex := log.Data
-		hexString := commissionHex[2:]
-		value, err := strconv.ParseUint(hexString, 16, 64)
+
+		value, err := decodePaddedHex(log.Data)
 		if err != nil {
 			value = 0
 			fmt.Println("Error parsing hexadecimal string:", err)
@@ -83,4 +83,18 @@ func (bc *blockContext) handleValidatorCommissionChange(logs []models.EventLog) 
 		bc.addressStats[log.Address] = addressStats
 	}
 	return nil
+}
+
+func decodePaddedHex(hexStr string) (uint64, error) {
+	// Decode the hex string to bytes.
+	bytes, err := hexutil.Decode(hexStr)
+	if err != nil {
+		return 0, err
+	}
+
+	// Convert bytes to big.Int.
+	bigInt := new(big.Int).SetBytes(bytes)
+	// convert to uint64
+	uint64Value := bigInt.Uint64()
+	return uint64Value, nil
 }
