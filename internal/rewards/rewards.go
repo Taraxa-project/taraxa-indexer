@@ -47,10 +47,6 @@ func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []m
 	return totalBlockFee
 }
 
-func (r *Rewards) PushToOracle(periodRewards PeriodRewards) {
-
-}
-
 func (r *Rewards) ProcessRewards(periodRewards PeriodRewards, total_minted *big.Int, totalStake *big.Int) (*big.Int, *big.Int) {
 	distributionFrequency := r.config.Chain.Hardforks.GetDistributionFrequency(r.blockNum)
 

@@ -17,6 +17,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
@@ -29,21 +30,26 @@ var (
 	http_port                        *int
 	metrics_port                     *int
 	blockchain_ws                    *string
+	chain_id                         *int
 	data_dir                         *string
 	log_level                        *string
 	yield_saving_interval            *int
 	validators_yield_saving_interval *int
+	signing_key                      *string
+	oracle_address                   *string
 )
 
 func init() {
 	http_port = flag.Int("http_port", 8080, "port to listen")
 	metrics_port = flag.Int("metrics_port", 2112, "metrics http port")
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
+	chain_id = flag.Int("chain_id", 841, "chain id")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
-	yield_saving_interval = flag.Int("yield_saving_interval", 150000, "interval for saving total yield")
-	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 150000, "interval for saving validators yield")
-
+	yield_saving_interval = flag.Int("yield_saving_interval", 21600, "interval for saving total yield")
+	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 21600, "interval for saving validators yield")
+	signing_key = flag.String("signing_key", "", "signing key")
+	oracle_address = flag.String("oracle_address", "0x4076f9669fd33e55545823c4cB9f1abA7cfa480B", "oracles address")
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
@@ -51,6 +57,8 @@ func init() {
 	log.WithFields(log.Fields{
 		"http_port":     *http_port,
 		"blockchain_ws": *blockchain_ws,
+		"chain_id":      *chain_id,
+		"signing_key":   *signing_key,
 		"data_dir":      *data_dir,
 		"log_level":     *log_level}).
 		Info("Application started")
@@ -100,6 +108,11 @@ func main() {
 
 	apiHandler := api.NewApiHandler(st, c)
 	api.RegisterHandlers(e, apiHandler)
+
+	// Registers oracle cron
+	if *signing_key != "" && *oracle_address != "" {
+		oracle.RegisterOracleCron(*blockchain_ws, *signing_key, *oracle_address, *yield_saving_interval, *chain_id, st)
+	}
 
 	go indexer.MakeAndRun(*blockchain_ws, st, c)
 
