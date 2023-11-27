@@ -8,10 +8,12 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	ce "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -113,8 +115,10 @@ func TestRewards(t *testing.T) {
 	}
 
 	st := pebble.NewStorage("")
+	eth := ethclient.Client{}
+	oracle := oracle.MakeMockOracle(&eth)
 	block := models.Pbft{Number: 1, Author: validator4_addr}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, validators_list)
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, validators_list)
 
 	trxs := makeTransactions(5)
 	dags := makeDags(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
@@ -142,6 +146,8 @@ func TestRewards(t *testing.T) {
 func TestRewardsWithNodeData(t *testing.T) {
 	config := common.DefaultConfig()
 	st := pebble.NewStorage("")
+	eth := ethclient.Client{}
+	oracle := oracle.MakeMockOracle(&eth)
 
 	TaraPrecision := big.NewInt(1e+18)
 	DefaultMinimumDeposit := big.NewInt(0).Mul(big.NewInt(1000), TaraPrecision)
@@ -161,7 +167,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 	// Simulated rewards statistics
 	block := models.Pbft{Number: 1, Author: validator3_addr}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, validators_list)
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, validators_list)
 	total_stake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
 	{
 		rewardsStats := stats{}
@@ -303,6 +309,8 @@ func TestYieldsCalculation(t *testing.T) {
 
 func TestTotalYieldSaving(t *testing.T) {
 	st := pebble.NewStorage("")
+	eth := ethclient.Client{}
+	oracle := oracle.MakeMockOracle(&eth)
 	config := makeTestConfig()
 	config.TotalYieldSavingInterval = 10
 	config.Chain.BlocksPerYear = big.NewInt(100)
@@ -316,7 +324,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	batch.CommitBatch()
 
 	block := models.Pbft{Number: 10, Author: "0x4"}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, nil)
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -346,6 +354,8 @@ func TestTotalYieldSaving(t *testing.T) {
 
 func TestValidatorsYieldSaving(t *testing.T) {
 	st := pebble.NewStorage("")
+	eth := ethclient.Client{}
+	oracle := oracle.MakeMockOracle(&eth)
 	config := makeTestConfig()
 	config.TotalYieldSavingInterval = 10
 	config.Chain.BlocksPerYear = big.NewInt(100)
@@ -359,7 +369,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	batch.CommitBatch()
 
 	block := models.Pbft{Number: 10, Author: "0x4"}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, nil)
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{

@@ -10,7 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spiretechnology/go-pool"
 )
 
@@ -120,4 +122,32 @@ func ParseToString(item any) (result any, err error) {
 		}
 	}
 	return
+}
+
+func DecodePaddedHex(hexStr string) (uint64, error) {
+	// Decode the hex string to bytes.
+	bytes, err := hexutil.Decode(hexStr)
+	if err != nil {
+		return 0, err
+	}
+
+	// Convert bytes to big.Int.
+	bigInt := new(big.Int).SetBytes(bytes)
+	// convert to uint64
+	uint64Value := bigInt.Uint64()
+	return uint64Value, nil
+}
+
+func DecodePaddedAddress(hexStr string) (common.Address, error) {
+	// Decode the hex string to bytes.
+	bytes, err := hexutil.Decode(hexStr)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	// Convert bytes to big.Int.
+	bigInt := new(big.Int).SetBytes(bytes)
+	// convert to uint64
+	address := common.BigToAddress(bigInt)
+	return address, nil
 }

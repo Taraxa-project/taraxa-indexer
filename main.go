@@ -46,8 +46,8 @@ func init() {
 	chain_id = flag.Int("chain_id", 841, "chain id")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
-	yield_saving_interval = flag.Int("yield_saving_interval", 21600, "interval for saving total yield")
-	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 21600, "interval for saving validators yield")
+	yield_saving_interval = flag.Int("yield_saving_interval", 50, "interval for saving total yield")
+	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 50, "interval for saving validators yield")
 	signing_key = flag.String("signing_key", "", "signing key")
 	oracle_address = flag.String("oracle_address", "0x4076f9669fd33e55545823c4cB9f1abA7cfa480B", "oracles address")
 	flag.Parse()
@@ -110,12 +110,13 @@ func main() {
 	api.RegisterHandlers(e, apiHandler)
 
 	// Registers oracle cron
-	if *signing_key != "" && *oracle_address != "" {
-		oracle.RegisterOracleCron(*blockchain_ws, *signing_key, *oracle_address, *yield_saving_interval, *chain_id, st)
+	if *signing_key == "" && *oracle_address == "" {
+		log.WithFields(log.Fields{"signing_key": *signing_key, "oracle_address": *oracle_address}).Fatal("Oracle address and signing key should be both set but both empty")
 	}
 
-	go indexer.MakeAndRun(*blockchain_ws, st, c)
-
+	o := oracle.MakeOracle(*blockchain_ws, *signing_key, *oracle_address, *yield_saving_interval, *st)
+	oracle.RegisterCron(o, *yield_saving_interval)
+	go indexer.MakeAndRun(*blockchain_ws, st, c, o)
 	// start a http server for prometheus on a separate go routine
 	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))
 

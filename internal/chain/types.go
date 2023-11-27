@@ -1,11 +1,13 @@
 package chain
 
 import (
+	"context"
 	"encoding/json"
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum"
 )
 
 type Block struct {
@@ -193,4 +195,9 @@ func (v *Validator) UnmarshalJSON(data []byte) error {
 	v.TotalStake.SetString(res["total_stake"], 10)
 
 	return nil
+}
+
+type EthereumClient interface {
+	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
+	// ... other methods as needed
 }

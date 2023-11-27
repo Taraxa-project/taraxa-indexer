@@ -6,10 +6,12 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
 )
@@ -98,6 +100,10 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+	ethClient, err := ethclient.Dial(m.blockchain_ws)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	currentHead, err := client.GetLatestPeriod()
 	if err != nil {
@@ -120,16 +126,26 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 		}
 
 		for _, validator := range validators {
+			validatorInfo, err := oracle.FetchValidatorInfo(ethClient, validator.Validator)
+			if err != nil {
+				fmt.Println("Error fetching validator info:", err)
+			}
+			if validatorInfo == nil {
+				continue
+			}
+			commission := uint64(validatorInfo.Commission)
 			addressStats := s.GetAddressStats(strings.ToLower(validator.Validator))
 			if addressStats == nil {
 				addressStats = &storage.AddressStats{
 					Address: strings.ToLower(validator.Validator),
 					StatsResponse: models.StatsResponse{
 						ValidatorRegisteredBlock: &validator.BlockHeight,
+						Commission:               &commission,
 					},
 				}
 			} else {
 				addressStats.ValidatorRegisteredBlock = &validator.BlockHeight
+				addressStats.Commission = &commission
 			}
 			batch.AddToBatch(addressStats, addressStats.Address, 0)
 		}

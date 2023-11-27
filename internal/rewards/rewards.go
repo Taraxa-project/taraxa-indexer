@@ -6,6 +6,7 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
@@ -15,18 +16,18 @@ var multiplier = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
 var percentage_multiplier = big.NewInt(10000)
 
 type Rewards struct {
-	storage    storage.Storage
-	batch      storage.Batch
-	config     *common.Config
-	validators *Validators
-
+	oracle      *oracle.Oracle
+	storage     storage.Storage
+	batch       storage.Batch
+	config      *common.Config
+	validators  *Validators
 	blockNum    uint64
 	blockAuthor string
 	blockFee    *big.Int
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *models.Pbft, blockFee *big.Int, validators []chain.Validator) *Rewards {
-	r := Rewards{storage, batch, config, MakeValidators(config, validators), block.Number, strings.ToLower(block.Author), blockFee}
+func MakeRewards(oracle *oracle.Oracle, storage storage.Storage, batch storage.Batch, config *common.Config, block *models.Pbft, blockFee *big.Int, validators []chain.Validator) *Rewards {
+	r := Rewards{oracle, storage, batch, config, MakeValidators(config, validators), block.Number, strings.ToLower(block.Author), blockFee}
 	return &r
 }
 
@@ -200,12 +201,15 @@ func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 	})
 
 	log.WithFields(log.Fields{"validators": len(sum_by_validator)}).Info("processValidatorsIntervalYield")
-
+	yields := make([]oracle.RawValidator, 0, len(sum_by_validator))
 	for val, sum := range sum_by_validator {
 		yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.ValidatorsYieldSavingInterval))
 		log.WithFields(log.Fields{"validator": val, "yield": yield}).Info("processValidatorsIntervalYield")
 		batch.AddToBatch(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
+		yields = append(yields, oracle.RawValidator{Yield: common.FormatFloat(yield), Address: val})
 	}
+
+	r.oracle.PushValidators(yields)
 }
 
 func GetYieldForInterval(yields_sum, blocks_per_year *big.Int, elem_count int64) float64 {

@@ -10,6 +10,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/rewards"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
@@ -22,6 +23,7 @@ type blockContext struct {
 	Batch        storage.Batch
 	Config       *common.Config
 	Client       chain.Client
+	Oracle       *oracle.Oracle
 	block        *models.Pbft
 	dags         []chain.DagBlock
 	transactions []models.Transaction
@@ -32,11 +34,12 @@ type blockContext struct {
 	blockFee     *big.Int
 }
 
-func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
+func MakeBlockContext(s storage.Storage, client chain.Client, oracle *oracle.Oracle, config *common.Config) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
 	bc.Client = client
+	bc.Oracle = oracle
 	bc.addressStats = make(map[string]*storage.AddressStats)
 	bc.finalized = s.GetFinalizationData()
 	bc.Config = config
@@ -75,7 +78,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 	totalReward := common.ParseStringToBigInt(raw.TotalReward)
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, bc.blockFee, validators)
+	r := rewards.MakeRewards(bc.Oracle, bc.Storage, bc.Batch, bc.Config, bc.block, bc.blockFee, validators)
 	blockFee := r.Process(totalReward, bc.dags, bc.transactions, *votes)
 	if blockFee != nil {
 		bc.balances.AddToBalance(common.DposContractAddress, blockFee)

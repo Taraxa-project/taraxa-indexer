@@ -5,20 +5,22 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	log "github.com/sirupsen/logrus"
 )
 
 type Indexer struct {
 	client                      *chain.WsClient
+	oracle                      *oracle.Oracle
 	storage                     storage.Storage
 	config                      *common.Config
 	retry_time                  time.Duration
 	consistency_check_available bool
 }
 
-func MakeAndRun(url string, s storage.Storage, c *common.Config) {
-	i := NewIndexer(url, s, c)
+func MakeAndRun(url string, s storage.Storage, c *common.Config, o *oracle.Oracle) {
+	i := NewIndexer(url, s, c, o)
 	for {
 		err := i.run()
 		f := i.storage.GetFinalizationData()
@@ -27,13 +29,14 @@ func MakeAndRun(url string, s storage.Storage, c *common.Config) {
 	}
 }
 
-func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer) {
+func NewIndexer(url string, s storage.Storage, c *common.Config, o *oracle.Oracle) (i *Indexer) {
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
 	i.storage = s
 	i.config = c
 	// connect is retrying to connect every retry_time
 	i.connect(url)
+	i.oracle = o
 	return
 }
 
@@ -88,9 +91,13 @@ func (i *Indexer) init() {
 	}
 	i.config.Chain = chain_genesis.ToChainConfig()
 
+	if err != nil {
+		log.WithError(err).Fatal("Failed to get current block")
+	}
+
 	// Process genesis if db is clean
 	if db_clean {
-		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash)
+		genesis := MakeGenesis(i.storage, i.client, i.oracle, chain_genesis, remote_hash)
 		// Genesis hash and finalized period(0) is set inside
 		genesis.process()
 	}
@@ -102,8 +109,9 @@ func (i *Indexer) syncPeriod(p uint64) error {
 	if b_err != nil {
 		return b_err
 	}
-
-	dc, tc, process_err := MakeBlockContext(i.storage, i.client, i.config).process(blk)
+	// print i.eth_client
+	blockContext := MakeBlockContext(i.storage, i.client, i.oracle, i.config)
+	dc, tc, process_err := blockContext.process(blk)
 	if process_err != nil {
 		return process_err
 	}
@@ -175,7 +183,7 @@ func (i *Indexer) run() error {
 				}
 			}
 
-			bc := MakeBlockContext(i.storage, i.client, i.config)
+			bc := MakeBlockContext(i.storage, i.client, i.oracle, i.config)
 			dc, tc, err := bc.process(blk)
 			if err != nil {
 				return err

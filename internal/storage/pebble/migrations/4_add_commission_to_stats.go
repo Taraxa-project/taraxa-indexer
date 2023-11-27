@@ -159,9 +159,11 @@ func GetCommissionChangesInBlock(client *chain.WsClient, from, to uint64) ([]Val
 		}{}
 
 		event.Validator = strings.ToLower(ethcommon.HexToAddress(eLog.Topics[1]).Hex())
-		commissionHex := eLog.Data
-		hexString := commissionHex[2:]
-		validators = append(validators, ValidatorCommission{Validator: event.Validator, Commission: common.ParseUInt(hexString)})
+		comm, err := common.DecodePaddedHex(eLog.Data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		validators = append(validators, ValidatorCommission{Validator: event.Validator, Commission: comm})
 		log.Infof("Found validator %s changed commission in block %d", event.Validator, common.ParseUInt(eLog.BlockNumber))
 	}
 	return validators, nil

@@ -13,7 +13,7 @@ func TestCalculateRating(t *testing.T) {
 	commission := uint64(100)
 	// Prepare test data
 	validator := YieldedValidator{
-		Address:           "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
+		Account:           "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
 		Yield:             "0.55",
 		Commisson:         &commission,
 		Rank:              uint64(1),
