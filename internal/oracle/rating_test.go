@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-playground/assert/v2"
 )
@@ -13,10 +14,10 @@ func TestCalculateRating(t *testing.T) {
 	commission := uint64(100)
 	// Prepare test data
 	validator := YieldedValidator{
-		Account:           "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
+		Account:           common.HexToAddress("0x0DC0d841F962759DA25547c686fa440cF6C28C61"),
 		Yield:             "0.55",
 		Commisson:         &commission,
-		Rank:              uint64(1),
+		Rank:              uint16(1),
 		RegistrationBlock: uint64(1),
 		PbftCount:         uint64(10000),
 	}
@@ -29,7 +30,7 @@ func TestCalculateRating(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Validate the rating
-	rating := calculateRating(validator, &commission, client)
+	rating, _, _ := validator.calculateRating(client)
 	commission_float := float64(*validator.Commisson)
 	yield_float, err := strconv.ParseFloat(validator.Yield, 64)
 	if err != nil {
@@ -41,5 +42,5 @@ func TestCalculateRating(t *testing.T) {
 	continuity := float64(blocksSinceRegistration) / float64(currentBlock.NumberU64()-validator.RegistrationBlock)
 
 	expected_rating := float64(0.4)*adjusted_apy - float64(0.1)*commission_float + float64(0.5)*continuity
-	assert.Equal(t, expected_rating, rating)
+	assert.Equal(t, int64(expected_rating*1000), rating)
 }

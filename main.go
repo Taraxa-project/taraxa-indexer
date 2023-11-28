@@ -43,13 +43,13 @@ func init() {
 	http_port = flag.Int("http_port", 8080, "port to listen")
 	metrics_port = flag.Int("metrics_port", 2112, "metrics http port")
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
-	chain_id = flag.Int("chain_id", 841, "chain id")
+	chain_id = flag.Int("chain_id", 842, "chain id")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
-	yield_saving_interval = flag.Int("yield_saving_interval", 50, "interval for saving total yield")
-	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 50, "interval for saving validators yield")
+	yield_saving_interval = flag.Int("yield_saving_interval", 900, "interval for saving total yield")
+	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 900, "interval for saving validators yield")
 	signing_key = flag.String("signing_key", "", "signing key")
-	oracle_address = flag.String("oracle_address", "0x4076f9669fd33e55545823c4cB9f1abA7cfa480B", "oracles address")
+	oracle_address = flag.String("oracle_address", "0x72B6B11CA6dFc90DC9840e038253133381FA57f9", "oracles address")
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
@@ -114,7 +114,7 @@ func main() {
 		log.WithFields(log.Fields{"signing_key": *signing_key, "oracle_address": *oracle_address}).Fatal("Oracle address and signing key should be both set but both empty")
 	}
 
-	o := oracle.MakeOracle(*blockchain_ws, *signing_key, *oracle_address, *yield_saving_interval, *st)
+	o := oracle.MakeOracle(*blockchain_ws, *signing_key, *oracle_address, *chain_id, *st)
 	oracle.RegisterCron(o, *yield_saving_interval)
 	go indexer.MakeAndRun(*blockchain_ws, st, c, o)
 	// start a http server for prometheus on a separate go routine

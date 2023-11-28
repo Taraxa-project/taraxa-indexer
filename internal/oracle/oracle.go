@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/big"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,21 +35,6 @@ type Oracle struct {
 	contract         *bind.BoundContract
 	validatorsMutex  sync.Mutex
 	latestValidators []YieldedValidator
-}
-
-type YieldedValidator struct {
-	Account           string
-	Yield             string
-	Commisson         *uint64
-	Rank              uint64
-	RegistrationBlock uint64
-	PbftCount         uint64
-	Rating            uint64
-}
-
-type RawValidator struct {
-	Address string
-	Yield   string
 }
 
 func MakeOracle(blockchain_ws, signing_key, oracle_address string, chainId int, storage pebble.Storage) *Oracle {
@@ -102,7 +88,7 @@ func (o *Oracle) PushValidators(validators []RawValidator) {
 	defer o.validatorsMutex.Unlock()
 	yieldedValidators := make([]YieldedValidator, 0)
 	for _, validator := range validators {
-		validatorData, err := FetchValidatorInfo(o.Eth, validator.Address)
+		validatorData, err := FetchValidatorInfo(o.Eth, validator.Address.Hex())
 		if err != nil {
 			if err.Error() == "Validator does not exist" {
 				continue
@@ -123,14 +109,13 @@ func (o *Oracle) PushValidators(validators []RawValidator) {
 	}
 	// sort by yield and add positions as rank and rating
 	for i := range yieldedValidators {
-		yieldedValidators[i].Rank = uint64(i + 1)
+		yieldedValidators[i].Rank = uint16(i + 1)
 		yield, err := strconv.ParseFloat(yieldedValidators[i].Yield, 64)
 		if err != nil {
 			log.Fatalf("Failed to parse yield: %v", err)
 		}
 		yieldInt := uint64(yield * 1000)
-		yieldedValidators[i].Rating = yieldedValidators[i].Rank * yieldInt
-		yieldedValidators[i].Rating = yieldedValidators[i].Rank * yieldInt
+		yieldedValidators[i].Rating = uint64(yieldedValidators[i].Rank) * yieldInt
 	}
 	o.UpdateValidators(yieldedValidators)
 	log.Infof("Loading validators into oracle instance: %d", len(yieldedValidators))
@@ -141,31 +126,34 @@ func (o *Oracle) pushDataToContract() {
 		log.Warn("No validator data to push")
 		return
 	}
-	// Obtain the nonce for the account
-	nonce, err := o.Eth.PendingNonceAt(context.Background(), o.signer.From)
-	if err != nil {
-		log.Fatalf("Failed to get nonce: %v", err)
-	}
-	o.signer.Nonce = big.NewInt(int64(nonce))
 
-	// Suggest a gas price
-	gasPrice, err := o.Eth.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to suggest gas price: %v", err)
-	}
-	o.signer.GasPrice = gasPrice
-
-	validatorAddresses := make([]common.Address, 0)
+	validatorDatas := make([]NodeData, 0)
 
 	for _, validator := range o.latestValidators {
-		validatorAddresses = append(validatorAddresses, common.HexToAddress(validator.Account))
+		data := validator.ToNodeData(o.Eth)
+		validatorDatas = append(validatorDatas, data)
 	}
 
-	log.Infof("Pushing validator data to contract: %v", validatorAddresses)
+	// sort data by rating in descending order
+	sort.Slice(validatorDatas, func(i, j int) bool {
+		return validatorDatas[i].Rating.Cmp(validatorDatas[j].Rating) == 1
+	})
 
-	_, err = o.contract.Transact(o.signer, "batchUpdateNodeData", validatorAddresses, o.latestValidators)
+	_, err := o.contract.Transact(o.signer, "batchUpdateNodeData", validatorDatas)
 	if err != nil {
 		log.Fatalf("Failed to transact with contract: %v", err)
+		// if it is a nonce error we need to update the nonce and retry
+		if strings.Contains(err.Error(), "nonce") {
+			for {
+				log.Error("Nonce error, retrying...")
+				o.signer.Nonce = o.signer.Nonce.Add(o.signer.Nonce, big.NewInt(1))
+				_, err = o.contract.Transact(o.signer, "batchUpdateNodeData", validatorDatas)
+				if err != nil {
+					continue
+				}
+				break
+			}
+		}
 	}
 }
 
@@ -193,7 +181,7 @@ func connect(url string) *ethclient.Client {
 func RegisterCron(o *Oracle, yield_saving_interval int) {
 	s := gocron.NewScheduler(time.UTC)
 	var err error
-	_, err = s.Every(10).Seconds().Do(func() {
+	_, err = s.Every(yield_saving_interval * 4).Seconds().Do(func() {
 		log.Info("Oracle cron started")
 		o.pushDataToContract()
 	})
@@ -236,38 +224,12 @@ func RegisterCron(o *Oracle, yield_saving_interval int) {
 // 	return validators
 // }
 
-// will not be used in the first primitive version
-func calculateRating(validator YieldedValidator, commission *uint64, client *ethclient.Client) float64 {
-	if commission == nil {
-		return 0
-	}
-
-	currentBlock, err := client.BlockByNumber(context.Background(), nil)
-
-	if err != nil {
-		log.Fatalf("Failed to get current block: %v", err)
-	}
-
-	blocksSinceRegistration := currentBlock.NumberU64() - validator.RegistrationBlock
-	commission_float := float64(*validator.Commisson)
-	yield_float, err := strconv.ParseFloat(validator.Yield, 64)
-	if err != nil {
-		log.Fatalf("Failed to parse yield: %v", err)
-	}
-	commission_percentage := commission_float / float64(100000)
-	adjusted_apy := (1 - commission_percentage) * yield_float * 100
-	continuity := float64(blocksSinceRegistration) / float64(currentBlock.NumberU64()-validator.RegistrationBlock)
-
-	//w1 * (APY) - (Commission * w2) + w3 * Continuity + w4 * stake
-	score := float64(0.4)*adjusted_apy - float64(0.1)*commission_float + float64(0.5)*continuity
-	return score
-}
-
 // FetchValidatorInfo fetches the ValidatorBasicInfo for a given validator address.
 func FetchValidatorInfo(client chain.EthereumClient, validatorAddress string) (*dpos_interface.DposInterfaceValidatorBasicInfo, error) {
 	if client == nil {
 		return nil, errors.New("Ethereum client is not available")
 	}
+
 	// Define the contract address
 	contractAddress := common.HexToAddress("0x00000000000000000000000000000000000000fe")
 
