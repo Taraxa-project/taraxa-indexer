@@ -194,36 +194,6 @@ func RegisterCron(o *Oracle, yield_saving_interval int) {
 	s.StartAsync()
 }
 
-// func getValidatorDatas(storage storage.Storage, client *ethclient.Client) []YieldedValidator {
-// 	tm, _ := goment.New()
-// 	year := int32(tm.ISOWeekYear())
-// 	week := int32(tm.ISOWeek())
-
-// 	// print the year & week
-// 	log.Infof("Current year: %d", year)
-// 	log.Infof("Current week: %d", week)
-
-// 	stats := storage.GetWeekStats(year, week)
-// 	stats.Sort()
-// 	validators := make([]YieldedValidator, 0)
-
-// 	for k, v := range stats.Validators {
-// 		yieldedValidator := YieldedValidator{
-// 			Address:           v.Address,
-// 			Rank:              uint64(k + 1),
-// 			Yield:             v.Yield,
-// 			RegistrationBlock: *v.RegistrationBlock,
-// 			PbftCount:         v.PbftCount,
-// 		}
-
-// 		statsResponse := storage.GetAddressStats(v.Address).StatsResponse
-// 		yieldedValidator.Commisson = statsResponse.Commission
-// 		yieldedValidator.Rating = yieldedValidator.Rank * taracommon.ParseUInt(yieldedValidator.Yield)
-// 		validators = append(validators, yieldedValidator)
-// 	}
-// 	return validators
-// }
-
 // FetchValidatorInfo fetches the ValidatorBasicInfo for a given validator address.
 func FetchValidatorInfo(client chain.EthereumClient, validatorAddress string) (*dpos_interface.DposInterfaceValidatorBasicInfo, error) {
 	if client == nil {
