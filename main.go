@@ -22,6 +22,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 )
@@ -114,9 +115,11 @@ func main() {
 		log.WithFields(log.Fields{"signing_key": *signing_key, "oracle_address": *oracle_address}).Fatal("Oracle address and signing key should be both set but both empty")
 	}
 
-	o := oracle.MakeOracle(*blockchain_ws, *signing_key, *oracle_address, *chain_id, *st)
+	indexer := indexer.NewIndexer(*blockchain_ws, st, c)
+	rpc := ethclient.NewClient(indexer.Client.Rpc)
+	o := oracle.MakeOracle(rpc, *signing_key, *oracle_address, *chain_id, *st)
 	oracle.RegisterCron(o, *yield_saving_interval)
-	go indexer.MakeAndRun(*blockchain_ws, st, c, o)
+	go indexer.Run(*blockchain_ws, st, c, o)
 	// start a http server for prometheus on a separate go routine
 	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))
 

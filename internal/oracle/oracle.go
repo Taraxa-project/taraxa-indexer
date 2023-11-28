@@ -37,10 +37,10 @@ type Oracle struct {
 	latestValidators []YieldedValidator
 }
 
-func MakeOracle(blockchain_ws, signing_key, oracle_address string, chainId int, storage pebble.Storage) *Oracle {
+func MakeOracle(rpc *ethclient.Client, signing_key, oracle_address string, chainId int, storage pebble.Storage) *Oracle {
 	o := new(Oracle)
 	o.storage = storage
-	o.Eth = connect(blockchain_ws)
+	o.Eth = rpc
 	o.signer = makeSigner(signing_key, chainId)
 	o.oracleAddress = oracle_address
 	o.chainId = chainId

@@ -11,7 +11,7 @@ import (
 )
 
 type Indexer struct {
-	client                      *chain.WsClient
+	Client                      *chain.WsClient
 	oracle                      *oracle.Oracle
 	storage                     storage.Storage
 	config                      *common.Config
@@ -19,8 +19,11 @@ type Indexer struct {
 	consistency_check_available bool
 }
 
-func MakeAndRun(url string, s storage.Storage, c *common.Config, o *oracle.Oracle) {
-	i := NewIndexer(url, s, c, o)
+func (i *Indexer) Run(url string, s storage.Storage, c *common.Config, o *oracle.Oracle) {
+	if o == nil {
+		log.Fatal("Oracle is nil")
+	}
+	i.oracle = o
 	for {
 		err := i.run()
 		f := i.storage.GetFinalizationData()
@@ -29,21 +32,20 @@ func MakeAndRun(url string, s storage.Storage, c *common.Config, o *oracle.Oracl
 	}
 }
 
-func NewIndexer(url string, s storage.Storage, c *common.Config, o *oracle.Oracle) (i *Indexer) {
+func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer) {
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
 	i.storage = s
 	i.config = c
 	// connect is retrying to connect every retry_time
 	i.connect(url)
-	i.oracle = o
 	return
 }
 
 func (i *Indexer) connect(url string) {
 	var err error
 	for {
-		i.client, err = chain.NewWsClient(url)
+		i.Client, err = chain.NewWsClient(url)
 		if err == nil {
 			break
 		}
@@ -51,12 +53,12 @@ func (i *Indexer) connect(url string) {
 		time.Sleep(i.retry_time)
 	}
 
-	version, err := i.client.GetVersion()
+	version, err := i.Client.GetVersion()
 	if err != nil || !chain.CheckProtocolVersion(version) {
 		log.WithFields(log.Fields{"version": version, "minimum": chain.MinimumProtocolVersion}).Fatal("Unsupported protocol version")
 	}
 	i.init()
-	_, stats_err := i.client.GetChainStats()
+	_, stats_err := i.Client.GetChainStats()
 	i.consistency_check_available = (stats_err == nil)
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
@@ -64,7 +66,7 @@ func (i *Indexer) connect(url string) {
 }
 
 func (i *Indexer) init() {
-	genesis_blk, err := i.client.GetBlockByNumber(0)
+	genesis_blk, err := i.Client.GetBlockByNumber(0)
 	if err != nil {
 		log.WithError(err).Fatal("GetBlockByNumber error")
 		return
@@ -85,7 +87,7 @@ func (i *Indexer) init() {
 		db_clean = true
 	}
 
-	chain_genesis, err := i.client.GetGenesis()
+	chain_genesis, err := i.Client.GetGenesis()
 	if err != nil {
 		log.WithError(err).Fatal("GetGenesis error")
 	}
@@ -97,7 +99,7 @@ func (i *Indexer) init() {
 
 	// Process genesis if db is clean
 	if db_clean {
-		genesis := MakeGenesis(i.storage, i.client, i.oracle, chain_genesis, remote_hash)
+		genesis := MakeGenesis(i.storage, i.Client, i.oracle, chain_genesis, remote_hash)
 		// Genesis hash and finalized period(0) is set inside
 		genesis.process()
 	}
@@ -105,12 +107,12 @@ func (i *Indexer) init() {
 }
 
 func (i *Indexer) syncPeriod(p uint64) error {
-	blk, b_err := i.client.GetBlockByNumber(p)
+	blk, b_err := i.Client.GetBlockByNumber(p)
 	if b_err != nil {
 		return b_err
 	}
 	// print i.eth_client
-	blockContext := MakeBlockContext(i.storage, i.client, i.oracle, i.config)
+	blockContext := MakeBlockContext(i.storage, i.Client, i.oracle, i.config)
 	dc, tc, process_err := blockContext.process(blk)
 	if process_err != nil {
 		return process_err
@@ -124,7 +126,7 @@ func (i *Indexer) syncPeriod(p uint64) error {
 func (i *Indexer) sync() error {
 	// start processing blocks from the next one
 	start := i.storage.GetFinalizationData().PbftCount + 1
-	end, p_err := i.client.GetLatestPeriod()
+	end, p_err := i.Client.GetLatestPeriod()
 	if p_err != nil {
 		return p_err
 	}
@@ -152,7 +154,7 @@ func (i *Indexer) run() error {
 		return err
 	}
 
-	ch, sub, err := i.client.SubscribeNewHeads()
+	ch, sub, err := i.Client.SubscribeNewHeads()
 	if err != nil {
 		return err
 	}
@@ -177,13 +179,13 @@ func (i *Indexer) run() error {
 			}
 			// We need to get block from API one more time if we doesn't have it in object from subscription
 			if blk.Transactions == nil {
-				blk, err = i.client.GetBlockByNumber(p)
+				blk, err = i.Client.GetBlockByNumber(p)
 				if err != nil {
 					return err
 				}
 			}
 
-			bc := MakeBlockContext(i.storage, i.client, i.oracle, i.config)
+			bc := MakeBlockContext(i.storage, i.Client, i.oracle, i.config)
 			dc, tc, err := bc.process(blk)
 			if err != nil {
 				return err
@@ -200,7 +202,7 @@ func (i *Indexer) run() error {
 }
 
 func (i *Indexer) consistencyCheck(finalized *storage.FinalizationData) {
-	remote_stats, stats_err := i.client.GetChainStats()
+	remote_stats, stats_err := i.Client.GetChainStats()
 	if stats_err == nil {
 		finalized.Check(remote_stats)
 	}
