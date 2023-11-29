@@ -5,7 +5,9 @@ import (
 	"math/big"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 )
@@ -86,4 +88,19 @@ func (validator *YieldedValidator) calculateRating(client *ethclient.Client) (in
 	//w1 * (APY) - (Commission * w2) + w3 * Continuity + w4 * stake
 	score := float64(0.4)*adjusted_apy - float64(0.1)*commission_float + float64(0.5)*continuity
 	return int64(score * 1000), validator.RegistrationBlock, currentBlock.NumberU64()
+}
+
+func makeSigner(signingKey string, chainId int) *bind.TransactOpts {
+	// Load your private key (securely)
+	privateKey, err := crypto.HexToECDSA(signingKey)
+	if err != nil {
+		log.Fatalf("Failed to load private key: %v", err)
+	}
+
+	// Create an auth object to use for the transaction
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(int64(chainId)))
+	if err != nil {
+		log.Fatalf("Failed to create authorized transactor: %v", err)
+	}
+	return auth
 }

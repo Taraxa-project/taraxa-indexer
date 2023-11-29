@@ -16,11 +16,11 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
+	"github.com/Taraxa-project/taraxa-indexer/internal/transact"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-co-op/gocron"
 	log "github.com/sirupsen/logrus"
@@ -41,26 +41,11 @@ func MakeOracle(rpc *ethclient.Client, signing_key, oracle_address string, chain
 	o := new(Oracle)
 	o.storage = storage
 	o.Eth = rpc
-	o.signer = makeSigner(signing_key, chainId)
+	o.signer = transact.MakeSigner(signing_key, chainId)
 	o.oracleAddress = oracle_address
 	o.chainId = chainId
 	o.contract = o.makeContract()
 	return o
-}
-
-func makeSigner(signingKey string, chainId int) *bind.TransactOpts {
-	// Load your private key (securely)
-	privateKey, err := crypto.HexToECDSA(signingKey)
-	if err != nil {
-		log.Fatalf("Failed to load private key: %v", err)
-	}
-
-	// Create an auth object to use for the transaction
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(int64(chainId)))
-	if err != nil {
-		log.Fatalf("Failed to create authorized transactor: %v", err)
-	}
-	return auth
 }
 
 func (o *Oracle) makeContract() *bind.BoundContract {
@@ -68,7 +53,7 @@ func (o *Oracle) makeContract() *bind.BoundContract {
 	contractAddress := common.HexToAddress(o.oracleAddress)
 
 	// Create an instance of your contract
-	oracleAbi, err := abi.JSON(strings.NewReader(contracts.ApyOracle)) // Assuming contracts.ApyOracle is your ABI
+	oracleAbi, err := abi.JSON(strings.NewReader(contracts.ApyOracle))
 	if err != nil {
 		log.Fatalf("Failed to read ABI: %v", err)
 	}
