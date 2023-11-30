@@ -1,10 +1,10 @@
 package lara
 
 import (
-	"log"
 	"math/big"
 	"strings"
 
+	dpos_contract "github.com/Taraxa-project/taraxa-indexer/abi/dpos"
 	lara_contract "github.com/Taraxa-project/taraxa-indexer/abi/lara"
 	apy_oracle "github.com/Taraxa-project/taraxa-indexer/abi/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	log "github.com/sirupsen/logrus"
 )
 
 type State struct {
@@ -31,6 +32,7 @@ type Lara struct {
 	chainID           *int
 	contract          *lara_contract.LaraContract
 	oracle            *apy_oracle.ApyOracle
+	dpos              *dpos_contract.DposContract
 	state             State
 }
 
@@ -45,7 +47,14 @@ func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_add
 	if err != nil {
 		log.Fatalf("Failed to create contract: %v", err)
 	}
-
+	l.oracle, err = apy_oracle.NewApyOracle(common.HexToAddress(l.oracleAddress), l.Eth)
+	if err != nil {
+		log.Fatalf("Failed to create oracle: %v", err)
+	}
+	l.dpos, err = dpos_contract.NewDposContract(common.HexToAddress("0x00000000000000000000000000000000000000fe"), l.Eth)
+	if err != nil {
+		log.Fatalf("Failed to create dpos: %v", err)
+	}
 	l.contract = contract
 	l.state = l.SyncState()
 	return l
@@ -155,7 +164,7 @@ func (l *Lara) GetState() State {
 	return l.state
 }
 
-func (l *Lara) Evaluate() {
+func (l *Lara) Evaluate(newValidators []oracle.NodeData) {
 	callOpts := &bind.CallOpts{
 		Pending:     false,
 		From:        l.signer.From,
@@ -169,29 +178,51 @@ func (l *Lara) Evaluate() {
 		Context:  nil,
 	}
 
-	// get the current validators from oracle
-	nodeCount, err := l.oracle.NodeCount(nil)
-	if err != nil {
-		log.Fatalf("Failed to get node count: %v", err)
-	}
-	for i := uint64(0); i < nodeCount.Uint64(); i++ {
-		nodeAddress, err := l.oracle.NodesList(callOpts, big.NewInt(int64(i)))
-		if err != nil {
-			log.Fatalf("Failed to get node address: %v", err)
-		}
-		node, err := l.oracle.Nodes(nil, nodeAddress)
+	log.Infof("Evaluating new validators: %d", len(newValidators))
+
+	// we need to go through lara's validators that have stake
+	for address, stake := range l.state.validatorStakes {
+		log.Infof("Evaluating validator: %s", address.Hex())
+		node, err := l.oracle.Nodes(nil, address)
 		if err != nil {
 			log.Fatalf("Failed to get node: %v", err)
 		}
-		// check if node is already in validators
-		found := false
-		for _, validator := range l.state.validators {
-			if validator.Account == node.Account {
-				found = true
-				break
+
+		// compare on-chain data with new score in state
+		newValidatorData := findNode(newValidators, node)
+		if newValidatorData.Account.Hex() != "" {
+			// if score is smaller with at least 10% compared to on-chain score
+			if newValidatorData.Rating.Cmp(node.Rating) == -1 && newValidatorData.Rating.Cmp(node.Rating.Div(node.Rating, big.NewInt(10))) == -1 {
+				// we need to redelegate to the higest score new node, which is the first one in the list
+				for _, validator := range newValidators {
+					// check if the node has enough stake room
+					info, err := l.dpos.GetValidator(callOpts, validator.Account)
+					if err != nil {
+						log.Fatalf("Failed to get validator info: %v", err)
+					}
+					// if there's a node that can fit & is still 10% better than the current node
+					if info.TotalStake.Cmp(stake) >= 0 && validator.Rating.Cmp(node.Rating.Div(node.Rating, big.NewInt(10))) == 1 {
+						// redelegate
+						log.Infof("Redelegating %s from %s to %s", stake, address.Hex(), validator.Account.Hex())
+						_, err := l.contract.ReDelegate(opts, address, validator.Account, stake)
+						if err != nil {
+							log.Fatalf("Failed to delegate: %v", err)
+						}
+					} else {
+						// we do this until we find a node with enough stake room
+						continue
+					}
+				}
 			}
 		}
-
-		// if found
 	}
+}
+
+func findNode(nodes []oracle.NodeData, node oracle.NodeData) oracle.NodeData {
+	for _, n := range nodes {
+		if n.Account == node.Account {
+			return n
+		}
+	}
+	return oracle.NodeData{}
 }

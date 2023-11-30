@@ -34,7 +34,7 @@ type Oracle struct {
 	chainId          int
 	contract         *bind.BoundContract
 	validatorsMutex  sync.Mutex
-	latestValidators []YieldedValidator
+	LatestValidators []YieldedValidator
 }
 
 func MakeOracle(rpc *ethclient.Client, signing_key, oracle_address string, chainId int, storage pebble.Storage) *Oracle {
@@ -63,8 +63,8 @@ func (o *Oracle) makeContract() *bind.BoundContract {
 
 func (o *Oracle) UpdateValidators(validators []YieldedValidator) {
 	log.Infof("Updating validators: %d", len(validators))
-	log.Infof("Validators before: %v", len(o.latestValidators))
-	o.latestValidators = validators
+	log.Infof("Validators before: %v", len(o.LatestValidators))
+	o.LatestValidators = validators
 
 }
 
@@ -107,14 +107,14 @@ func (o *Oracle) PushValidators(validators []RawValidator) {
 }
 
 func (o *Oracle) pushDataToContract() {
-	if len(o.latestValidators) == 0 {
+	if len(o.LatestValidators) == 0 {
 		log.Warn("No validator data to push")
 		return
 	}
 
 	validatorDatas := make([]NodeData, 0)
 
-	for _, validator := range o.latestValidators {
+	for _, validator := range o.LatestValidators {
 		data := validator.ToNodeData(o.Eth)
 		validatorDatas = append(validatorDatas, data)
 	}
