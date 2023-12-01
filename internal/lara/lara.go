@@ -1,16 +1,16 @@
 package lara
 
 import (
+	"context"
 	"math/big"
 	"strings"
+	"time"
 
 	dpos_contract "github.com/Taraxa-project/taraxa-indexer/abi/dpos"
 	lara_contract "github.com/Taraxa-project/taraxa-indexer/abi/lara"
 	apy_oracle "github.com/Taraxa-project/taraxa-indexer/abi/oracle"
-	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
 	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/transact"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -19,6 +19,7 @@ import (
 
 type State struct {
 	epochDuration                 *big.Int
+	epochStartTimestamp           *big.Int
 	isEpochRunning                bool
 	lastEpochTotalDelegatedAmount *big.Int
 	validatorStakes               map[common.Address]*big.Int
@@ -56,24 +57,47 @@ func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_add
 		log.Fatalf("Failed to create dpos: %v", err)
 	}
 	l.contract = contract
-	l.state = l.SyncState()
+	l.SyncState()
 	return l
 }
 
-func (l *Lara) makeContract() *bind.BoundContract {
-	// Define the contract address
-	contractAddress := common.HexToAddress(l.deploymentAddress)
-
-	// Create an instance of your contract
-	oracleAbi, err := abi.JSON(strings.NewReader(contracts.Lara))
-	if err != nil {
-		log.Fatalf("Failed to read ABI: %v", err)
+func (l *Lara) Run() {
+	if l.Eth == nil {
+		log.Fatalf("Eth client is nil")
 	}
-	contractInstance := bind.NewBoundContract(contractAddress, oracleAbi, l.Eth, l.Eth, l.Eth)
-	return contractInstance
+	for {
+
+		timeToEndEpoch := l.state.epochStartTimestamp.Int64() + int64(4)*l.state.epochDuration.Int64()
+		log.Infof("Calculated new Time to end epoch: %d", timeToEndEpoch)
+
+		ctx := context.Background()
+		currentBlock, err := l.Eth.BlockNumber(ctx)
+		if err != nil {
+			log.Fatalf("Failed to get current block: %v", err)
+		}
+		blockByNumber, err := l.Eth.BlockByNumber(ctx, new(big.Int).SetUint64(currentBlock))
+		if err != nil {
+			log.Fatalf("Failed to get block by number: %v", err)
+		}
+		// if we pass the time to end epoch
+		if int64(blockByNumber.Time()) > timeToEndEpoch {
+			l.SyncState()
+			// if the epoch is running
+			if l.state.isEpochRunning {
+				// end the epoch
+				l.EndEpoch()
+			} else {
+				// start the epoch
+				l.StartEpoch()
+			}
+			// wait for the next block
+			time.Sleep(5 * time.Second)
+		}
+	}
+
 }
 
-func (l *Lara) SyncState() State {
+func (l *Lara) SyncState() {
 	opts := &bind.CallOpts{
 		Pending:     false,
 		From:        l.signer.From,
@@ -83,6 +107,11 @@ func (l *Lara) SyncState() State {
 	epochDuration, err := l.contract.EpochDuration(opts)
 	if err != nil {
 		log.Fatalf("Failed to get epoch duration: %v", err)
+	}
+
+	epochStartTimestamp, err := l.contract.ProtocolStartTimestamp(opts)
+	if err != nil {
+		log.Fatalf("Failed to get epoch start timestamp: %v", err)
 	}
 
 	isEpochRunning, err := l.contract.IsEpochRunning(opts)
@@ -100,10 +129,16 @@ func (l *Lara) SyncState() State {
 	validatorStakes := make(map[common.Address]*big.Int)
 	validators := make([]oracle.NodeData, 0)
 	for {
+		log.Infof("Fetching validator at pos: %d", pos)
 		validator, err := l.contract.Validators(opts, pos)
 		if err != nil {
-			log.Fatalf("Failed to get validator: %v", err)
-			break
+			if strings.Contains(err.Error(), "reverted") {
+				log.Infof("Reached end of validators")
+				break
+			} else {
+				log.Fatalf("Failed to get validator: %v", err)
+				break
+			}
 		}
 		totalStakeAtValidator, err := l.contract.ProtocolTotalStakeAtValidator(opts, validator)
 		if err != nil {
@@ -117,17 +152,29 @@ func (l *Lara) SyncState() State {
 			log.Fatalf("Failed to get node data: %v", err)
 		}
 		validators = append(validators, nodeData)
+		pos.Add(pos, big.NewInt(1))
 	}
 
+	//set commission to 10%
+	commission, err := l.contract.Commission(opts)
+	if err != nil {
+		log.Fatalf("Failed to get commission: %v", err)
+	}
+	if commission.Cmp(big.NewInt(10)) != 0 {
+		_, err = l.contract.SetCommission(l.signer, big.NewInt(10))
+
+		if err != nil {
+			log.Fatalf("Failed to set commission: %v", err)
+		}
+	}
 	l.state = State{
 		epochDuration:                 epochDuration,
+		epochStartTimestamp:           epochStartTimestamp,
 		isEpochRunning:                isEpochRunning,
 		lastEpochTotalDelegatedAmount: lastEpochTotalDelegatedAmount,
 		validatorStakes:               validatorStakes,
 		validators:                    validators,
 	}
-
-	return l.state
 }
 
 func (l *Lara) StartEpoch() {
@@ -137,12 +184,25 @@ func (l *Lara) StartEpoch() {
 		GasLimit: 0,
 		Context:  nil,
 	}
-	_, err := l.contract.StartEpoch(opts)
+	oracleNodeCount, err := l.oracle.NodeCount(nil)
 	if err != nil {
-		log.Fatalf("Failed to start epoch: %v", err)
+		log.Fatalf("Failed to get oracle node count: %v", err)
+	}
+	if oracleNodeCount.Cmp(big.NewInt(0)) == 0 {
+		log.Warn("LARA == No oracle nodes")
+		return
+	}
+	_, err = l.contract.StartEpoch(opts)
+	if err != nil {
+		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
+			log.Warn("Start epoch tx already in pool")
+		} else {
+			log.Fatalf("Failed to start epoch: %v", err)
+		}
 	}
 
 	l.SyncState()
+	log.Infof("Started epoch: %s", l.state.epochStartTimestamp)
 }
 
 func (l *Lara) EndEpoch() {
@@ -154,9 +214,18 @@ func (l *Lara) EndEpoch() {
 	}
 	_, err := l.contract.EndEpoch(opts)
 	if err != nil {
-		log.Fatalf("Failed to end epoch: %v", err)
+		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
+			log.Warn("End epoch tx already in pool")
+		} else {
+			log.Fatalf("Failed to end epoch: %v", err)
+		}
 	}
 
+	l.SyncState()
+
+	// can be solved by indexing a separate event for this and taking the validator info at the event height
+	// find the delegators of Lara and divide & disburse them if these amounts are too big
+	l.Evaluate(l.state.validators)
 	l.SyncState()
 }
 
@@ -187,6 +256,11 @@ func (l *Lara) Evaluate(newValidators []oracle.NodeData) {
 		if err != nil {
 			log.Fatalf("Failed to get node: %v", err)
 		}
+
+		// we go through on-chain state
+		// we get the new validators array with new scores from the indexer
+		// we compare the scores and if the old score is ?10%? worse than the new score we look for a better node to delegate to
+		// we go through the new validators array and find the first node that has enough stake room and is better than the current node
 
 		// compare on-chain data with new score in state
 		newValidatorData := findNode(newValidators, node)

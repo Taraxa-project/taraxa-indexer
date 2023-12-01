@@ -15,6 +15,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
+	"github.com/Taraxa-project/taraxa-indexer/internal/lara"
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
@@ -38,6 +39,7 @@ var (
 	validators_yield_saving_interval *int
 	signing_key                      *string
 	oracle_address                   *string
+	lara_address                     *string
 )
 
 func init() {
@@ -47,21 +49,24 @@ func init() {
 	chain_id = flag.Int("chain_id", 842, "chain id")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
-	yield_saving_interval = flag.Int("yield_saving_interval", 900, "interval for saving total yield")
-	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 900, "interval for saving validators yield")
+	yield_saving_interval = flag.Int("yield_saving_interval", 100, "interval for saving total yield")
+	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 100, "interval for saving validators yield")
 	signing_key = flag.String("signing_key", "", "signing key")
-	oracle_address = flag.String("oracle_address", "0x72B6B11CA6dFc90DC9840e038253133381FA57f9", "oracles address")
+	oracle_address = flag.String("oracle_address", "0xaC0DAb152fDDf491c578eaBc392841D2aD7Da241", "oracles address")
+	lara_address = flag.String("lara_address", "0xa8D8D188A4d9cEebEEceBd886F2aAefCB31d91ec", "lara address")
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
 	log.Print("\n\n\n")
 	log.WithFields(log.Fields{
-		"http_port":     *http_port,
-		"blockchain_ws": *blockchain_ws,
-		"chain_id":      *chain_id,
-		"signing_key":   *signing_key,
-		"data_dir":      *data_dir,
-		"log_level":     *log_level}).
+		"http_port":      *http_port,
+		"blockchain_ws":  *blockchain_ws,
+		"chain_id":       *chain_id,
+		"signing_key":    *signing_key,
+		"oracle_address": *oracle_address,
+		"lara_address":   *lara_address,
+		"data_dir":       *data_dir,
+		"log_level":      *log_level}).
 		Info("Application started")
 }
 
@@ -111,14 +116,20 @@ func main() {
 	api.RegisterHandlers(e, apiHandler)
 
 	// Registers oracle cron
-	if *signing_key == "" && *oracle_address == "" {
-		log.WithFields(log.Fields{"signing_key": *signing_key, "oracle_address": *oracle_address}).Fatal("Oracle address and signing key should be both set but both empty")
+	if *signing_key == "" && *oracle_address == "" && *lara_address == "" {
+		log.WithFields(log.Fields{"signing_key": *signing_key, "oracle_address": *oracle_address, "lara_address": *lara_address}).Fatal("Oracle address, Lara address and signing key should be both set but both empty")
 	}
 
 	indexer := indexer.NewIndexer(*blockchain_ws, st, c)
+	log.Info("Indexer initialized")
 	rpc := ethclient.NewClient(indexer.Client.Rpc)
+	log.Info("RPC initialized")
+	lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
+	log.Info("Lara initialized")
 	o := oracle.MakeOracle(rpc, *signing_key, *oracle_address, *chain_id, *st)
+	log.Info("Oracle initialized")
 	oracle.RegisterCron(o, *yield_saving_interval)
+	go lara.Run()
 	go indexer.Run(*blockchain_ws, st, c, o)
 	// start a http server for prometheus on a separate go routine
 	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))
