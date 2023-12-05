@@ -35,9 +35,7 @@ func (bc *blockContext) handleValidatorRegistrations(logs []models.EventLog) (er
 			continue
 		}
 		address := common.HexToAddress(log.Topics[1])
-		addressStats := bc.getAddress(bc.Storage, address.Hex())
-		addressStats.RegisterValidatorBlock(bc.block.Number)
-		bc.addressStats[address.Hex()] = addressStats
+		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidatorBlock(bc.block.Number)
 	}
 	return nil
 }
