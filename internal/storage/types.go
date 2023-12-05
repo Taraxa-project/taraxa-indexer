@@ -35,6 +35,14 @@ type AddressStats struct {
 	mutex   sync.RWMutex `rlp:"-"`
 }
 
+func (a *AddressStats) RegisterValidator(address string, blockheight uint64) string {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.Address = address
+	a.ValidatorRegisteredBlock = &blockheight
+	return a.Address
+}
+
 func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
