@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error) {
@@ -34,18 +34,8 @@ func (bc *blockContext) handleValidatorRegistrations(logs []models.EventLog) (er
 		if strings.Compare(log.Topics[0], registerValidatorTopic) != 0 && strings.Compare(log.Address, "0x00000000000000000000000000000000000000fe") != 0 {
 			continue
 		}
-		addressStats := bc.addressStats[log.Address]
-		if addressStats == nil {
-			addressStats = &storage.AddressStats{
-				Address: log.Address,
-				StatsResponse: models.StatsResponse{
-					ValidatorRegisteredBlock: &bc.block.Number,
-				},
-			}
-		} else {
-			addressStats.ValidatorRegisteredBlock = &bc.block.Number
-		}
-		bc.addressStats[log.Address] = addressStats
+		address := common.HexToAddress(log.Topics[1])
+		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidatorBlock(bc.block.Number)
 	}
 	return nil
 }
