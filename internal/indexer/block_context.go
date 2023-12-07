@@ -3,8 +3,6 @@ package indexer
 import (
 	"fmt"
 	"math/big"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
@@ -28,8 +26,7 @@ type blockContext struct {
 	dags         []chain.DagBlock
 	transactions []models.Transaction
 	finalized    *storage.FinalizationData
-	statsMutex   sync.RWMutex
-	addressStats map[string]*storage.AddressStats
+	addressStats *storage.AddressStatsMap
 	balances     *storage.Balances
 	blockFee     *big.Int
 }
@@ -40,7 +37,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, oracle *oracle.Ora
 	bc.Batch = s.NewBatch()
 	bc.Client = client
 	bc.Oracle = oracle
-	bc.addressStats = make(map[string]*storage.AddressStats)
+	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
 	bc.Config = config
 	bc.balances = &storage.Balances{Accounts: bc.Storage.GetAccounts()}
@@ -51,7 +48,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, oracle *oracle.Ora
 
 func (bc *blockContext) commit() {
 	bc.Batch.SetFinalizationData(bc.finalized)
-	bc.addAddressStatsToBatch()
+	bc.addressStats.AddToBatch(bc.Batch)
 	bc.Batch.CommitBatch()
 
 	metrics.StorageCommitCounter.Inc()
@@ -100,7 +97,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	bc.finalized.DagCount += dags_count
 	bc.finalized.PbftCount++
 
-	pbft_author_index := bc.getAddress(bc.Storage, bc.block.Author).AddPbft(bc.block.Timestamp)
+	pbft_author_index := bc.addressStats.GetAddress(bc.Storage, bc.block.Author).AddPbft(bc.block.Timestamp)
 	log.WithFields(log.Fields{"author": bc.block.Author, "hash": bc.block.Hash}).Debug("Saving PBFT block")
 	bc.Batch.AddToBatch(bc.block, bc.block.Author, pbft_author_index)
 
@@ -185,20 +182,6 @@ func (bc *blockContext) processDag(hash string) (dag chain.DagBlock, err error) 
 func (bc *blockContext) saveDag(dag *chain.DagBlock) {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
 	dagModel := dag.ToModel()
-	dag_index := bc.getAddress(bc.Storage, dag.Sender).AddDag(dagModel.Timestamp)
+	dag_index := bc.addressStats.GetAddress(bc.Storage, dag.Sender).AddDag(dagModel.Timestamp)
 	bc.Batch.AddToBatch(dagModel, dag.Sender, dag_index)
-}
-
-func (bc *blockContext) getAddress(s storage.Storage, addr string) *storage.AddressStats {
-	addr = strings.ToLower(addr)
-	bc.statsMutex.Lock()
-	defer bc.statsMutex.Unlock()
-	stats := bc.addressStats[addr]
-	if stats != nil {
-		return stats
-	}
-
-	bc.addressStats[addr] = s.GetAddressStats(addr)
-
-	return bc.addressStats[addr]
 }

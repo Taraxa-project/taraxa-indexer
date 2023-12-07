@@ -7,8 +7,8 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error) {
@@ -41,12 +41,8 @@ func (bc *blockContext) handleValidatorRegistrations(logs []models.EventLog) (er
 		if strings.Compare(log.Topics[0], registerValidatorTopic) != 0 && strings.Compare(log.Address, "0x00000000000000000000000000000000000000fe") != 0 {
 			continue
 		}
-		validatorAddress, err := common.DecodePaddedAddress(log.Topics[1])
-		if err != nil {
-			fmt.Println("Error parsing hexadecimal string:", err)
-		}
-		addressStats := bc.addressStats[validatorAddress.Hex()]
-		validatorInfo, err := oracle.FetchValidatorInfo(bc.Oracle.Eth, validatorAddress.Hex())
+		address := ethcommon.HexToAddress(log.Topics[1])
+		validatorInfo, err := oracle.FetchValidatorInfo(bc.Oracle.Eth, address.Hex())
 		if err != nil {
 			fmt.Println("Error fetching validator info:", err)
 		}
@@ -54,19 +50,7 @@ func (bc *blockContext) handleValidatorRegistrations(logs []models.EventLog) (er
 			return nil
 		}
 		commission := uint64(validatorInfo.Commission)
-		if addressStats == nil {
-			addressStats = &storage.AddressStats{
-				Address: validatorAddress.Hex(),
-				StatsResponse: models.StatsResponse{
-					ValidatorRegisteredBlock: &bc.block.Number,
-					Commission:               &commission,
-				},
-			}
-		} else {
-			addressStats.ValidatorRegisteredBlock = &bc.block.Number
-			addressStats.Commission = &commission
-		}
-		bc.addressStats[validatorAddress.Hex()] = addressStats
+		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidator(bc.block.Number, commission)
 	}
 	return nil
 }
@@ -77,27 +61,13 @@ func (bc *blockContext) handleValidatorCommissionChange(logs []models.EventLog) 
 		if strings.Compare(log.Topics[0], commissionSetTopic) != 0 && strings.Compare(log.Address, "0x00000000000000000000000000000000000000fe") != 0 {
 			continue
 		}
-		validatorAddress, err := common.DecodePaddedAddress(log.Topics[1])
+		address := ethcommon.HexToAddress(log.Topics[1])
+		commission, err := common.DecodePaddedHex(log.Data)
 		if err != nil {
+			commission = 0
 			fmt.Println("Error parsing hexadecimal string:", err)
 		}
-		value, err := common.DecodePaddedHex(log.Data)
-		if err != nil {
-			value = 0
-			fmt.Println("Error parsing hexadecimal string:", err)
-		}
-		addressStats := bc.addressStats[validatorAddress.Hex()]
-		if addressStats == nil {
-			addressStats = &storage.AddressStats{
-				Address: validatorAddress.Hex(),
-				StatsResponse: models.StatsResponse{
-					Commission: &value,
-				},
-			}
-		} else {
-			addressStats.Commission = &value
-		}
-		bc.addressStats[validatorAddress.Hex()] = addressStats
+		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidator(bc.block.Number, commission)
 	}
 	return nil
 }
