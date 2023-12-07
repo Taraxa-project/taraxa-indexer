@@ -52,8 +52,8 @@ func init() {
 	yield_saving_interval = flag.Int("yield_saving_interval", 100, "interval for saving total yield")
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 100, "interval for saving validators yield")
 	signing_key = flag.String("signing_key", "", "signing key")
-	oracle_address = flag.String("oracle_address", "0xaC0DAb152fDDf491c578eaBc392841D2aD7Da241", "oracles address")
-	lara_address = flag.String("lara_address", "0xa8D8D188A4d9cEebEEceBd886F2aAefCB31d91ec", "lara address")
+	oracle_address = flag.String("oracle_address", "0x9ad1044499a38B373BC8F29643612967bac9e901", "oracles address")
+	lara_address = flag.String("lara_address", "0x83BA75e668B479376973F4C7B0D240E4b5B25237", "lara address")
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
