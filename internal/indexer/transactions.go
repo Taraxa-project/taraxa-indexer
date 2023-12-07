@@ -120,20 +120,14 @@ func makeInternal(trx models.Transaction, entry chain.TraceEntry, gasCost uint64
 func (bc *blockContext) SaveTransaction(trx models.Transaction) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 
-	from_index := bc.getAddress(bc.Storage, trx.From).AddTransaction(trx.Timestamp)
+	from_index := bc.addressStats.GetAddress(bc.Storage, trx.From).AddTransaction(trx.Timestamp)
 	bc.Batch.AddToBatch(trx, trx.From, from_index)
 	if trx.To != "" {
-		to_index := bc.getAddress(bc.Storage, trx.To).AddTransaction(trx.Timestamp)
+		to_index := bc.addressStats.GetAddress(bc.Storage, trx.To).AddTransaction(trx.Timestamp)
 		bc.Batch.AddToBatch(trx, trx.To, to_index)
 	}
 
 	if (trx.Input != "0x") && (trx.Input != "") {
 		bc.Batch.AddToBatchSingleKey(trx, trx.Hash)
-	}
-}
-
-func (bc *blockContext) addAddressStatsToBatch() {
-	for _, stats := range bc.addressStats {
-		bc.Batch.AddToBatch(stats, stats.Address, 0)
 	}
 }
