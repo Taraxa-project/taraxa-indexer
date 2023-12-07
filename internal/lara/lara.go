@@ -19,7 +19,7 @@ import (
 
 type State struct {
 	epochDuration                 *big.Int
-	epochStartTimestamp           *big.Int
+	protocolStartTimestamp        *big.Int
 	isEpochRunning                bool
 	lastEpochTotalDelegatedAmount *big.Int
 	validatorStakes               map[common.Address]*big.Int
@@ -65,11 +65,10 @@ func (l *Lara) Run() {
 	if l.Eth == nil {
 		log.Fatalf("Eth client is nil")
 	}
-	for {
-
-		timeToEndEpoch := l.state.epochStartTimestamp.Int64() + int64(4)*l.state.epochDuration.Int64()
-		log.Infof("Calculated new Time to end epoch: %d", timeToEndEpoch)
-
+	ticker := time.NewTicker(1 * time.Second)
+	lastEpochStartTimestamp := int64(0)
+	for range ticker.C {
+		log.Infof("Last epoch start timestamp: %d", lastEpochStartTimestamp)
 		ctx := context.Background()
 		currentBlock, err := l.Eth.BlockNumber(ctx)
 		if err != nil {
@@ -80,18 +79,28 @@ func (l *Lara) Run() {
 			log.Fatalf("Failed to get block by number: %v", err)
 		}
 		// if we pass the time to end epoch
-		if int64(blockByNumber.Time()) > timeToEndEpoch {
+		log.Infof("Current block time: %d", blockByNumber.Time())
+		log.Warnf("Ending epoch at %d", lastEpochStartTimestamp+(int64(4)*l.state.epochDuration.Int64()))
+		if lastEpochStartTimestamp == 0 || int64(blockByNumber.Time()) > lastEpochStartTimestamp {
 			l.SyncState()
 			// if the epoch is running
 			if l.state.isEpochRunning {
 				// end the epoch
 				l.EndEpoch()
+				// wait 3 sec
+				time.Sleep(3 * time.Second)
 			} else {
 				// start the epoch
 				l.StartEpoch()
+				// wait 3 sec
+				time.Sleep(3 * time.Second)
 			}
-			// wait for the next block
-			time.Sleep(5 * time.Second)
+			if lastEpochStartTimestamp == 0 {
+				lastEpochStartTimestamp = l.state.protocolStartTimestamp.Int64()
+			}
+			timeToEndEpoch := lastEpochStartTimestamp + (int64(4) * l.state.epochDuration.Int64())
+			lastEpochStartTimestamp = timeToEndEpoch
+			log.Infof("Calculated new Time to end epoch: %d", timeToEndEpoch)
 		}
 	}
 
@@ -166,10 +175,12 @@ func (l *Lara) SyncState() {
 		if err != nil {
 			log.Fatalf("Failed to set commission: %v", err)
 		}
+		// wait 1 sec
+		time.Sleep(1 * time.Second)
 	}
 	l.state = State{
 		epochDuration:                 epochDuration,
-		epochStartTimestamp:           epochStartTimestamp,
+		protocolStartTimestamp:        epochStartTimestamp,
 		isEpochRunning:                isEpochRunning,
 		lastEpochTotalDelegatedAmount: lastEpochTotalDelegatedAmount,
 		validatorStakes:               validatorStakes,
@@ -192,7 +203,7 @@ func (l *Lara) StartEpoch() {
 		log.Warn("LARA == No oracle nodes")
 		return
 	}
-	_, err = l.contract.StartEpoch(opts)
+	tx, err := l.contract.StartEpoch(opts)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("Start epoch tx already in pool")
@@ -200,9 +211,13 @@ func (l *Lara) StartEpoch() {
 			log.Fatalf("Failed to start epoch: %v", err)
 		}
 	}
-
+	if tx != nil {
+		log.Warnf("Started epoch at timestamp: %d", tx.Time().Unix())
+	}
+	// wait 3 sec
+	time.Sleep(3 * time.Second)
 	l.SyncState()
-	log.Infof("Started epoch: %s", l.state.epochStartTimestamp)
+	log.Infof("Started epoch: %s", l.state.protocolStartTimestamp)
 }
 
 func (l *Lara) EndEpoch() {
@@ -212,7 +227,7 @@ func (l *Lara) EndEpoch() {
 		GasLimit: 0,
 		Context:  nil,
 	}
-	_, err := l.contract.EndEpoch(opts)
+	tx, err := l.contract.EndEpoch(opts)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("End epoch tx already in pool")
@@ -220,7 +235,9 @@ func (l *Lara) EndEpoch() {
 			log.Fatalf("Failed to end epoch: %v", err)
 		}
 	}
-
+	if tx != nil {
+		log.Warnf("Ended epoch at timestamp: %d", tx.Time().Unix())
+	}
 	l.SyncState()
 
 	// can be solved by indexing a separate event for this and taking the validator info at the event height

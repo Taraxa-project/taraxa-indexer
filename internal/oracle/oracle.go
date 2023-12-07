@@ -120,7 +120,7 @@ func (o *Oracle) pushDataToContract() {
 	for {
 		_, err := o.contract.BatchUpdateNodeData(o.signer, validatorDatas)
 		if err != nil {
-			if strings.Contains(err.Error(), "Transaction already in transactions pool") {
+			if strings.Contains(err.Error(), "Transaction already in transactions pool") || strings.Contains(err.Error(), "nonce too low") {
 				time.Sleep(1 * time.Second)
 				continue
 			}
