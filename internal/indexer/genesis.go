@@ -5,6 +5,7 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
@@ -17,12 +18,12 @@ type Genesis struct {
 	hash    string
 }
 
-func MakeGenesis(s storage.Storage, c *chain.WsClient, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) *Genesis {
+func MakeGenesis(s storage.Storage, c *chain.WsClient, oracle *oracle.Oracle, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
-	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()})
+	genesis.bc = *MakeBlockContext(s, c, oracle, &common.Config{Chain: gen_obj.ToChainConfig()})
 
 	return &genesis
 }

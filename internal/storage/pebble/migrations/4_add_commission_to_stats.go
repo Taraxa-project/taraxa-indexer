@@ -6,56 +6,55 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
-	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
 )
 
-type AddValidatorRegistrationBlock struct {
+type AddCommission struct {
 	id            string
 	blockchain_ws string
 }
 
-type ValidatorRegistration struct {
-	Validator   string
-	BlockHeight uint64
+type ValidatorCommission struct {
+	Validator  string
+	Commission uint64
 }
 
-type OldStatsResponse struct {
+type OldStatsResponseCom struct {
 	DagsCount                models.Counter        `json:"dagsCount"`
 	LastDagTimestamp         *models.NilableUint64 `json:"lastDagTimestamp" rlp:"nil"`
 	LastPbftTimestamp        *models.NilableUint64 `json:"lastPbftTimestamp" rlp:"nil"`
 	LastTransactionTimestamp *models.NilableUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
 	PbftCount                models.Counter        `json:"pbftCount"`
 	TransactionsCount        models.Counter        `json:"transactionsCount"`
+	ValidatorRegisteredBlock *models.NilableUint64 `json:"validatorRegisteredBlock" rlp:"nil"`
 }
 
-type OldAddressStats struct {
-	OldStatsResponse
+type OldAddressStatsCom struct {
+	OldStatsResponseCom
 	Address string `json:"address"`
 }
 
-func (m *AddValidatorRegistrationBlock) GetId() string {
+func (m *AddCommission) GetId() string {
 	return m.id
 }
 
-func (m *AddValidatorRegistrationBlock) migrateStats(s *pebble.Storage) {
+func (m *AddCommission) migrateStats(s *pebble.Storage) {
 	const STATS_BATCH_THRESHOLD = 1000
 	batch := s.NewBatch()
 	var last_key []byte
 
 	for {
-		var o OldAddressStats
+		var o OldAddressStatsCom
 		count := 0
 		s.ForEachFromKey([]byte(pebble.GetPrefix(storage.AddressStats{})), last_key, func(key []byte, res []byte) bool {
 			err := rlp.DecodeBytes(res, &o)
 			if err != nil {
-				if err.Error() == "rlp: input list has too many elements for migration.OldStatsResponse, decoding into (migration.OldAddressStats).OldStatsResponse" {
+				if err.Error() == "rlp: input list has too many elements for migration.OldStatsResponseCom, decoding into (migration.OldAddressStatsCom).OldStatsResponseCom" {
 					// Check if it's really already migrated
 					var o storage.AddressStats
 					err := rlp.DecodeBytes(res, &o)
@@ -64,7 +63,7 @@ func (m *AddValidatorRegistrationBlock) migrateStats(s *pebble.Storage) {
 					}
 					return false
 				}
-				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding OldAddressStats")
+				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error decoding OldAddressStatsCom")
 			}
 
 			sr := models.StatsResponse{
@@ -74,6 +73,7 @@ func (m *AddValidatorRegistrationBlock) migrateStats(s *pebble.Storage) {
 				LastTransactionTimestamp: o.LastTransactionTimestamp,
 				PbftCount:                o.PbftCount,
 				TransactionsCount:        o.TransactionsCount,
+				ValidatorRegisteredBlock: o.ValidatorRegisteredBlock,
 			}
 			err = batch.AddToBatchFullKey(&storage.AddressStats{Address: o.Address, StatsResponse: sr}, key)
 
@@ -94,13 +94,9 @@ func (m *AddValidatorRegistrationBlock) migrateStats(s *pebble.Storage) {
 
 }
 
-func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
+func (m *AddCommission) Apply(s *pebble.Storage) error {
 	m.migrateStats(s)
 	client, err := chain.NewWsClient(m.blockchain_ws)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ethClient, err := ethclient.Dial(m.blockchain_ws)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -120,32 +116,22 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 
 	for startBlock := uint64(0); startBlock < currentHead; startBlock += step {
 		endBlock := startBlock + step
-		validators, err := GetValidatorsRegisteredInBlock(client, startBlock, endBlock)
+		validators, err := GetCommissionChangesInBlock(client, startBlock, endBlock)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		for _, validator := range validators {
-			validatorInfo, err := oracle.FetchValidatorInfo(ethClient, validator.Validator)
-			if err != nil {
-				fmt.Println("Error fetching validator info:", err)
-			}
-			if validatorInfo == nil {
-				continue
-			}
-			commission := uint64(validatorInfo.Commission)
 			addressStats := s.GetAddressStats(strings.ToLower(validator.Validator))
 			if addressStats == nil {
 				addressStats = &storage.AddressStats{
 					Address: strings.ToLower(validator.Validator),
 					StatsResponse: models.StatsResponse{
-						ValidatorRegisteredBlock: &validator.BlockHeight,
-						Commission:               &commission,
+						Commission: &validator.Commission,
 					},
 				}
 			} else {
-				addressStats.ValidatorRegisteredBlock = &validator.BlockHeight
-				addressStats.Commission = &commission
+				addressStats.Commission = &validator.Commission
 			}
 			batch.AddToBatch(addressStats, addressStats.Address, 0)
 		}
@@ -154,27 +140,31 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 	return nil
 }
 
-func GetValidatorsRegisteredInBlock(client *chain.WsClient, from, to uint64) ([]ValidatorRegistration, error) {
+func GetCommissionChangesInBlock(client *chain.WsClient, from, to uint64) ([]ValidatorCommission, error) {
 	if from > to {
 		return nil, fmt.Errorf("from block %d is greater than to block %d", from, to)
 	}
 
-	logs, err := client.GetLogs(from, to, []string{"0x00000000000000000000000000000000000000fe"}, [][]string{{"0xd09501348473474a20c772c79c653e1fd7e8b437e418fe235d277d2c88853251"}})
+	logs, err := client.GetLogs(from, to, []string{"0x00000000000000000000000000000000000000fe"}, [][]string{{"0xc909daf778d180f43dac53b55d0de934d2f1e0b70412ca274982e4e6e894eb1a"}})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Infof("Found %d validator registrations in blocks %d-%d", len(logs), from, to)
+	log.Infof("Found %d validator commission changes in blocks %d-%d", len(logs), from, to)
 
-	var validators []ValidatorRegistration
+	var validators []ValidatorCommission
 	for _, eLog := range logs {
 		event := struct {
 			Validator string `json:"validator"`
 		}{}
 
 		event.Validator = strings.ToLower(ethcommon.HexToAddress(eLog.Topics[1]).Hex())
-		validators = append(validators, ValidatorRegistration{Validator: event.Validator, BlockHeight: common.ParseUInt(eLog.BlockNumber)})
-		log.Infof("Found validator %s registered in block %d", event.Validator, common.ParseUInt(eLog.BlockNumber))
+		comm, err := common.DecodePaddedHex(eLog.Data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		validators = append(validators, ValidatorCommission{Validator: event.Validator, Commission: comm})
+		log.Infof("Found validator %s changed commission in block %d", event.Validator, common.ParseUInt(eLog.BlockNumber))
 	}
 	return validators, nil
 }

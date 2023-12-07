@@ -5,15 +5,17 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 )
 
-func MakeTestBlockContext(mc *chain.ClientMock, blockNumber uint64) *blockContext {
+func MakeTestBlockContext(mc *chain.ClientMock, oracle *oracle.Oracle, blockNumber uint64) *blockContext {
 	st := pebble.NewStorage("")
-	bc := MakeBlockContext(st, mc, new(common.Config))
+	bc := MakeBlockContext(st, mc, oracle, new(common.Config))
 	bc.block = &models.Pbft{}
 	bc.block.Number = blockNumber
 	bc.block.TransactionCount = 1
@@ -238,6 +240,8 @@ func TestTraceParsing(t *testing.T) {
 	}]`
 
 	mc := chain.MakeMockClient()
+	eth := ethclient.Client{}
+	oracle := oracle.MakeMockOracle(&eth)
 	mc.AddTransactionFromJson(transaction_json)
 	tt, _ := mc.GetTransactionByHash(transaction_hash)
 	trx := tt.ToModelWithTimestamp(1)
@@ -245,7 +249,7 @@ func TestTraceParsing(t *testing.T) {
 	assert.Equal(t, uint64(0x5487c), trx.BlockNumber)
 	assert.Equal(t, models.ContractCall, trx.Type)
 
-	bc := MakeTestBlockContext(mc, trx.BlockNumber)
+	bc := MakeTestBlockContext(mc, oracle, trx.BlockNumber)
 
 	mc.AddTracesFromJson(transaction_hash, traces_json)
 

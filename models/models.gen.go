@@ -112,6 +112,7 @@ type Period struct {
 
 // StatsResponse defines model for StatsResponse.
 type StatsResponse struct {
+	Commission               *NilableUint64 `json:"commission" rlp:"nil"`
 	DagsCount                Counter        `json:"dagsCount"`
 	LastDagTimestamp         *NilableUint64 `json:"lastDagTimestamp" rlp:"nil"`
 	LastPbftTimestamp        *NilableUint64 `json:"lastPbftTimestamp" rlp:"nil"`

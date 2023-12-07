@@ -595,6 +595,7 @@ components:
         - lastDagTimestamp
         - lastTransactionTimestamp
         - validatorRegisteredBlock
+        - commission
       properties:
         pbftCount:
           $ref: "#/components/schemas/Counter"
@@ -609,6 +610,8 @@ components:
         lastTransactionTimestamp:
           $ref: "#/components/schemas/NilableUint64"
         validatorRegisteredBlock:
+          $ref: "#/components/schemas/NilableUint64"
+        commission:
           $ref: "#/components/schemas/NilableUint64"
     PaginatedResponse:
       type: object
