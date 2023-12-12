@@ -32,6 +32,7 @@ const internalTransactionsPrefix = "i"
 const yieldPrefix = "y"
 const validatorsYieldPrefix = "vy"
 const multipliedYieldPrefix = "my"
+const PeriodRewardsPrefix = "pr"
 
 type Storage struct {
 	db   *pebble.DB
@@ -124,6 +125,8 @@ func GetPrefix(o interface{}) (ret string) {
 		ret = validatorsYieldPrefix
 	case *storage.MultipliedYield, storage.MultipliedYield:
 		ret = multipliedYieldPrefix
+	case *storage.PeriodRewards, storage.PeriodRewards:
+		ret = PeriodRewardsPrefix
 	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
 		ret = GetPrefix(*o.(*interface{}))
@@ -168,7 +171,7 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 		UpperBound: keyUpperBound(prefix),
 	}
 
-	iter := s.db.NewIter(&prefixIterOptions)
+	iter, _ := s.db.NewIter(&prefixIterOptions)
 	return iter
 }
 

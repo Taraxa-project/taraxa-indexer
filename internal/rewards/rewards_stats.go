@@ -11,19 +11,19 @@ import (
 
 type validatorStats struct {
 	// count of rewardable(with 1 or more unique transactions) DAG blocks produced by this validator
-	dagBlocksCount int64
+	DagBlocksCount int64
 
 	// Validator cert voted block weight
-	voteWeight int64
+	VoteWeight int64
 }
 
-type totalRewards struct {
+type totalPeriodRewards struct {
 	dags  *big.Int
 	votes *big.Int
 	bonus *big.Int
 }
 
-func ZeroTotalRewards() (tr totalRewards) {
+func ZeroTotalRewards() (tr totalPeriodRewards) {
 	tr.dags = big.NewInt(0)
 	tr.votes = big.NewInt(0)
 	tr.bonus = big.NewInt(0)
@@ -54,8 +54,8 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.T
 	for _, v := range votes.Votes {
 		voter := strings.ToLower(v.Voter)
 		entry := s.ValidatorStats[voter]
-		entry.voteWeight = int64(common.ParseInt(v.Weight))
-		s.TotalVotesWeight += entry.voteWeight
+		entry.VoteWeight = int64(common.ParseInt(v.Weight))
+		s.TotalVotesWeight += entry.VoteWeight
 
 		s.ValidatorStats[voter] = entry
 	}
@@ -79,7 +79,7 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.T
 		if has_unique_transactions {
 			sender := strings.ToLower(d.Sender)
 			entry := s.ValidatorStats[sender]
-			entry.dagBlocksCount += 1
+			entry.DagBlocksCount += 1
 			s.ValidatorStats[sender] = entry
 			s.TotalDagCount += 1
 		}
@@ -87,7 +87,7 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.T
 	return
 }
 
-func calculateTotalRewards(config *common.ChainConfig, totalStake *big.Int, noVotes bool) (tr totalRewards) {
+func calculateTotalPeriodRewards(config *common.ChainConfig, totalStake *big.Int, noVotes bool) (tr totalPeriodRewards) {
 	// calculate total rewards
 	totalRewards := big.NewInt(0).Mul(totalStake, config.YieldPercentage)
 	totalRewards.Div(totalRewards, big.NewInt(0).Mul(big.NewInt(100), config.BlocksPerYear))

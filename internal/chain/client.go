@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -16,11 +15,12 @@ type Client interface {
 	GetDagBlockByHash(hash string) (dag DagBlock, err error)
 	GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error)
 	GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error)
-	GetValidatorsAtBlock(block_num uint64) (validators []dpos_interface.DposInterfaceValidatorData, err error)
+	GetValidatorsAtBlock(block_num uint64) (validators []Validator, err error)
 	GetGenesis() (genesis GenesisObject, err error)
 	GetChainStats() (ns storage.FinalizationData, err error)
 	SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error)
 	GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error)
+	GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error)
 	// Close disconnects from the node
 	Close()
 }

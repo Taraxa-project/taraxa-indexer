@@ -1,5 +1,18 @@
 package common
 
+import (
+	"reflect"
+	"runtime"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
+)
+
+func GetFunctionName(temp interface{}) string {
+	strs := strings.Split((runtime.FuncForPC(reflect.ValueOf(temp).Pointer()).Name()), ".")
+	return strs[len(strs)-1]
+}
+
 type Task[P any] struct {
 	f      func(P) error
 	params P
@@ -17,6 +30,27 @@ func MakeTask[P any](f func(P) error, params P, err *error) *Task[P] {
 func (t *Task[P]) Run() {
 	exec_err := t.f(t.params)
 	if exec_err != nil {
+		log.WithField("func", GetFunctionName(t.f)).Error("Task fn returned an error")
+		*t.err = exec_err
+	}
+}
+
+type TaskWithoutParams struct {
+	f   func() error
+	err *error
+}
+
+func MakeTaskWithoutParams(f func() error, err *error) *TaskWithoutParams {
+	t := new(TaskWithoutParams)
+	t.f = f
+	t.err = err
+	return t
+}
+
+func (t *TaskWithoutParams) Run() {
+	exec_err := t.f()
+	if exec_err != nil {
+		log.WithField("func", GetFunctionName(t.f)).Error("TaskWithoutParams fn returned an error")
 		*t.err = exec_err
 	}
 }
@@ -40,7 +74,9 @@ func MakeTaskWithResult[P, R any](f func(P) (R, error), params P, result *R, err
 func (t *TaskWithResult[P, R]) Run() {
 	var exec_err error
 	*t.result, exec_err = t.f(t.params)
+
 	if exec_err != nil {
+		log.WithField("func", GetFunctionName(t.f)).Error("TaskWithResult fn returned an error")
 		*t.err = exec_err
 	}
 }

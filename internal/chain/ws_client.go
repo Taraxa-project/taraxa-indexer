@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client"
-	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,7 +17,6 @@ import (
 type WsClient struct {
 	rpc     *rpc.Client
 	ctx     context.Context
-	dpos    *dpos_contract_client.DposContractClient
 	ChainId *big.Int
 }
 
@@ -35,8 +30,6 @@ func NewWsClient(url string) (*WsClient, error) {
 	client := &WsClient{rpc: ws, ctx: ctx}
 	client.GetChainId()
 
-	ethclient := ethclient.NewClient(client.rpc)
-	client.dpos, err = dpos_contract_client.NewDposContractClient(ethclient, ethcommon.HexToAddress(common.DposContractAddress), client.ChainId)
 	if err != nil {
 		log.WithError(err).Fatal("Can't create dpos client")
 	}
@@ -137,6 +130,14 @@ func (client *WsClient) GetGenesis() (genesis GenesisObject, err error) {
 	return
 }
 
+func (client *WsClient) GetVersion() (version string, err error) {
+	versionResponse := make(map[string]string)
+	err = client.rpc.Call(&versionResponse, "taraxa_getVersion")
+	version = versionResponse["version"]
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
 func (client *WsClient) GetChainStats() (fd storage.FinalizationData, err error) {
 	err = client.rpc.Call(&fd, "taraxa_getChainStats")
 	metrics.RpcCallsCounter.Inc()
@@ -149,8 +150,20 @@ func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr VotesRespon
 	return
 }
 
-func (client *WsClient) GetValidatorsAtBlock(block_num uint64) (validators []dpos_interface.DposInterfaceValidatorData, err error) {
-	return client.dpos.GetValidatorsAtBlock(big.NewInt(0).SetUint64(block_num))
+func (client *WsClient) GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error) {
+	err = client.rpc.Call(&logs, "eth_getLogs", map[string]interface{}{
+		"fromBlock": fmt.Sprintf("0x%x", fromBlock),
+		"toBlock":   fmt.Sprintf("0x%x", toBlock),
+		"address":   addresses,
+		"topics":    topics,
+	})
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
+func (client *WsClient) GetValidatorsAtBlock(period uint64) (validators []Validator, err error) {
+	err = client.rpc.Call(&validators, "debug_dposValidatorTotalStakes", fmt.Sprintf("0x%x", period))
+	return
 }
 
 func (client *WsClient) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {

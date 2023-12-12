@@ -67,7 +67,7 @@ func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {
 func (b *Batch) AddToBatchSingleKey(o interface{}, key string) {
 	err := b.AddToBatchFullKey(o, getPrefixKey(GetPrefix(o), key))
 	if err != nil {
-		log.WithError(err).Fatal("AddToBatchSingleKey failed")
+		log.WithError(err).WithField("key", string(getPrefixKey(GetPrefix(o), key))).Fatal("AddToBatchSingleKey failed")
 	}
 }
 
@@ -82,11 +82,11 @@ func (b *Batch) AddToBatchFullKey(o interface{}, key []byte) error {
 	return b.Set(key, data, nil)
 }
 
-func (b *Batch) Remove(key string) {
+func (b *Batch) Remove(key []byte) {
 	b.Mutex.Lock()
 	defer b.Mutex.Unlock()
 
-	err := b.Delete([]byte(key), nil)
+	err := b.Delete(key, nil)
 	if err != nil {
 		log.WithError(err).Fatal("Remove failed")
 	}
