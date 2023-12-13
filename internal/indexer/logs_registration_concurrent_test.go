@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +18,12 @@ func TestHandleValidatorRegistrations(t *testing.T) {
 	wg.Add(concurrency)
 	// Create a mock blockContext
 	mc := chain.MakeMockClient()
-	bc := MakeTestBlockContext(mc, 1)
+	eth, err := ethclient.Dial("ws://localhost:8777")
+	if err != nil {
+		t.Fatal(err)
+	}
+	o := oracle.MakeMockOracle(eth)
+	bc := MakeTestBlockContext(mc, o, 1)
 
 	// Create a slice of EventLog for testing
 	logs := []models.EventLog{
