@@ -170,9 +170,9 @@ func (l *Lara) SyncState() {
 		log.Fatalf("Failed to get commission: %v", err)
 	}
 	if commission.Cmp(big.NewInt(10)) != 0 {
-		_, err = l.contract.SetCommission(l.signer, big.NewInt(10))
+		_, err = l.contract.SetCommission(l.signer, big.NewInt(2))
 
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Fatalf("Failed to set commission: %v", err)
 		}
 		// wait 1 sec
