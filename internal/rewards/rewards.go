@@ -56,10 +56,10 @@ func (r *Rewards) ProcessRewards(periodRewards PeriodRewards, total_minted *big.
 		// distribute rewards for whole interval
 		periodRewards = r.GetIntervalRewards(periodRewards, distributionFrequency)
 	} else if distributionFrequency > 1 {
-		// Save blockFee to db, but not return it from this method to avoid double counting
+		// Save blockFee to db to process it later and return it from this method to avoid yield double counting
 		toStore := periodRewards.ToStorage(r.blockFee)
-		// save this period rewards to process it later
 		r.batch.AddToBatchSingleKey(toStore, storage.FormatIntToKey(r.blockNum))
+		return big.NewInt(0), big.NewInt(0)
 	}
 
 	validators_yield := GetValidatorsYield(periodRewards.ValidatorRewards, r.validators)
