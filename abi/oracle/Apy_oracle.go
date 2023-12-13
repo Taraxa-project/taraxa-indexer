@@ -43,11 +43,20 @@ type IApyOracleNodeData struct {
 type IApyOracleTentativeDelegation struct {
 	Validator common.Address
 	Amount    *big.Int
+	Rating    *big.Int
+}
+
+// IApyOracleTentativeReDelegation is an auto generated low-level Go binding around an user-defined struct.
+type IApyOracleTentativeReDelegation struct {
+	From     common.Address
+	To       common.Address
+	Amount   *big.Int
+	ToRating *big.Int
 }
 
 // ApyOracleMetaData contains all meta data concerning the ApyOracle contract.
 var ApyOracleMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dataFeed\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"dpos\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"pbftCount\",\"type\":\"uint256\"}],\"name\":\"NodeDataUpdated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"_dataFeed\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_dpos\",\"outputs\":[{\"internalType\":\"contractDposInterface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData[]\",\"name\":\"data\",\"type\":\"tuple[]\"}],\"name\":\"batchUpdateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getDataFeedAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getNodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"}],\"name\":\"getNodeData\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"getNodesForDelegation\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxValidatorStakeCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"nodes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"nodesList\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"capacity\",\"type\":\"uint256\"}],\"name\":\"setMaxValidatorStakeCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"count\",\"type\":\"uint256\"}],\"name\":\"updateNodeCount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"data\",\"type\":\"tuple\"}],\"name\":\"updateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dataFeed\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"dpos\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"pbftCount\",\"type\":\"uint256\"}],\"name\":\"NodeDataUpdated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"_dataFeed\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_dpos\",\"outputs\":[{\"internalType\":\"contractDposInterface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData[]\",\"name\":\"data\",\"type\":\"tuple[]\"}],\"name\":\"batchUpdateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getDataFeedAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getNodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"}],\"name\":\"getNodeData\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"getNodesForDelegation\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"currentValidators\",\"type\":\"tuple[]\"}],\"name\":\"getRebalanceList\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"toRating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeReDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lara\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxValidatorStakeCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"nodes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"nodesList\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_lara\",\"type\":\"address\"}],\"name\":\"setLara\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"capacity\",\"type\":\"uint256\"}],\"name\":\"setMaxValidatorStakeCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"count\",\"type\":\"uint256\"}],\"name\":\"updateNodeCount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"data\",\"type\":\"tuple\"}],\"name\":\"updateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // ApyOracleABI is the input ABI used to generate the binding from.
@@ -351,6 +360,37 @@ func (_ApyOracle *ApyOracleCallerSession) GetNodeData(node common.Address) (IApy
 	return _ApyOracle.Contract.GetNodeData(&_ApyOracle.CallOpts, node)
 }
 
+// Lara is a free data retrieval call binding the contract method 0x07f71eb2.
+//
+// Solidity: function lara() view returns(address)
+func (_ApyOracle *ApyOracleCaller) Lara(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ApyOracle.contract.Call(opts, &out, "lara")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Lara is a free data retrieval call binding the contract method 0x07f71eb2.
+//
+// Solidity: function lara() view returns(address)
+func (_ApyOracle *ApyOracleSession) Lara() (common.Address, error) {
+	return _ApyOracle.Contract.Lara(&_ApyOracle.CallOpts)
+}
+
+// Lara is a free data retrieval call binding the contract method 0x07f71eb2.
+//
+// Solidity: function lara() view returns(address)
+func (_ApyOracle *ApyOracleCallerSession) Lara() (common.Address, error) {
+	return _ApyOracle.Contract.Lara(&_ApyOracle.CallOpts)
+}
+
 // MaxValidatorStakeCapacity is a free data retrieval call binding the contract method 0x2a8cf87f.
 //
 // Solidity: function maxValidatorStakeCapacity() view returns(uint256)
@@ -532,23 +572,65 @@ func (_ApyOracle *ApyOracleTransactorSession) BatchUpdateNodeData(data []IApyOra
 
 // GetNodesForDelegation is a paid mutator transaction binding the contract method 0xe87eafa4.
 //
-// Solidity: function getNodesForDelegation(uint256 amount) returns((address,uint256)[])
+// Solidity: function getNodesForDelegation(uint256 amount) returns((address,uint256,uint256)[])
 func (_ApyOracle *ApyOracleTransactor) GetNodesForDelegation(opts *bind.TransactOpts, amount *big.Int) (*types.Transaction, error) {
 	return _ApyOracle.contract.Transact(opts, "getNodesForDelegation", amount)
 }
 
 // GetNodesForDelegation is a paid mutator transaction binding the contract method 0xe87eafa4.
 //
-// Solidity: function getNodesForDelegation(uint256 amount) returns((address,uint256)[])
+// Solidity: function getNodesForDelegation(uint256 amount) returns((address,uint256,uint256)[])
 func (_ApyOracle *ApyOracleSession) GetNodesForDelegation(amount *big.Int) (*types.Transaction, error) {
 	return _ApyOracle.Contract.GetNodesForDelegation(&_ApyOracle.TransactOpts, amount)
 }
 
 // GetNodesForDelegation is a paid mutator transaction binding the contract method 0xe87eafa4.
 //
-// Solidity: function getNodesForDelegation(uint256 amount) returns((address,uint256)[])
+// Solidity: function getNodesForDelegation(uint256 amount) returns((address,uint256,uint256)[])
 func (_ApyOracle *ApyOracleTransactorSession) GetNodesForDelegation(amount *big.Int) (*types.Transaction, error) {
 	return _ApyOracle.Contract.GetNodesForDelegation(&_ApyOracle.TransactOpts, amount)
+}
+
+// GetRebalanceList is a paid mutator transaction binding the contract method 0x9a0e3695.
+//
+// Solidity: function getRebalanceList((address,uint256,uint256)[] currentValidators) returns((address,address,uint256,uint256)[])
+func (_ApyOracle *ApyOracleTransactor) GetRebalanceList(opts *bind.TransactOpts, currentValidators []IApyOracleTentativeDelegation) (*types.Transaction, error) {
+	return _ApyOracle.contract.Transact(opts, "getRebalanceList", currentValidators)
+}
+
+// GetRebalanceList is a paid mutator transaction binding the contract method 0x9a0e3695.
+//
+// Solidity: function getRebalanceList((address,uint256,uint256)[] currentValidators) returns((address,address,uint256,uint256)[])
+func (_ApyOracle *ApyOracleSession) GetRebalanceList(currentValidators []IApyOracleTentativeDelegation) (*types.Transaction, error) {
+	return _ApyOracle.Contract.GetRebalanceList(&_ApyOracle.TransactOpts, currentValidators)
+}
+
+// GetRebalanceList is a paid mutator transaction binding the contract method 0x9a0e3695.
+//
+// Solidity: function getRebalanceList((address,uint256,uint256)[] currentValidators) returns((address,address,uint256,uint256)[])
+func (_ApyOracle *ApyOracleTransactorSession) GetRebalanceList(currentValidators []IApyOracleTentativeDelegation) (*types.Transaction, error) {
+	return _ApyOracle.Contract.GetRebalanceList(&_ApyOracle.TransactOpts, currentValidators)
+}
+
+// SetLara is a paid mutator transaction binding the contract method 0xe2b27fe9.
+//
+// Solidity: function setLara(address _lara) returns()
+func (_ApyOracle *ApyOracleTransactor) SetLara(opts *bind.TransactOpts, _lara common.Address) (*types.Transaction, error) {
+	return _ApyOracle.contract.Transact(opts, "setLara", _lara)
+}
+
+// SetLara is a paid mutator transaction binding the contract method 0xe2b27fe9.
+//
+// Solidity: function setLara(address _lara) returns()
+func (_ApyOracle *ApyOracleSession) SetLara(_lara common.Address) (*types.Transaction, error) {
+	return _ApyOracle.Contract.SetLara(&_ApyOracle.TransactOpts, _lara)
+}
+
+// SetLara is a paid mutator transaction binding the contract method 0xe2b27fe9.
+//
+// Solidity: function setLara(address _lara) returns()
+func (_ApyOracle *ApyOracleTransactorSession) SetLara(_lara common.Address) (*types.Transaction, error) {
+	return _ApyOracle.Contract.SetLara(&_ApyOracle.TransactOpts, _lara)
 }
 
 // SetMaxValidatorStakeCapacity is a paid mutator transaction binding the contract method 0x6d2d8519.

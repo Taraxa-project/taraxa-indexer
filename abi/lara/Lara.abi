@@ -1,1142 +1,1247 @@
 [
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_sttaraToken",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_dposContract",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_apyOracle",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_treasuryAddress",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "delegator",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "name": "CancelUndelegationFailed",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "delegator",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "name": "ConfirmUndelegationFailed",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "delegator",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "name": "DelegationFailed",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        }
-      ],
-      "name": "OwnableInvalidOwner",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "OwnableUnauthorizedAccount",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "from",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "name": "RedelegationFailed",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint32",
-          "name": "batch",
-          "type": "uint32"
-        }
-      ],
-      "name": "RewardClaimFailed",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "StakeAmountTooLow",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "sentAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "targetAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "StakeValueTooLow",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "delegator",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "name": "UndelegationFailed",
-      "type": "error"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "AllRewardsClaimed",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "newCommission",
-          "type": "uint256"
-        }
-      ],
-      "name": "CommissionChanged",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "CommissionWithdrawn",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "value",
-          "type": "bool"
-        }
-      ],
-      "name": "CompoundChanged",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "Delegated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "totalEpochDelegation",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "totalEpochReward",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "EpochEnded",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "totalEpochDelegation",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "EpochStarted",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "previousOwner",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "OwnershipTransferred",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "RewardsClaimed",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "StakeRemoved",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "Staked",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "blockNumber",
-          "type": "uint256"
-        }
-      ],
-      "name": "TaraSent",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "newTreasury",
-          "type": "address"
-        }
-      ],
-      "name": "TreasuryChanged",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "Undelegated",
-      "type": "event"
-    },
-    {
-      "stateMutability": "payable",
-      "type": "fallback"
-    },
-    {
-      "inputs": [],
-      "name": "apyOracle",
-      "outputs": [
-        {
-          "internalType": "contract IApyOracle",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "cancelUndelegate",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "claimRewards",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "claimableRewards",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "commission",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "confirmUndelegate",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "delegateStakeOfUser",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        }
-      ],
-      "name": "delegateToDpos",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "delegateToValidators",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "remainingAmount",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "delegatedAmounts",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "delegators",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "dposContract",
-      "outputs": [
-        {
-          "internalType": "contract DposInterface",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "endEpoch",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "epochDuration",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "index",
-          "type": "uint256"
-        }
-      ],
-      "name": "getDelegatorAtIndex",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "getValidatorsForAmount",
-      "outputs": [
-        {
-          "components": [
+        "inputs":[
             {
-              "internalType": "address",
-              "name": "validator",
-              "type": "address"
+                "internalType":"address",
+                "name":"_sttaraToken",
+                "type":"address"
             },
             {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
+                "internalType":"address",
+                "name":"_dposContract",
+                "type":"address"
+            },
+            {
+                "internalType":"address",
+                "name":"_apyOracle",
+                "type":"address"
+            },
+            {
+                "internalType":"address",
+                "name":"_treasuryAddress",
+                "type":"address"
             }
-          ],
-          "internalType": "struct IApyOracle.TentativeDelegation[]",
-          "name": "",
-          "type": "tuple[]"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        ],
+        "stateMutability":"nonpayable",
+        "type":"constructor"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "isCompounding",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"delegator",
+                "type":"address"
+            },
+            {
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            },
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "internalType":"string",
+                "name":"reason",
+                "type":"string"
+            }
+        ],
+        "name":"CancelUndelegationFailed",
+        "type":"error"
     },
     {
-      "inputs": [],
-      "name": "isEpochRunning",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"delegator",
+                "type":"address"
+            },
+            {
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            },
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "internalType":"string",
+                "name":"reason",
+                "type":"string"
+            }
+        ],
+        "name":"ConfirmUndelegationFailed",
+        "type":"error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "validator",
-          "type": "address"
-        }
-      ],
-      "name": "isValidatorRegistered",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            },
+            {
+                "internalType":"address",
+                "name":"delegator",
+                "type":"address"
+            },
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "internalType":"string",
+                "name":"reason",
+                "type":"string"
+            }
+        ],
+        "name":"DelegationFailed",
+        "type":"error"
     },
     {
-      "inputs": [],
-      "name": "lastEpochTotalDelegatedAmount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"lastEpochStart",
+                "type":"uint256"
+            },
+            {
+                "internalType":"uint256",
+                "name":"currentBlockNumber",
+                "type":"uint256"
+            },
+            {
+                "internalType":"uint256",
+                "name":"epochDuration",
+                "type":"uint256"
+            }
+        ],
+        "name":"EpochDurationNotMet",
+        "type":"error"
     },
     {
-      "inputs": [],
-      "name": "maxValidatorStakeCapacity",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"owner",
+                "type":"address"
+            }
+        ],
+        "name":"OwnableInvalidOwner",
+        "type":"error"
     },
     {
-      "inputs": [],
-      "name": "minStakeAmount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"account",
+                "type":"address"
+            }
+        ],
+        "name":"OwnableUnauthorizedAccount",
+        "type":"error"
     },
     {
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"from",
+                "type":"address"
+            },
+            {
+                "internalType":"address",
+                "name":"to",
+                "type":"address"
+            },
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "internalType":"string",
+                "name":"reason",
+                "type":"string"
+            }
+        ],
+        "name":"RedelegationFailed",
+        "type":"error"
     },
     {
-      "inputs": [],
-      "name": "protocolStartTimestamp",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"uint32",
+                "name":"batch",
+                "type":"uint32"
+            }
+        ],
+        "name":"RewardClaimFailed",
+        "type":"error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "protocolTotalStakeAtValidator",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "internalType":"uint256",
+                "name":"minAmount",
+                "type":"uint256"
+            }
+        ],
+        "name":"StakeAmountTooLow",
+        "type":"error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "from",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "reDelegate",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"sentAmount",
+                "type":"uint256"
+            },
+            {
+                "internalType":"uint256",
+                "name":"targetAmount",
+                "type":"uint256"
+            }
+        ],
+        "name":"StakeValueTooLow",
+        "type":"error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "removeStake",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            },
+            {
+                "internalType":"address",
+                "name":"delegator",
+                "type":"address"
+            },
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "internalType":"string",
+                "name":"reason",
+                "type":"string"
+            }
+        ],
+        "name":"UndelegationFailed",
+        "type":"error"
     },
     {
-      "inputs": [],
-      "name": "renounceOwnership",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"AllRewardsClaimed",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "requestUndelegate",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"newCommission",
+                "type":"uint256"
+            }
+        ],
+        "name":"CommissionChanged",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_commission",
-          "type": "uint256"
-        }
-      ],
-      "name": "setCommission",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"CommissionWithdrawn",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "value",
-          "type": "bool"
-        }
-      ],
-      "name": "setCompound",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"bool",
+                "name":"value",
+                "type":"bool"
+            }
+        ],
+        "name":"CompoundChanged",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_epochDuration",
-          "type": "uint256"
-        }
-      ],
-      "name": "setEpochDuration",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"Delegated",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_maxValidatorStakeCapacity",
-          "type": "uint256"
-        }
-      ],
-      "name": "setMaxValidatorStakeCapacity",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"totalEpochDelegation",
+                "type":"uint256"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"totalEpochReward",
+                "type":"uint256"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"timestamp",
+                "type":"uint256"
+            }
+        ],
+        "name":"EpochEnded",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_minStakeAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "setMinStakeAmount",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"totalEpochDelegation",
+                "type":"uint256"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"timestamp",
+                "type":"uint256"
+            }
+        ],
+        "name":"EpochStarted",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_treasuryAddress",
-          "type": "address"
-        }
-      ],
-      "name": "setTreasuryAddress",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"previousOwner",
+                "type":"address"
+            },
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"newOwner",
+                "type":"address"
+            }
+        ],
+        "name":"OwnershipTransferred",
+        "type":"event"
     },
     {
-      "inputs": [],
-      "name": "stTaraToken",
-      "outputs": [
-        {
-          "internalType": "contract IstTara",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "indexed":false,
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            }
+        ],
+        "name":"RedelegationRewardsClaimed",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "stake",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"timestamp",
+                "type":"uint256"
+            }
+        ],
+        "name":"RewardsClaimed",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "stakedAmounts",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"StakeRemoved",
+        "type":"event"
     },
     {
-      "inputs": [],
-      "name": "startEpoch",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"Staked",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "transferOwnership",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"blockNumber",
+                "type":"uint256"
+            }
+        ],
+        "name":"TaraSent",
+        "type":"event"
     },
     {
-      "inputs": [],
-      "name": "treasuryAddress",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"newTreasury",
+                "type":"address"
+            }
+        ],
+        "name":"TreasuryChanged",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "undelegated",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "anonymous":false,
+        "inputs":[
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"user",
+                "type":"address"
+            },
+            {
+                "indexed":true,
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            },
+            {
+                "indexed":false,
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"Undelegated",
+        "type":"event"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "validators",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
+        "stateMutability":"payable",
+        "type":"fallback"
     },
     {
-      "stateMutability": "payable",
-      "type": "receive"
+        "inputs":[
+            
+        ],
+        "name":"apyOracle",
+        "outputs":[
+            {
+                "internalType":"contract IApyOracle",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            },
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"cancelUndelegate",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"claimRewards",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "name":"claimableRewards",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"commission",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            },
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"confirmUndelegate",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"delegateToValidators",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"remainingAmount",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "name":"delegatedAmounts",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "name":"delegators",
+        "outputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"dposContract",
+        "outputs":[
+            {
+                "internalType":"contract DposInterface",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"endEpoch",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"epochDuration",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"index",
+                "type":"uint256"
+            }
+        ],
+        "name":"getDelegatorAtIndex",
+        "outputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"getValidatorsForAmount",
+        "outputs":[
+            {
+                "components":[
+                    {
+                        "internalType":"address",
+                        "name":"validator",
+                        "type":"address"
+                    },
+                    {
+                        "internalType":"uint256",
+                        "name":"amount",
+                        "type":"uint256"
+                    },
+                    {
+                        "internalType":"uint256",
+                        "name":"rating",
+                        "type":"uint256"
+                    }
+                ],
+                "internalType":"struct IApyOracle.TentativeDelegation[]",
+                "name":"",
+                "type":"tuple[]"
+            }
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "name":"isCompounding",
+        "outputs":[
+            {
+                "internalType":"bool",
+                "name":"",
+                "type":"bool"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"isEpochRunning",
+        "outputs":[
+            {
+                "internalType":"bool",
+                "name":"",
+                "type":"bool"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"validator",
+                "type":"address"
+            }
+        ],
+        "name":"isValidatorRegistered",
+        "outputs":[
+            {
+                "internalType":"bool",
+                "name":"",
+                "type":"bool"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"lastEpochStartBlock",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"lastEpochTotalDelegatedAmount",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"maxValidatorStakeCapacity",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"minStakeAmount",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"owner",
+        "outputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"protocolStartTimestamp",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "name":"protocolTotalStakeAtValidator",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "name":"protocolValidatorRatingAtDelegation",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"rebalance",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"removeStake",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"renounceOwnership",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"requestUndelegate",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"_commission",
+                "type":"uint256"
+            }
+        ],
+        "name":"setCommission",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"bool",
+                "name":"value",
+                "type":"bool"
+            }
+        ],
+        "name":"setCompound",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"_epochDuration",
+                "type":"uint256"
+            }
+        ],
+        "name":"setEpochDuration",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"_maxValidatorStakeCapacity",
+                "type":"uint256"
+            }
+        ],
+        "name":"setMaxValidatorStakeCapacity",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"_minStakeAmount",
+                "type":"uint256"
+            }
+        ],
+        "name":"setMinStakeAmount",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"_treasuryAddress",
+                "type":"address"
+            }
+        ],
+        "name":"setTreasuryAddress",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"stTaraToken",
+        "outputs":[
+            {
+                "internalType":"contract IstTara",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"amount",
+                "type":"uint256"
+            }
+        ],
+        "name":"stake",
+        "outputs":[
+            
+        ],
+        "stateMutability":"payable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "name":"stakedAmounts",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"startEpoch",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"newOwner",
+                "type":"address"
+            }
+        ],
+        "name":"transferOwnership",
+        "outputs":[
+            
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            
+        ],
+        "name":"treasuryAddress",
+        "outputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "name":"undelegated",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "inputs":[
+            {
+                "internalType":"uint256",
+                "name":"",
+                "type":"uint256"
+            }
+        ],
+        "name":"validators",
+        "outputs":[
+            {
+                "internalType":"address",
+                "name":"",
+                "type":"address"
+            }
+        ],
+        "stateMutability":"view",
+        "type":"function"
+    },
+    {
+        "stateMutability":"payable",
+        "type":"receive"
     }
-  ]
+]

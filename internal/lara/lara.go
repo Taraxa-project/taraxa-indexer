@@ -242,7 +242,7 @@ func (l *Lara) EndEpoch() {
 
 	// can be solved by indexing a separate event for this and taking the validator info at the event height
 	// find the delegators of Lara and divide & disburse them if these amounts are too big
-	l.Evaluate(l.state.validators)
+	l.Rebalance()
 	l.SyncState()
 }
 
@@ -250,62 +250,17 @@ func (l *Lara) GetState() State {
 	return l.state
 }
 
-func (l *Lara) Evaluate(newValidators []oracle.NodeData) {
-	callOpts := &bind.CallOpts{
-		Pending:     false,
-		From:        l.signer.From,
-		BlockNumber: nil,
-		Context:     nil,
-	}
-	opts := &bind.TransactOpts{
-		From:     l.signer.From,
-		Signer:   l.signer.Signer,
-		GasLimit: 0,
-		Context:  nil,
-	}
-
-	log.Infof("Evaluating new validators: %d", len(newValidators))
-
-	// we need to go through lara's validators that have stake
-	for address, stake := range l.state.validatorStakes {
-		log.Infof("Evaluating validator: %s", address.Hex())
-		node, err := l.oracle.Nodes(nil, address)
-		if err != nil {
-			log.Fatalf("Failed to get node: %v", err)
+func (l *Lara) Rebalance() {
+	tx, err := l.contract.Rebalance(nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
+			log.Warn("Rebalance tx already in pool")
+		} else {
+			log.Fatalf("Failed to rebalance: %v", err)
 		}
-
-		// we go through on-chain state
-		// we get the new validators array with new scores from the indexer
-		// we compare the scores and if the old score is ?10%? worse than the new score we look for a better node to delegate to
-		// we go through the new validators array and find the first node that has enough stake room and is better than the current node
-
-		// compare on-chain data with new score in state
-		newValidatorData := findNode(newValidators, node)
-		if newValidatorData.Account.Hex() != "" {
-			// if score is smaller with at least 10% compared to on-chain score
-			if newValidatorData.Rating.Cmp(node.Rating) == -1 && newValidatorData.Rating.Cmp(node.Rating.Div(node.Rating, big.NewInt(10))) == -1 {
-				// we need to redelegate to the higest score new node, which is the first one in the list
-				for _, validator := range newValidators {
-					// check if the node has enough stake room
-					info, err := l.dpos.GetValidator(callOpts, validator.Account)
-					if err != nil {
-						log.Fatalf("Failed to get validator info: %v", err)
-					}
-					// if there's a node that can fit & is still 10% better than the current node
-					if info.TotalStake.Cmp(stake) >= 0 && validator.Rating.Cmp(node.Rating.Div(node.Rating, big.NewInt(10))) == 1 {
-						// redelegate
-						log.Infof("Redelegating %s from %s to %s", stake, address.Hex(), validator.Account.Hex())
-						_, err := l.contract.ReDelegate(opts, address, validator.Account, stake)
-						if err != nil {
-							log.Fatalf("Failed to delegate: %v", err)
-						}
-					} else {
-						// we do this until we find a node with enough stake room
-						continue
-					}
-				}
-			}
-		}
+	}
+	if tx != nil {
+		log.Warnf("Rebalanced at timestamp: %d", tx.Time().Unix())
 	}
 }
 
