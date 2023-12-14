@@ -182,7 +182,11 @@ func (l *Lara) SyncState() {
 		validators:                    validators,
 	}
 	epochEndBlock := big.NewInt(0).Add(epochStartBlock, epochDuration)
-	log.Infof("Epoch is running: %t since %d and currently delegated to %d nodes. Ending at %d", l.state.isEpochRunning, l.state.lastEpochStartBlock, len(l.state.validators), epochEndBlock)
+	currentBlock, err := l.Eth.BlockNumber(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get current block: %v", err)
+	}
+	log.WithFields(log.Fields{"isRunning": l.state.isEpochRunning, "currentBlock": currentBlock, "epochStartBlock": l.state.lastEpochStartBlock, "epochEndBlock": epochEndBlock, "nodesDelegatedTo": len(l.state.validators), "totalDelegated": l.state.lastEpochTotalDelegatedAmount}).Info("LARA STATE: ")
 }
 
 func (l *Lara) StartEpoch() {
@@ -220,7 +224,7 @@ func (l *Lara) StartEpoch() {
 	// wait 3 sec
 	time.Sleep(3 * time.Second)
 	l.SyncState()
-	log.Infof("Started epoch: %s", l.state.lastEpochStartBlock)
+	log.Warnf("Started epoch: %s", l.state.lastEpochStartBlock)
 }
 
 func (l *Lara) EndEpoch() {
