@@ -54,6 +54,12 @@ func makeTestConfig() (config *common.Config) {
 	return
 }
 
+func rewardFromStake(config *common.ChainConfig, totalStake *big.Int) *big.Int {
+	blockReward := big.NewInt(0).Mul(totalStake, config.YieldPercentage)
+	blockReward.Div(blockReward, big.NewInt(0).Mul(big.NewInt(100), config.BlocksPerYear))
+	return blockReward
+}
+
 func TestMakeStats(t *testing.T) {
 	trxs := makeTransactions(6)
 	dags := makeDags(AddressCount{"0x1": 1, "0x2": 2, "0x3": 3})
@@ -88,14 +94,16 @@ func TestCalculateTotalRewards(t *testing.T) {
 	votes_reward := big.NewInt(0)
 	votes_reward.Mul(blockReward, votes_rewards_part).Div(votes_reward, big.NewInt(100))
 
-	totalRewards := calculatePeriodRewardsParts(config, totalStake, false)
-	assert.Equal(t, dags_reward, totalRewards.dags)
-	assert.Equal(t, votes_reward, totalRewards.votes)
+	totalReward := rewardFromStake(config, totalStake)
+	rewardsParts := calculatePeriodRewardsParts(config, totalReward, false)
+	assert.Equal(t, dags_reward, rewardsParts.dags)
+	assert.Equal(t, votes_reward, rewardsParts.votes)
 
-	totalRewards = calculatePeriodRewardsParts(config, totalStake, true)
+	totalReward = rewardFromStake(config, totalStake)
+	rewardsParts = calculatePeriodRewardsParts(config, totalReward, true)
 
-	assert.Equal(t, blockReward, totalRewards.dags)
-	assert.Equal(t, big.NewInt(0), totalRewards.votes)
+	assert.Equal(t, blockReward, rewardsParts.dags)
+	assert.Equal(t, big.NewInt(0), rewardsParts.votes)
 }
 
 func TestRewards(t *testing.T) {
@@ -162,7 +170,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 	// Simulated rewards statistics
 	block := models.Pbft{Number: 1, Author: validator3_addr}
 	r := MakeRewards(st, st.NewBatch(), config, &block, nil, validators_list)
-	total_stake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
+	totalStake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
 	{
 		rewardsStats := stats{}
 		rewardsStats.ValidatorStats = map[string]validatorStats{
@@ -175,10 +183,11 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 8
 
 		// Expected block reward
-		totalRewards := calculatePeriodRewardsParts(r.config.Chain, total_stake, false)
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		totalReward := rewardFromStake(config.Chain, totalStake)
+		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 2 bonus votes, so block author should get half of the bonus reward
-		assert.Equal(t, big.NewInt(0).Div(totalRewards.bonus, big.NewInt(2)), rewards.ValidatorRewards[r.blockAuthor])
+		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(2)), rewards.ValidatorRewards[r.blockAuthor])
 
 		// data from node test
 		expected_validator1_commission_reward := int64(31890990795100)
@@ -201,10 +210,11 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 13
 
 		// Expected block reward
-		totalRewards := calculatePeriodRewardsParts(r.config.Chain, total_stake, false)
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		totalReward := rewardFromStake(config.Chain, totalStake)
+		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
-		assert.Equal(t, big.NewInt(0).Div(totalRewards.bonus, big.NewInt(4)), rewards.ValidatorRewards[r.blockAuthor])
+		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(4)), rewards.ValidatorRewards[r.blockAuthor])
 		assert.Equal(t, big.NewInt(5073566717402), rewards.ValidatorRewards[r.blockAuthor])
 		// data from node test
 		expected_validator1_commission_reward := int64(54794520547944)
@@ -228,7 +238,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 24
 
 		// Expected block reward
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
@@ -256,7 +266,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 		// Expected block reward
 		r.blockAuthor = validator1_addr
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
