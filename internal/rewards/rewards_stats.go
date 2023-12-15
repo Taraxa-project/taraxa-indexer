@@ -87,11 +87,7 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.T
 	return
 }
 
-func calculateTotalPeriodRewards(config *common.ChainConfig, totalStake *big.Int, noVotes bool) (tr totalPeriodRewards) {
-	// calculate total rewards
-	totalRewards := big.NewInt(0).Mul(totalStake, config.YieldPercentage)
-	totalRewards.Div(totalRewards, big.NewInt(0).Mul(big.NewInt(100), config.BlocksPerYear))
-
+func calculatePeriodRewardsParts(config *common.ChainConfig, totalRewards *big.Int, noVotes bool) (tr totalPeriodRewards) {
 	tr = ZeroTotalRewards()
 
 	// Should only happen for block 1, so we are distributing all rewards to dag blocks producers
