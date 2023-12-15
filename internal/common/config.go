@@ -35,15 +35,17 @@ func (c *HardforksConfig) GetDistributionFrequency(period uint64) uint32 {
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 
 	lastBigger := uint64(0)
+	found := false
 	for _, ki := range keys {
 		k := uint64(ki)
 		if period >= k {
+			found = true
 			lastBigger = k
 		} else {
 			break
 		}
 	}
-	if lastBigger == 0 {
+	if !found {
 		return 1
 	}
 	return c.RewardsDistributionFrequency[lastBigger]
