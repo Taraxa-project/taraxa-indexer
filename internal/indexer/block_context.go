@@ -80,12 +80,12 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 	bc.balances.AddToBalance(common.DposContractAddress, totalReward)
 
-	// if bc.block.Number%1000 == 0 {
-	err = bc.checkIndexedBalances()
-	if err != nil {
-		return
+	if bc.block.Number%1000 == 0 {
+		err = bc.checkIndexedBalances()
+		if err != nil {
+			return
+		}
 	}
-	// }
 	bc.Batch.SaveAccounts(bc.balances)
 
 	dags_count = uint64(len(bc.dags))
