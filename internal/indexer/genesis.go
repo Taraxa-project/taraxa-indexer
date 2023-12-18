@@ -22,7 +22,7 @@ func MakeGenesis(s storage.Storage, c *chain.WsClient, gen_obj chain.GenesisObje
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
-	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()})
+	genesis.bc = *MakeBlockContext(s, chain.MakeEmptyBlockData(), c, &common.Config{Chain: gen_obj.ToChainConfig()})
 
 	return &genesis
 }

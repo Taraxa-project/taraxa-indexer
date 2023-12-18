@@ -2,7 +2,6 @@ package chain
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -16,21 +15,27 @@ type Block struct {
 }
 
 func (b *Block) UnmarshalJSON(data []byte) error {
-	var strMap map[string]interface{}
-	if err := json.Unmarshal(data, &strMap); err != nil {
+	var rawStruct struct {
+		Author    string `json:"author"`
+		Hash      string `json:"hash"`
+		Number    string `json:"number"`
+		Timestamp string `json:"timestamp"`
+
+		Transactions []string `json:"transactions"`
+		TotalReward  string   `json:"totalReward"`
+	}
+	if err := json.Unmarshal(data, &rawStruct); err != nil {
 		panic(err)
 	}
-	fmt.Println(strMap)
+	b.Transactions = rawStruct.Transactions
+	b.TotalReward = rawStruct.TotalReward
 
-	b.Transactions = strMap["transactions"].([]string)
-	b.TotalReward = strMap["totalReward"].(string)
+	b.Author = rawStruct.Author
+	b.Hash = rawStruct.Hash
+	b.Number = common.ParseUInt(rawStruct.Number)
+	b.Timestamp = common.ParseUInt(rawStruct.Timestamp)
 
-	b.Pbft.Author = strMap["author"].(string)
-	b.Pbft.Hash = strMap["hash"].(string)
-	b.Pbft.Number = common.ParseUInt(strMap["timestamp"].(string))
-	b.Pbft.Timestamp = common.ParseUInt(strMap["timestamp"].(string))
-
-	b.Pbft.TransactionCount = uint64(len(b.Transactions))
+	b.TransactionCount = uint64(len(b.Transactions))
 	return nil
 }
 
@@ -45,17 +50,23 @@ type DagBlock struct {
 }
 
 func (b *DagBlock) UnmarshalJSON(data []byte) error {
-	var strMap map[string]interface{}
-	if err := json.Unmarshal(data, &strMap); err != nil {
+	var rawStruct struct {
+		Hash      string `json:"hash"`
+		Level     string `json:"level"`
+		Timestamp string `json:"timestamp"`
+
+		Sender       string   `json:"sender"`
+		Transactions []string `json:"transactions"`
+	}
+	if err := json.Unmarshal(data, &rawStruct); err != nil {
 		panic(err)
 	}
-	fmt.Println(strMap)
-	b.Sender = strMap["sender"].(string)
-	b.Transactions = strMap["transactions"].([]string)
+	b.Sender = rawStruct.Sender
+	b.Transactions = rawStruct.Transactions
 
-	b.Dag.Hash = strMap["hash"].(string)
-	b.Dag.Level = common.ParseUInt(strMap["level"].(string))
-	b.Dag.Timestamp = common.ParseUInt(strMap["timestamp"].(string))
+	b.Dag.Hash = rawStruct.Hash
+	b.Dag.Level = common.ParseUInt(rawStruct.Level)
+	b.Dag.Timestamp = common.ParseUInt(rawStruct.Timestamp)
 	b.Dag.TransactionCount = uint64(len(b.Transactions))
 
 	return nil

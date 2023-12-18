@@ -10,7 +10,6 @@ import (
 )
 
 func TestHandleValidatorRegistrations(t *testing.T) {
-
 	var wg sync.WaitGroup
 	concurrency := 5
 	wg.Add(concurrency)

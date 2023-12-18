@@ -102,8 +102,11 @@ func (i *Indexer) syncPeriod(p uint64) error {
 	if b_err != nil {
 		return b_err
 	}
-
-	dc, tc, process_err := MakeBlockContext(i.storage, i.client, i.config).process(blk)
+	bd, bd_err := chain.GetBlockData(i.client, p)
+	if bd_err != nil {
+		return bd_err
+	}
+	dc, tc, process_err := MakeBlockContext(i.storage, bd, i.client, i.config).process(blk)
 	if process_err != nil {
 		return process_err
 	}
@@ -167,14 +170,18 @@ func (i *Indexer) run() error {
 				continue
 			}
 			// We need to get block from API one more time if we doesn't have it in object from subscription
+			bd := chain.MakeEmptyBlockData()
 			if blk.Transactions == nil {
-				blk, err = i.client.GetBlockByNumber(blk.Number)
-				if err != nil {
-					return err
-				}
+				bd, err = chain.GetBlockData(i.client, blk.Number)
+			} else {
+				bd, err = chain.GetBlockDataFromPbft(i.client, &blk)
+
+			}
+			if err != nil {
+				return err
 			}
 
-			bc := MakeBlockContext(i.storage, i.client, i.config)
+			bc := MakeBlockContext(i.storage, bd, i.client, i.config)
 			dc, tc, err := bc.process(blk)
 			if err != nil {
 				return err

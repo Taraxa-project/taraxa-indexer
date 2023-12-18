@@ -9,6 +9,7 @@ import (
 )
 
 type ClientMock struct {
+	Blocks            map[uint64]Block
 	Traces            map[string][]TransactionTrace
 	Transactions      map[string]Transaction
 	BlockTransactions map[uint64][]string
@@ -23,6 +24,7 @@ func MakeMockClient() *ClientMock {
 	m.Transactions = make(map[string]Transaction)
 	m.BlockTransactions = make(map[uint64][]string)
 	m.EventLogs = make(map[string][]EventLog)
+	m.Blocks = make(map[uint64]Block)
 	return m
 }
 
@@ -31,7 +33,7 @@ func (c *ClientMock) GetBalanceAtBlock(address string, blockNumber uint64) (bala
 }
 
 func (c *ClientMock) GetBlockByNumber(number uint64) (blk Block, err error) {
-	return Block{}, ErrNotImplemented
+	return c.Blocks[number], nil
 }
 
 func (c *ClientMock) GetLatestPeriod() (p uint64, e error) {
@@ -67,7 +69,7 @@ func (c *ClientMock) GetDagBlockByHash(hash string) (dag DagBlock, err error) {
 }
 
 func (c *ClientMock) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
-	return nil, ErrNotImplemented
+	return []DagBlock{}, nil
 }
 
 func (c *ClientMock) GetGenesis() (genesis GenesisObject, err error) {
@@ -83,11 +85,11 @@ func (c *ClientMock) GetChainStats() (ns storage.FinalizationData, err error) {
 }
 
 func (c *ClientMock) GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error) {
-	return VotesResponse{}, ErrNotImplemented
+	return VotesResponse{}, nil
 }
 
 func (c *ClientMock) GetValidatorsAtBlock(uint64) (validators []Validator, err error) {
-	return nil, ErrNotImplemented
+	return []Validator{}, nil
 }
 
 func (c *ClientMock) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {
@@ -128,4 +130,8 @@ func (c *ClientMock) AddTracesFromJson(hash, traces_json string) {
 	}
 
 	c.Traces[hash] = traces
+}
+
+func (c *ClientMock) AddPbftBlock(period uint64, block *Block) {
+	c.Blocks[period] = *block
 }

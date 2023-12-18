@@ -13,10 +13,11 @@ import (
 
 func MakeTestBlockContext(mc *chain.ClientMock, blockNumber uint64) *blockContext {
 	st := pebble.NewStorage("")
-	bc := MakeBlockContext(st, mc, new(common.Config))
-	bc.block = &chain.Block{}
-	bc.block.Number = blockNumber
-	bc.block.TransactionCount = 1
+	bd, err := chain.GetBlockData(mc, blockNumber)
+	if err != nil {
+		panic(err)
+	}
+	bc := MakeBlockContext(st, bd, mc, new(common.Config))
 
 	return bc
 }
@@ -243,22 +244,28 @@ func TestTraceParsing(t *testing.T) {
 	trx, _ := mc.GetTransactionByHash(transaction_hash)
 	trx.SetTimestamp(1)
 
-	assert.Equal(t, transaction_hash, trx.Hash)
-	assert.Equal(t, uint64(0x5487c), trx.GetModel().BlockNumber)
-	assert.Equal(t, models.ContractCall, trx.GetModel().Type)
-
-	bc := MakeTestBlockContext(mc, trx.GetModel().BlockNumber)
-
 	mc.AddTracesFromJson(transaction_hash, traces_json)
 
-	transactions_trace, _ := bc.Client.TraceBlockTransactions(trx.GetModel().BlockNumber)
+	assert.Equal(t, transaction_hash, trx.Hash)
+	assert.Equal(t, uint64(0x5487c), trx.BlockNumber)
+	assert.Equal(t, models.ContractCall, trx.Type)
+
+	pbft := &chain.Block{}
+	pbft.Number = trx.BlockNumber
+	pbft.Transactions = []string{trx.Hash}
+	pbft.TransactionCount = 1
+	mc.AddPbftBlock(trx.BlockNumber, pbft)
+
+	bc := MakeTestBlockContext(mc, trx.BlockNumber)
+
+	transactions_trace, _ := bc.Client.TraceBlockTransactions(trx.BlockNumber)
 	// Have one transaction with 9 internal transactions
 	trx_count := 1
 	internal_count := 9
 	assert.Equal(t, trx_count, len(transactions_trace))
 	assert.Equal(t, trx_count+internal_count, len(transactions_trace[0].Trace))
 
-	err := bc.processTransactions([]string{trx.Hash})
+	err := bc.processTransactions()
 
 	assert.Equal(t, err, nil)
 	bc.commit()

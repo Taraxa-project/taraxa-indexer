@@ -18,26 +18,24 @@ type blockContext struct {
 	Batch        storage.Batch
 	Config       *common.Config
 	Client       chain.Client
-	block        *chain.Block
-	dags         []chain.DagBlock
-	transactions []chain.Transaction
+	Block        *chain.BlockData
 	accounts     storage.Accounts
 	blockFee     *big.Int
 	addressStats *storage.AddressStatsMap
 	finalized    *storage.FinalizationData
 }
 
-func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
+func MakeBlockContext(s storage.Storage, bd *chain.BlockData, client chain.Client, config *common.Config) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
-	bc.Client = client
 	bc.Config = config
 	bc.accounts = bc.Storage.GetAccounts()
 	bc.blockFee = big.NewInt(0)
-
 	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
+	bc.Block = bd
+	bc.Client = client
 
 	return &bc
 }
@@ -52,17 +50,12 @@ func (bc *blockContext) commit() {
 
 func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, err error) {
 	start_processing := time.Now()
-	bc.block = &raw
+	bc.Block.Pbft = &raw
 
 	tp := common.MakeThreadPool()
-	tp.Go(func() { bc.updateValidatorStats(bc.block) })
+	tp.Go(func() { bc.updateValidatorStats(bc.Block.Pbft) })
 	tp.Go(common.MakeTaskWithoutParams(bc.processDags, &err).Run)
-	tp.Go(common.MakeTask(bc.processTransactions, raw.Transactions, &err).Run)
-	votes := new(chain.VotesResponse)
-	tp.Go(common.MakeTaskWithResult(bc.Client.GetPreviousBlockCertVotes, bc.block.Number, votes, &err).Run)
-
-	validators := make([]chain.Validator, 0)
-	tp.Go(common.MakeTaskWithResult(bc.Client.GetValidatorsAtBlock, bc.block.Number, &validators, &err).Run)
+	tp.Go(common.MakeTaskWithoutParams(bc.processTransactions, &err).Run)
 
 	tp.Wait()
 	if err != nil {
@@ -71,28 +64,28 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 	totalReward := common.ParseStringToBigInt(raw.TotalReward)
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, bc.blockFee, validators)
-	blockFee := r.Process(totalReward, bc.dags, bc.transactions, *votes)
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block.Pbft, bc.blockFee, bc.Block.Validators)
+	blockFee := r.Process(totalReward, bc.Block.Dags, bc.Block.Transactions, bc.Block.Votes)
 	if blockFee != nil {
 		bc.accounts.AddToBalance(common.DposContractAddress, blockFee)
 	}
 
 	bc.accounts.AddToBalance(common.DposContractAddress, totalReward)
 
-	if bc.block.Number%1000 == 0 {
+	if bc.Block.Pbft.Number%1000 == 0 {
 		bc.checkIndexedBalances()
 	}
 	bc.Batch.SaveAccounts(bc.accounts)
 
-	dags_count = uint64(len(bc.dags))
-	trx_count = bc.block.TransactionCount
+	dags_count = uint64(len(bc.Block.Dags))
+	trx_count = bc.Block.Pbft.TransactionCount
 	bc.finalized.TrxCount += trx_count
 	bc.finalized.DagCount += dags_count
 	bc.finalized.PbftCount++
 
-	pbft_author_index := bc.addressStats.GetAddress(bc.Storage, bc.block.Author).AddPbft(bc.block.Timestamp)
-	log.WithFields(log.Fields{"author": bc.block.Author, "hash": bc.block.Hash}).Debug("Saving PBFT block")
-	bc.Batch.AddToBatch(bc.block, bc.block.Author, pbft_author_index)
+	pbft_author_index := bc.addressStats.GetAddress(bc.Storage, bc.Block.Pbft.Author).AddPbft(bc.Block.Pbft.Timestamp)
+	log.WithFields(log.Fields{"author": bc.Block.Pbft.Author, "hash": bc.Block.Pbft.Hash}).Debug("Saving PBFT block")
+	bc.Batch.AddToBatch(bc.Block.Pbft.GetModel(), bc.Block.Pbft.Author, pbft_author_index)
 
 	// If stats is available check for consistency
 	remote_stats, stats_err := bc.Client.GetChainStats()
@@ -113,7 +106,7 @@ func (bc *blockContext) checkIndexedBalances() {
 		tp.Go(func() {
 			address := account.Address
 			balance := account.Balance
-			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
+			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.Block.Pbft.Number)
 			if get_err != nil {
 				log.WithError(get_err).WithField("address", address).Warn("GetBalanceAtBlock error for address")
 				return
@@ -135,13 +128,13 @@ func (bc *blockContext) updateValidatorStats(block *chain.Block) {
 }
 
 func (bc *blockContext) processDags() (err error) {
-	dag_blocks, err := bc.Client.GetPeriodDagBlocks(bc.block.Number)
+	dag_blocks, err := bc.Client.GetPeriodDagBlocks(bc.Block.Pbft.Number)
 	if err != nil {
 		log.WithError(err).Fatal("GetPeriodDagBlocks error")
 	}
-	bc.dags = make([]chain.DagBlock, len(dag_blocks))
+	bc.Block.Dags = make([]chain.DagBlock, len(dag_blocks))
 	for i, dag := range dag_blocks {
-		bc.dags[i] = dag
+		bc.Block.Dags[i] = dag
 		bc.saveDag(&dag)
 	}
 	return

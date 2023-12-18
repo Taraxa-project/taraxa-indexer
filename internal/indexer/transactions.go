@@ -2,7 +2,6 @@ package indexer
 
 import (
 	"math/big"
-	"runtime/debug"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -10,53 +9,47 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (bc *blockContext) processTransactions(trxHashes []string) (err error) {
-	if len(trxHashes) == 0 {
-		return
-	}
-	var traces []chain.TransactionTrace
-
-	tp := common.MakeThreadPool()
-	tp.Go(common.MakeTaskWithResult(bc.Client.TraceBlockTransactions, bc.block.Number, &traces, &err).Run)
-	tp.Go(common.MakeTaskWithResult(bc.getTransactions, trxHashes, &bc.transactions, &err).Run)
-	tp.Wait()
-
-	if err != nil || len(traces) != len(bc.transactions) || len(trxHashes) != len(bc.transactions) {
+func (bc *blockContext) processTransactions() (err error) {
+	if len(bc.Block.Pbft.Transactions) == 0 {
 		return
 	}
 
-	for t_idx := 0; t_idx < len(bc.transactions); t_idx++ {
-		bc.transactions[t_idx].SetTimestamp(bc.block.Timestamp)
+	if err != nil || len(bc.Block.Pbft.Transactions) != len(bc.Block.Transactions) || len(bc.Block.Traces) != len(bc.Block.Transactions) {
+		return
+	}
 
-		bc.SaveTransaction(*bc.transactions[t_idx].GetModel())
+	for t_idx := 0; t_idx < len(bc.Block.Transactions); t_idx++ {
+		bc.Block.Transactions[t_idx].SetTimestamp(bc.Block.Pbft.Timestamp)
 
-		trx_fee := bc.transactions[t_idx].GetFee()
+		bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel())
+
+		trx_fee := bc.Block.Transactions[t_idx].GetFee()
 		bc.blockFee.Add(bc.blockFee, trx_fee)
 		// Remove fee from sender balance
-		bc.accounts.AddToBalance(bc.transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
-		if !bc.transactions[t_idx].Status {
+		bc.accounts.AddToBalance(bc.Block.Transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
+		if !bc.Block.Transactions[t_idx].Status {
 			continue
 		}
 		// remove value from sender and add to receiver
-		receiver := bc.transactions[t_idx].To
+		receiver := bc.Block.Transactions[t_idx].To
 		if receiver == "" {
-			receiver = bc.transactions[t_idx].ContractAddress
+			receiver = bc.Block.Transactions[t_idx].ContractAddress
 		}
-		bc.accounts.UpdateBalances(bc.transactions[t_idx].From, receiver, bc.transactions[t_idx].Value)
+		bc.accounts.UpdateBalances(bc.Block.Transactions[t_idx].From, receiver, bc.Block.Transactions[t_idx].Value)
 
 		// process logs
-		err = bc.processTransactionLogs(bc.transactions[t_idx])
+		err = bc.processTransactionLogs(bc.Block.Transactions[t_idx])
 		if err != nil {
 			return
 		}
 
-		if internal_transactions := bc.processInternalTransactions(traces[t_idx], t_idx, bc.transactions[t_idx].GasPrice); internal_transactions != nil {
-			bc.Batch.AddToBatchSingleKey(internal_transactions, bc.transactions[t_idx].Hash)
+		if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
+			bc.Batch.AddToBatchSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
 		}
 	}
 	// add total fee from the block to block producer balance
-	if bc.Config.Chain != nil && (bc.block.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
-		bc.accounts.AddToBalance(bc.block.Author, bc.blockFee)
+	if bc.Config.Chain != nil && (bc.Block.Pbft.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
+		bc.accounts.AddToBalance(bc.Block.Pbft.Author, bc.blockFee)
 	}
 	return
 }
@@ -72,7 +65,7 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		if e_idx == 0 {
 			continue
 		}
-		internal := makeInternal(*bc.transactions[t_idx].GetModel(), entry, gasPrice)
+		internal := makeInternal(*bc.Block.Transactions[t_idx].GetModel(), entry, gasPrice)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
 		bc.SaveTransaction(internal)
@@ -81,16 +74,6 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 			bc.accounts.UpdateBalances(internal.From, internal.To, internal.Value)
 		}
 	}
-	return
-}
-
-func (bc *blockContext) getTransactions(trxHashes []string) (trxs []chain.Transaction, err error) {
-	trxs, err = bc.Client.GetPeriodTransactions(bc.block.Number)
-	if err != nil {
-		debug.PrintStack()
-		log.WithError(err).Fatal("GetPeriodTransactions error")
-	}
-
 	return
 }
 

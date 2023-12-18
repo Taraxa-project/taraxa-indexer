@@ -76,7 +76,7 @@ func (t *TaskWithResult[P, R]) Run() {
 	*t.result, exec_err = t.f(t.params)
 
 	if exec_err != nil {
-		log.WithField("func", GetFunctionName(t.f)).Error("TaskWithResult fn returned an error")
+		log.WithField("func", GetFunctionName(t.f)).WithError(exec_err).Error("TaskWithResult fn returned an error")
 		*t.err = exec_err
 	}
 }

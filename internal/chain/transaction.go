@@ -2,7 +2,6 @@ package chain
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -85,7 +84,6 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &rawStruct); err != nil {
 		return err
 	}
-	fmt.Println(rawStruct)
 
 	t.Logs = rawStruct.Logs
 	t.Nonce = common.ParseUInt(rawStruct.Nonce)
@@ -109,8 +107,6 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 		t.To = t.ContractAddress
 	}
 
-	tj, _ := json.Marshal(t)
-	fmt.Println("transaction", string(tj))
 	return nil
 }
 
