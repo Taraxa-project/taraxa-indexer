@@ -24,7 +24,6 @@ type State struct {
 	lastEpochTotalDelegatedAmount *big.Int
 	validatorStakes               map[common.Address]*big.Int
 	validators                    []oracle.NodeData
-	canRebalance                  bool
 	isStartingEpoch               bool
 	isEndingEpoch                 bool
 	isRebalancing                 bool
@@ -87,14 +86,15 @@ func (l *Lara) Run() {
 			if l.state.isEpochRunning {
 				// end the epoch
 				l.EndEpoch()
-				l.state.canRebalance = true
+				time.Sleep(5 * time.Second)
 				l.Rebalance()
 				// wait 3 sec
 				time.Sleep(3 * time.Second)
 			} else {
+				l.Rebalance()
+				time.Sleep(3 * time.Second)
 				// start the epoch
 				l.StartEpoch()
-				l.state.canRebalance = false
 				// wait 3 sec
 				time.Sleep(3 * time.Second)
 			}
@@ -212,7 +212,11 @@ func (l *Lara) StartEpoch() {
 	tx, err := l.contract.StartEpoch(opts)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
-			log.Warn("Start epoch tx already in pool")
+			if strings.Contains(err.Error(), "Epoch already running") {
+				log.Warn("Epoch already running")
+			} else {
+				log.Warn("Start epoch tx already in pool")
+			}
 		} else {
 			log.Fatalf("Failed to start epoch: %v", err)
 		}
@@ -244,7 +248,7 @@ func (l *Lara) EndEpoch() {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("End epoch tx already in pool")
 		} else {
-			log.Fatalf("Failed to end epoch: %v", err)
+			log.Warnf("Failed to end epoch: %v", err)
 		}
 	}
 	if tx != nil {
@@ -261,8 +265,12 @@ func (l *Lara) GetState() State {
 }
 
 func (l *Lara) Rebalance() {
-	if l.state.canRebalance || l.state.isRebalancing {
+	if l.state.isRebalancing {
 		log.Warn("WARN: PENDING REBALANCE")
+		return
+	}
+	if l.state.isEpochRunning {
+		log.Warn("WARN: EPOCH RUNNING")
 		return
 	}
 	opts := &bind.TransactOpts{
@@ -273,6 +281,7 @@ func (l *Lara) Rebalance() {
 	}
 	l.state.isRebalancing = true
 	tx, err := l.contract.Rebalance(opts)
+	log.Printf("rebalance tx: %v", tx)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("Rebalance tx already in pool")
