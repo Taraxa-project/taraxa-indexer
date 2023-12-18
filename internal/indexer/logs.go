@@ -17,7 +17,7 @@ func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error)
 		Data: logs,
 	}
 	bc.Batch.AddToBatchSingleKey(logsResponse, tx.Hash)
-	err = bc.balances.UpdateEvents(logs)
+	err = bc.accounts.UpdateEvents(logs)
 	if err != nil {
 		return err
 	}

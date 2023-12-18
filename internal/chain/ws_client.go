@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -73,7 +72,7 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return common.ParseUInt(blk.Number), err
+	return blk.Number, err
 }
 
 func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {

@@ -17,9 +17,9 @@ import (
 
 type AddressCount map[string]int
 
-func makeTransactions(count int) (trxs []models.Transaction) {
+func makeTransactions(count int) (trxs []chain.Transaction) {
 	for i := 0; i < count; i++ {
-		trxs = append(trxs, models.Transaction{Hash: fmt.Sprintf("0x%x", i)})
+		trxs = append(trxs, chain.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}})
 	}
 	return
 }
@@ -121,7 +121,7 @@ func TestRewards(t *testing.T) {
 	}
 
 	st := pebble.NewStorage("")
-	block := models.Pbft{Number: 1, Author: validator4_addr}
+	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
 	r := MakeRewards(st, st.NewBatch(), config, &block, nil, validators_list)
 
 	trxs := makeTransactions(5)
@@ -168,7 +168,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 	}
 
 	// Simulated rewards statistics
-	block := models.Pbft{Number: 1, Author: validator3_addr}
+	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
 	r := MakeRewards(st, st.NewBatch(), config, &block, nil, validators_list)
 	totalStake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
 	{
@@ -325,7 +325,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	}
 	batch.CommitBatch()
 
-	block := models.Pbft{Number: 10, Author: "0x4"}
+	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	r := MakeRewards(st, st.NewBatch(), config, &block, nil, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
@@ -368,7 +368,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	}
 	batch.CommitBatch()
 
-	block := models.Pbft{Number: 10, Author: "0x4"}
+	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	r := MakeRewards(st, st.NewBatch(), config, &block, nil, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})

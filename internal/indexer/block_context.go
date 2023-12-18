@@ -9,7 +9,6 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/rewards"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,13 +18,13 @@ type blockContext struct {
 	Batch        storage.Batch
 	Config       *common.Config
 	Client       chain.Client
-	block        *models.Pbft
+	block        *chain.Block
 	dags         []chain.DagBlock
-	transactions []models.Transaction
-	finalized    *storage.FinalizationData
-	addressStats *storage.AddressStatsMap
-	balances     *storage.Balances
+	transactions []chain.Transaction
+	accounts     storage.Accounts
 	blockFee     *big.Int
+	addressStats *storage.AddressStatsMap
+	finalized    *storage.FinalizationData
 }
 
 func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
@@ -33,11 +32,12 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
 	bc.Client = client
+	bc.Config = config
+	bc.accounts = bc.Storage.GetAccounts()
+	bc.blockFee = big.NewInt(0)
+
 	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
-	bc.Config = config
-	bc.balances = &storage.Balances{Accounts: bc.Storage.GetAccounts()}
-	bc.blockFee = big.NewInt(0)
 
 	return &bc
 }
@@ -52,7 +52,7 @@ func (bc *blockContext) commit() {
 
 func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, err error) {
 	start_processing := time.Now()
-	bc.block = raw.ToModel()
+	bc.block = &raw
 
 	tp := common.MakeThreadPool()
 	tp.Go(func() { bc.updateValidatorStats(bc.block) })
@@ -74,15 +74,15 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.block, bc.blockFee, validators)
 	blockFee := r.Process(totalReward, bc.dags, bc.transactions, *votes)
 	if blockFee != nil {
-		bc.balances.AddToBalance(common.DposContractAddress, blockFee)
+		bc.accounts.AddToBalance(common.DposContractAddress, blockFee)
 	}
 
-	bc.balances.AddToBalance(common.DposContractAddress, totalReward)
+	bc.accounts.AddToBalance(common.DposContractAddress, totalReward)
 
 	if bc.block.Number%1000 == 0 {
 		bc.checkIndexedBalances()
 	}
-	bc.Batch.SaveAccounts(bc.balances)
+	bc.Batch.SaveAccounts(bc.accounts)
 
 	dags_count = uint64(len(bc.dags))
 	trx_count = bc.block.TransactionCount
@@ -109,10 +109,10 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 
 func (bc *blockContext) checkIndexedBalances() {
 	tp := common.MakeThreadPool()
-	for _, balance := range bc.balances.Accounts {
-		address := balance.Address
-		balance := balance.Balance
+	for _, account := range bc.accounts {
 		tp.Go(func() {
+			address := account.Address
+			balance := account.Balance
 			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
 			if get_err != nil {
 				log.WithError(get_err).WithField("address", address).Warn("GetBalanceAtBlock error for address")
@@ -127,18 +127,17 @@ func (bc *blockContext) checkIndexedBalances() {
 	tp.Wait()
 }
 
-func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
+func (bc *blockContext) updateValidatorStats(block *chain.Block) {
 	tn, _ := goment.Unix(int64(block.Timestamp))
 	weekStats := bc.Storage.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
-	weekStats.AddPbftBlock(block)
+	weekStats.AddPbftBlock(block.GetModel())
 	bc.Batch.UpdateWeekStats(weekStats)
 }
 
 func (bc *blockContext) processDags() (err error) {
 	dag_blocks, err := bc.Client.GetPeriodDagBlocks(bc.block.Number)
 	if err != nil {
-		log.WithError(err).Debug("GetPeriodDagBlocks error")
-		return bc.processDagsOld()
+		log.WithError(err).Fatal("GetPeriodDagBlocks error")
 	}
 	bc.dags = make([]chain.DagBlock, len(dag_blocks))
 	for i, dag := range dag_blocks {
@@ -148,31 +147,8 @@ func (bc *blockContext) processDags() (err error) {
 	return
 }
 
-func (bc *blockContext) processDagsOld() (err error) {
-	block_with_dags, err := bc.Client.GetPbftBlockWithDagBlocks(bc.block.Number)
-	if err != nil {
-		return
-	}
-	tp := common.MakeThreadPool()
-	for i, dag_hash := range block_with_dags.Schedule.DagBlocksOrder {
-		tp.Go(common.MakeTaskWithResult(bc.processDag, dag_hash, &bc.dags[i], &err).Run)
-	}
-	tp.Wait()
-	return
-}
-
-func (bc *blockContext) processDag(hash string) (dag chain.DagBlock, err error) {
-	dag, err = bc.Client.GetDagBlockByHash(hash)
-	if err != nil {
-		return chain.DagBlock{}, err
-	}
-	bc.saveDag(&dag)
-	return
-}
-
 func (bc *blockContext) saveDag(dag *chain.DagBlock) {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
-	dagModel := dag.ToModel()
-	dag_index := bc.addressStats.GetAddress(bc.Storage, dag.Sender).AddDag(dagModel.Timestamp)
-	bc.Batch.AddToBatch(dagModel, dag.Sender, dag_index)
+	dag_index := bc.addressStats.GetAddress(bc.Storage, dag.Sender).AddDag(dag.GetModel().Timestamp)
+	bc.Batch.AddToBatch(dag.GetModel(), dag.Sender, dag_index)
 }

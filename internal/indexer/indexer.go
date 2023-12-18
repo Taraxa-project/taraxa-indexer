@@ -154,22 +154,21 @@ func (i *Indexer) run() error {
 		case err := <-sub.Err():
 			return err
 		case blk := <-ch:
-			p := common.ParseUInt(blk.Number)
 			finalized_period := i.storage.GetFinalizationData().PbftCount
-			if p != finalized_period+1 {
+			if blk.Number != finalized_period+1 {
 				err := i.sync()
 				if err != nil {
 					return err
 				}
 				continue
 			}
-			if p < finalized_period {
-				log.WithFields(log.Fields{"finalized": finalized_period, "received": p}).Warn("Received block number is lower than finalized. Node was reset?")
+			if blk.Number < finalized_period {
+				log.WithFields(log.Fields{"finalized": finalized_period, "received": blk.Number}).Warn("Received block number is lower than finalized. Node was reset?")
 				continue
 			}
 			// We need to get block from API one more time if we doesn't have it in object from subscription
 			if blk.Transactions == nil {
-				blk, err = i.client.GetBlockByNumber(p)
+				blk, err = i.client.GetBlockByNumber(blk.Number)
 				if err != nil {
 					return err
 				}
@@ -186,7 +185,7 @@ func (i *Indexer) run() error {
 				i.consistencyCheck(bc.finalized)
 			}
 
-			log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Info("Block processed")
+			log.WithFields(log.Fields{"period": blk.Number, "dags": dc, "trxs": tc}).Info("Block processed")
 		}
 	}
 }

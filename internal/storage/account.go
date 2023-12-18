@@ -22,51 +22,49 @@ func (a *Account) ToModel() models.Account {
 	}
 }
 
-type Balances struct {
-	Accounts []Account `json:"accounts"`
-}
+type Accounts []Account
 
-func (a *Balances) SortByBalanceDescending() {
-	sort.Slice(a.Accounts, func(i, j int) bool {
-		return a.Accounts[i].Balance.Cmp(a.Accounts[j].Balance) == 1
+func (a Accounts) SortByBalanceDescending() {
+	sort.Slice(a, func(i, j int) bool {
+		return a[i].Balance.Cmp(a[j].Balance) == 1
 	})
 }
 
-func (a *Balances) findIndex(address string) int {
-	for i := 0; i < len(a.Accounts); i++ {
-		if strings.EqualFold(a.Accounts[i].Address, address) {
+func (a Accounts) findIndex(address string) int {
+	for i := 0; i < len(a); i++ {
+		if strings.EqualFold(a[i].Address, address) {
 			return i
 		}
 	}
 	return -1
 }
 
-func (a *Balances) FindBalance(address string) *Account {
+func (a Accounts) FindBalance(address string) *Account {
 	i := a.findIndex(address)
 	if i == -1 {
 		return nil
 	}
-	return &a.Accounts[i]
+	return &a[i]
 }
 
-func (a *Balances) RegisterBalance(address string) *Account {
+func (a *Accounts) RegisterBalance(address string) *Account {
 	// Append the new account to the array
-	a.Accounts = append(a.Accounts, Account{
+	*a = append(*a, Account{
 		Address: address,
 		Balance: big.NewInt(0),
 	})
 
-	return &a.Accounts[len(a.Accounts)-1]
+	return &(*a)[len(*a)-1]
 }
 
-func (a *Balances) RemoveBalance(address string) {
+func (a *Accounts) RemoveBalance(address string) {
 	i := a.findIndex(address)
 	if i != -1 {
-		a.Accounts = append(a.Accounts[:i], a.Accounts[i+1:]...)
+		*a = append((*a)[:i], (*a)[i+1:]...)
 	}
 }
 
-func (a *Balances) AddToBalance(address string, value *big.Int) {
+func (a Accounts) AddToBalance(address string, value *big.Int) {
 	address = strings.ToLower(address)
 	account := a.FindBalance(address)
 	if account == nil {
@@ -78,7 +76,7 @@ func (a *Balances) AddToBalance(address string, value *big.Int) {
 	}
 }
 
-func (a *Balances) UpdateBalances(from, to, value_str string) {
+func (a Accounts) UpdateBalances(from, to, value_str string) {
 	from = strings.ToLower(from)
 	to = strings.ToLower(to)
 	value, ok := big.NewInt(0).SetString(value_str, 0)
@@ -89,7 +87,7 @@ func (a *Balances) UpdateBalances(from, to, value_str string) {
 	}
 }
 
-func (a *Balances) UpdateEvents(logs []models.EventLog) error {
+func (a Accounts) UpdateEvents(logs []models.EventLog) error {
 	if len(logs) > 0 {
 		rewards_events, err := events.DecodeRewardsTopics(logs)
 		if err != nil {

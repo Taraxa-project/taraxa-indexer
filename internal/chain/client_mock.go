@@ -50,8 +50,12 @@ func (c *ClientMock) GetTransactionByHash(hash string) (trx Transaction, err err
 	return c.Transactions[hash], nil
 }
 
-func (c *ClientMock) GetPeriodTransactions(p uint64) (trx []Transaction, err error) {
-	return nil, ErrNotImplemented
+func (c *ClientMock) GetPeriodTransactions(num uint64) (trxs []Transaction, err error) {
+	hashes := c.BlockTransactions[num]
+	for _, h := range hashes {
+		trxs = append(trxs, c.Transactions[h])
+	}
+	return trxs, nil
 }
 
 func (c *ClientMock) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags PbftBlockWithDags, err error) {
@@ -100,8 +104,8 @@ func (c *ClientMock) AddTransactionFromJson(trx_json string) {
 		fmt.Println("ClientMock.AddTransactionFromJson", err)
 	}
 
-	tm := trx.ToModelWithTimestamp(1)
-	c.BlockTransactions[tm.BlockNumber] = append(c.BlockTransactions[tm.BlockNumber], trx.Hash)
+	trx.SetTimestamp(1)
+	c.BlockTransactions[trx.GetModel().BlockNumber] = append(c.BlockTransactions[trx.GetModel().BlockNumber], trx.Hash)
 	c.Transactions[trx.Hash] = trx
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/models"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,26 +25,26 @@ type Rewards struct {
 	blockFee    *big.Int
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *models.Pbft, blockFee *big.Int, validators []chain.Validator) *Rewards {
+func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.Block, blockFee *big.Int, validators []chain.Validator) *Rewards {
 	r := Rewards{storage, batch, config, MakeValidators(config, validators), block.Number, strings.ToLower(block.Author), blockFee}
 	return &r
 }
 
-func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []models.Transaction, votes chain.VotesResponse) (blockFee *big.Int) {
+func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []chain.Transaction, votes chain.VotesResponse) (currentBlockFee *big.Int) {
 	totalStake := CalculateTotalStake(r.validators)
 	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
 		log.WithFields(log.Fields{"total_stake": totalStake}).Info("totalStake")
 	}
 
 	rewards := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
-	totalReward, totalBlockFee := r.ProcessRewards(rewards, total_minted, totalStake)
+	totalReward, currentBlockFee := r.ProcessRewards(rewards, total_minted, totalStake)
 
 	if totalReward.Cmp(totalReward) != 0 {
 		log.WithFields(log.Fields{"period": r.blockNum, "total_reward_check": totalReward, "total_minted": total_minted}).Fatal("Total reward check failed")
 	}
 	r.addTotalMinted(totalReward)
 
-	return totalBlockFee
+	return
 }
 
 func (r *Rewards) ProcessRewards(periodRewards PeriodRewards, total_minted *big.Int, totalStake *big.Int) (*big.Int, *big.Int) {
@@ -77,7 +76,7 @@ func (r *Rewards) addTotalMinted(amount *big.Int) {
 
 func (r *Rewards) calculateValidatorsRewards(
 	dags []chain.DagBlock, votes chain.VotesResponse,
-	trxs []models.Transaction, totalStake *big.Int) PeriodRewards {
+	trxs []chain.Transaction, totalStake *big.Int) PeriodRewards {
 	stats := makeStats(dags, votes, trxs, r.config.Chain.CommitteeSize.Int64())
 	return r.rewardsFromStats(totalStake, stats)
 }
