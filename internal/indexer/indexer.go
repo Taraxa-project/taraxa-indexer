@@ -39,6 +39,7 @@ func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer) {
 	i.config = c
 	// connect is retrying to connect every retry_time
 	i.connect(url)
+	log.Info("Indexer Instance initialized")
 	return
 }
 

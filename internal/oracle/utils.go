@@ -5,19 +5,13 @@ import (
 	"math/big"
 	"strconv"
 
+	apy_oracle "github.com/Taraxa-project/taraxa-indexer/abi/oracle"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 )
 
-type NodeData struct {
-	Rating    *big.Int
-	Account   common.Address
-	FromBlock uint64
-	ToBlock   uint64
-	Rank      uint16
-	Apy       uint16
-}
+type NodeData = apy_oracle.IApyOracleNodeData
 
 type YieldedValidator struct {
 	Account           common.Address

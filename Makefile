@@ -11,6 +11,7 @@ help:
 	@echo "    check:       run tests"
 	@echo "    tidy         tidy go mod"
 	@echo "    make         builds executable"
+	@echo "	   abigen       generates typings for solidity contracts"
 
 $(GOBIN)/golangci-lint:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.51.1
@@ -37,3 +38,8 @@ build: clean
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+abigen:
+	abigen --abi=/Users/vargaelod/lara/taraxa-indexer/abi/dpos/Dpos.abi --pkg=dpos_contract --out=/Users/vargaelod/lara/taraxa-indexer/abi/dpos/Dpos.go
+	abigen --abi=/Users/vargaelod/lara/taraxa-indexer/abi/oracle/Oracle.abi --pkg=apy_oracle --out=/Users/vargaelod/lara/taraxa-indexer/abi/oracle/Apy_oracle.go
+	abigen --abi=/Users/vargaelod/lara/taraxa-indexer/abi/lara/Lara.abi --pkg=lara_contract --out=/Users/vargaelod/lara/taraxa-indexer/abi/lara/Lara.go

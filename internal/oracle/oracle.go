@@ -13,14 +13,15 @@ import (
 
 	// Import other necessary packages
 	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
+	apy_oracle "github.com/Taraxa-project/taraxa-indexer/abi/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
+	"github.com/Taraxa-project/taraxa-indexer/internal/transact"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-co-op/gocron"
 	log "github.com/sirupsen/logrus"
@@ -32,55 +33,32 @@ type Oracle struct {
 	signer           *bind.TransactOpts
 	oracleAddress    string
 	chainId          int
-	contract         *bind.BoundContract
+	contract         *apy_oracle.ApyOracle
 	validatorsMutex  sync.Mutex
-	latestValidators []YieldedValidator
+	LatestValidators []YieldedValidator
 }
 
 func MakeOracle(rpc *ethclient.Client, signing_key, oracle_address string, chainId int, storage pebble.Storage) *Oracle {
 	o := new(Oracle)
 	o.storage = storage
 	o.Eth = rpc
-	o.signer = makeSigner(signing_key, chainId)
+	o.signer = transact.MakeSigner(signing_key, chainId)
 	o.oracleAddress = oracle_address
 	o.chainId = chainId
-	o.contract = o.makeContract()
+	contract, err := apy_oracle.NewApyOracle(common.HexToAddress(o.oracleAddress), o.Eth)
+	if err != nil {
+		log.Fatalf("Failed to create contract: %v", err)
+	}
+	o.contract = contract
+	log.Info("Oracle initialized")
 	return o
-}
-
-func makeSigner(signingKey string, chainId int) *bind.TransactOpts {
-	// Load your private key (securely)
-	privateKey, err := crypto.HexToECDSA(signingKey)
-	if err != nil {
-		log.Fatalf("Failed to load private key: %v", err)
-	}
-
-	// Create an auth object to use for the transaction
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(int64(chainId)))
-	if err != nil {
-		log.Fatalf("Failed to create authorized transactor: %v", err)
-	}
-	return auth
-}
-
-func (o *Oracle) makeContract() *bind.BoundContract {
-	// Define the contract address
-	contractAddress := common.HexToAddress(o.oracleAddress)
-
-	// Create an instance of your contract
-	oracleAbi, err := abi.JSON(strings.NewReader(contracts.ApyOracle)) // Assuming contracts.ApyOracle is your ABI
-	if err != nil {
-		log.Fatalf("Failed to read ABI: %v", err)
-	}
-	contractInstance := bind.NewBoundContract(contractAddress, oracleAbi, o.Eth, o.Eth, o.Eth)
-	return contractInstance
 }
 
 func (o *Oracle) UpdateValidators(validators []YieldedValidator) {
 	log.Infof("Updating validators: %d", len(validators))
-	log.Infof("Validators before: %v", len(o.latestValidators))
-	o.latestValidators = validators
-
+	log.Infof("Validators before: %v", len(o.LatestValidators))
+	o.LatestValidators = validators
+	o.pushDataToContract()
 }
 
 func (o *Oracle) PushValidators(validators []RawValidator) {
@@ -122,14 +100,14 @@ func (o *Oracle) PushValidators(validators []RawValidator) {
 }
 
 func (o *Oracle) pushDataToContract() {
-	if len(o.latestValidators) == 0 {
+	if len(o.LatestValidators) == 0 {
 		log.Warn("No validator data to push")
 		return
 	}
 
 	validatorDatas := make([]NodeData, 0)
 
-	for _, validator := range o.latestValidators {
+	for _, validator := range o.LatestValidators {
 		data := validator.ToNodeData(o.Eth)
 		validatorDatas = append(validatorDatas, data)
 	}
@@ -139,49 +117,35 @@ func (o *Oracle) pushDataToContract() {
 		return validatorDatas[i].Rating.Cmp(validatorDatas[j].Rating) == 1
 	})
 
-	_, err := o.contract.Transact(o.signer, "batchUpdateNodeData", validatorDatas)
-	if err != nil {
-		log.Fatalf("Failed to transact with contract: %v", err)
-		// if it is a nonce error we need to update the nonce and retry
-		if strings.Contains(err.Error(), "nonce") {
-			for {
-				log.Error("Nonce error, retrying...")
-				o.signer.Nonce = o.signer.Nonce.Add(o.signer.Nonce, big.NewInt(1))
-				_, err = o.contract.Transact(o.signer, "batchUpdateNodeData", validatorDatas)
-				if err != nil {
-					continue
-				}
-				break
-			}
-		}
-	}
-}
-
-func connect(url string) *ethclient.Client {
-	var err error
-	var client *ethclient.Client
 	for {
-		client, err = ethclient.Dial(url)
+		_, err := o.contract.BatchUpdateNodeData(o.signer, validatorDatas)
 		if err != nil {
-			log.WithError(err).Error("Failed to connect to eth client")
-			time.Sleep(5 * time.Second)
-			continue
+			if strings.Contains(err.Error(), "Transaction already in transactions pool") || strings.Contains(err.Error(), "nonce too low") || strings.Contains(err.Error(), "out of gas") {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			log.Fatalf("Failed to batch update node data: %v", err)
 		}
-		_, err := client.BlockNumber(context.Background())
+
+		log.Infof("Pushed %d validators to contract", len(validatorDatas))
+		// wait 1 second
+		time.Sleep(1 * time.Second)
+		nodeCount, err := o.contract.NodeCount(nil)
 		if err != nil {
-			log.WithError(err).Error("Failed to get current block")
-			break
+			log.Errorf("Failed to get node count: %v", err)
+		}
+		if nodeCount.Cmp(big.NewInt(int64(len(validatorDatas)))) != 0 {
+			log.Errorf("Node count mismatch: %d != %d", nodeCount, len(validatorDatas))
 		} else {
 			break
 		}
 	}
-	return client
 }
 
 func RegisterCron(o *Oracle, yield_saving_interval int) {
 	s := gocron.NewScheduler(time.UTC)
 	var err error
-	_, err = s.Every(yield_saving_interval * 4).Seconds().Do(func() {
+	_, err = s.Every(yield_saving_interval).Seconds().Do(func() {
 		log.Info("Oracle cron started")
 		o.pushDataToContract()
 	})
