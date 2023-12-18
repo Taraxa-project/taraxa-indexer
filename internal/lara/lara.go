@@ -30,7 +30,6 @@ type State struct {
 }
 type Lara struct {
 	deploymentAddress string
-	oracleAddress     string
 	Eth               *ethclient.Client
 	signer            *bind.TransactOpts
 	chainID           *int
@@ -45,13 +44,12 @@ func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_add
 	l.Eth = rpc
 	l.signer = transact.MakeSigner(signing_key, chainID)
 	l.deploymentAddress = deployment_address
-	l.oracleAddress = oracle_address
 	l.chainID = &chainID
 	contract, err := lara_contract.NewLaraContract(common.HexToAddress(l.deploymentAddress), l.Eth)
 	if err != nil {
 		log.Fatalf("Failed to create contract: %v", err)
 	}
-	l.oracle, err = apy_oracle.NewApyOracle(common.HexToAddress(l.oracleAddress), l.Eth)
+	l.oracle, err = apy_oracle.NewApyOracle(common.HexToAddress(oracle_address), l.Eth)
 	if err != nil {
 		log.Fatalf("Failed to create oracle: %v", err)
 	}
@@ -293,13 +291,4 @@ func (l *Lara) Rebalance() {
 		l.state.isRebalancing = false
 		log.Warnf("Rebalanced at timestamp: %d", tx.Time().Unix())
 	}
-}
-
-func findNode(nodes []oracle.NodeData, node oracle.NodeData) oracle.NodeData {
-	for _, n := range nodes {
-		if n.Account == node.Account {
-			return n
-		}
-	}
-	return oracle.NodeData{}
 }
