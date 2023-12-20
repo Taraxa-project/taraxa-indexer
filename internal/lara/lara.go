@@ -89,8 +89,6 @@ func (l *Lara) Run() {
 				// wait 3 sec
 				time.Sleep(3 * time.Second)
 			} else {
-				l.Rebalance()
-				time.Sleep(3 * time.Second)
 				// start the epoch
 				l.StartEpoch()
 				// wait 3 sec
@@ -226,6 +224,7 @@ func (l *Lara) StartEpoch() {
 	// wait 3 sec
 	time.Sleep(3 * time.Second)
 	l.SyncState()
+	time.Sleep(3 * time.Second)
 	log.Warnf("Started epoch: %s", l.state.lastEpochStartBlock)
 }
 
@@ -256,6 +255,7 @@ func (l *Lara) EndEpoch() {
 	// wait one block
 	time.Sleep(3 * time.Second)
 	l.SyncState()
+	time.Sleep(3 * time.Second)
 }
 
 func (l *Lara) GetState() State {
@@ -279,7 +279,7 @@ func (l *Lara) Rebalance() {
 	}
 	l.state.isRebalancing = true
 	tx, err := l.contract.Rebalance(opts)
-	log.Printf("rebalance tx: %v", tx)
+	log.Printf("rebalance tx: %s", tx.Hash().Hex())
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("Rebalance tx already in pool")
