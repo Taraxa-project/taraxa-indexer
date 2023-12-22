@@ -17,12 +17,12 @@ type Genesis struct {
 	hash    string
 }
 
-func MakeGenesis(s storage.Storage, c *chain.WsClient, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) *Genesis {
+func MakeGenesis(s storage.Storage, c chain.Client, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
-	genesis.bc = *MakeBlockContext(s, chain.MakeEmptyBlockData(), c, &common.Config{Chain: gen_obj.ToChainConfig()})
+	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()})
 
 	return &genesis
 }

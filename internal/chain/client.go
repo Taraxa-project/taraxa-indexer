@@ -6,7 +6,7 @@ import (
 )
 
 type Client interface {
-	GetBlockByNumber(number uint64) (blk Block, err error)
+	GetBlockByNumber(number uint64) (blk *Block, err error)
 	GetLatestPeriod() (uint64, error)
 	TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error)
 	GetTransactionByHash(hash string) (trx Transaction, err error)
@@ -16,6 +16,7 @@ type Client interface {
 	GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error)
 	GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error)
 	GetValidatorsAtBlock(block_num uint64) (validators []Validator, err error)
+	GetVersion() (version string, err error)
 	GetGenesis() (genesis GenesisObject, err error)
 	GetChainStats() (ns storage.FinalizationData, err error)
 	SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error)

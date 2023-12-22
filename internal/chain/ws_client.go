@@ -22,7 +22,8 @@ type WsClient struct {
 // NewWsClient creates a new instance of the WsClient struct.
 func NewWsClient(url string) (*WsClient, error) {
 	ctx := context.Background()
-	ws, err := rpc.DialWebsocket(ctx, url, "")
+	ws, err := rpc.DialOptions(ctx, url, rpc.WithWebsocketMessageSizeLimit(0))
+
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +60,7 @@ func (client *WsClient) GetBalanceAtBlock(address string, blockNumber uint64) (b
 	return
 }
 
-func (client *WsClient) GetBlockByNumber(number uint64) (blk Block, err error) {
+func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
 	err = client.rpc.Call(&blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
 	metrics.RpcCallsCounter.Inc()
 	return

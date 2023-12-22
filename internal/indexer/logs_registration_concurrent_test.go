@@ -15,6 +15,7 @@ func TestHandleValidatorRegistrations(t *testing.T) {
 	wg.Add(concurrency)
 	// Create a mock blockContext
 	mc := chain.MakeMockClient()
+	mc.AddPbftBlock(1, chain.MakeEmptyBlockData().Pbft)
 	bc := MakeTestBlockContext(mc, 1)
 
 	// Create a slice of EventLog for testing

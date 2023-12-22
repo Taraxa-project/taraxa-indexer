@@ -9,7 +9,7 @@ import (
 )
 
 type ClientMock struct {
-	Blocks            map[uint64]Block
+	Blocks            map[uint64]*Block
 	Traces            map[string][]TransactionTrace
 	Transactions      map[string]Transaction
 	BlockTransactions map[uint64][]string
@@ -24,7 +24,7 @@ func MakeMockClient() *ClientMock {
 	m.Transactions = make(map[string]Transaction)
 	m.BlockTransactions = make(map[uint64][]string)
 	m.EventLogs = make(map[string][]EventLog)
-	m.Blocks = make(map[uint64]Block)
+	m.Blocks = make(map[uint64]*Block)
 	return m
 }
 
@@ -32,7 +32,7 @@ func (c *ClientMock) GetBalanceAtBlock(address string, blockNumber uint64) (bala
 	return "", ErrNotImplemented
 }
 
-func (c *ClientMock) GetBlockByNumber(number uint64) (blk Block, err error) {
+func (c *ClientMock) GetBlockByNumber(number uint64) (blk *Block, err error) {
 	return c.Blocks[number], nil
 }
 
@@ -70,6 +70,9 @@ func (c *ClientMock) GetDagBlockByHash(hash string) (dag DagBlock, err error) {
 
 func (c *ClientMock) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
 	return []DagBlock{}, nil
+}
+func (c *ClientMock) GetVersion() (version string, err error) {
+	return "", nil
 }
 
 func (c *ClientMock) GetGenesis() (genesis GenesisObject, err error) {
@@ -133,5 +136,5 @@ func (c *ClientMock) AddTracesFromJson(hash, traces_json string) {
 }
 
 func (c *ClientMock) AddPbftBlock(period uint64, block *Block) {
-	c.Blocks[period] = *block
+	c.Blocks[period] = block
 }

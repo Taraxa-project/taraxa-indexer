@@ -99,6 +99,7 @@ type Config struct {
 	Chain                         *ChainConfig
 	TotalYieldSavingInterval      uint64
 	ValidatorsYieldSavingInterval uint64
+	SyncQueueLimit                uint64
 }
 
 func (c *Config) IsEligible(stake *big.Int) bool {
@@ -113,5 +114,6 @@ func DefaultConfig() *Config {
 		Chain:                         DefaultChainConfig(),
 		TotalYieldSavingInterval:      1000,
 		ValidatorsYieldSavingInterval: 1000,
+		SyncQueueLimit:                10,
 	}
 }

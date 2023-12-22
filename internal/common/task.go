@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -30,7 +31,7 @@ func MakeTask[P any](f func(P) error, params P, err *error) *Task[P] {
 func (t *Task[P]) Run() {
 	exec_err := t.f(t.params)
 	if exec_err != nil {
-		log.WithField("func", GetFunctionName(t.f)).Error("Task fn returned an error")
+		log.WithError(exec_err).WithField("func", GetFunctionName(t.f)).Error("Task fn returned an error")
 		*t.err = exec_err
 	}
 }
@@ -50,7 +51,7 @@ func MakeTaskWithoutParams(f func() error, err *error) *TaskWithoutParams {
 func (t *TaskWithoutParams) Run() {
 	exec_err := t.f()
 	if exec_err != nil {
-		log.WithField("func", GetFunctionName(t.f)).Error("TaskWithoutParams fn returned an error")
+		log.WithError(exec_err).WithField("func", GetFunctionName(t.f)).Error("TaskWithoutParams fn returned an error")
 		*t.err = exec_err
 	}
 }
@@ -73,10 +74,13 @@ func MakeTaskWithResult[P, R any](f func(P) (R, error), params P, result *R, err
 
 func (t *TaskWithResult[P, R]) Run() {
 	var exec_err error
+	start := time.Now()
 	*t.result, exec_err = t.f(t.params)
-
+	elapsed := time.Since(start)
+	// log execution time
+	log.WithFields(log.Fields{"func": GetFunctionName(t.f), "elapsed": elapsed, "params": t.params}).Debug("TaskWithResult fn execution time")
 	if exec_err != nil {
-		log.WithField("func", GetFunctionName(t.f)).WithError(exec_err).Error("TaskWithResult fn returned an error")
+		log.WithFields(log.Fields{"func": GetFunctionName(t.f), "params": t.params}).WithError(exec_err).Error("TaskWithResult fn returned an error")
 		*t.err = exec_err
 	}
 }
