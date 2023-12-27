@@ -171,7 +171,7 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 		UpperBound: keyUpperBound(prefix),
 	}
 
-	iter, _ := s.db.NewIter(&prefixIterOptions)
+	iter := s.db.NewIter(&prefixIterOptions)
 	return iter
 }
 
