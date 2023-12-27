@@ -1,4 +1,4 @@
-//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=models/models.cfg.yaml api/openapi.yaml
+//go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=models/models.cfg.yaml api/openapi.yaml
 
 package main
 
@@ -20,8 +20,8 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
-	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
+	"github.com/oapi-codegen/echo-middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -85,7 +85,7 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(middleware.OapiRequestValidator(swagger))
+	e.Use(echomiddleware.OapiRequestValidator(swagger))
 	// Add http error handler to return a proper error JSON on request error
 	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
 		_ = ctx.JSON(http.StatusInternalServerError, map[string]any{"message": err.Error()})
