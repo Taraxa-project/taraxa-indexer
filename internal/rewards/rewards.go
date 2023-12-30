@@ -15,6 +15,7 @@ import (
 
 var multiplier = big.NewInt(0).Exp(big.NewInt(10), big.NewInt(18), nil)
 var percentage_multiplier = big.NewInt(10000)
+var YieldFractionDecimalPrecision = big.NewInt(1e+6)
 
 type Rewards struct {
 	oracle      *oracle.Oracle
@@ -83,33 +84,65 @@ func (r *Rewards) calculateValidatorsRewards(
 	return r.rewardsFromStats(totalStake, stats)
 }
 
-func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (periodRewards PeriodRewards) {
-	totalPeriodRewards := calculateTotalPeriodRewards(r.config.Chain, totalStake, stats.TotalVotesWeight == 0)
-	periodRewards = MakePeriodRewards()
+func (r *Rewards) calculateCurrentYield(current_total_tara_supply *big.Int) *big.Int {
+	// Current yield = (max supply - current total supply) / current total supply
+	current_yield := big.NewInt(0).Sub(r.config.Chain.Hardforks.AspenHf.MaxSupply, current_total_tara_supply)
+	current_yield.Mul(current_yield, YieldFractionDecimalPrecision)
+	current_yield.Div(current_yield, current_total_tara_supply)
+
+	return current_yield
+}
+
+func (r *Rewards) calculateBlockReward(totalStake, current_total_tara_supply *big.Int) (block_reward *big.Int, yield *big.Int) {
+	yield = r.calculateCurrentYield(current_total_tara_supply)
+	block_reward = big.NewInt(0).Mul(totalStake, yield)
+	block_reward.Div(block_reward, big.NewInt(0).Mul(YieldFractionDecimalPrecision, r.config.Chain.BlocksPerYear))
+	return
+}
+
+func (r *Rewards) calculateTotalPeriodReward(totalStake *big.Int) *big.Int {
+	if r.config.Chain.Hardforks.AspenHf.BlockNumPartTwo >= r.blockNum {
+		current_supply := r.storage.GetTotalSupply()
+
+		blockReward, _ := r.calculateBlockReward(totalStake, current_supply)
+
+		return blockReward
+	} else {
+		// Original fixed yield curve
+		blockReward := big.NewInt(0).Mul(totalStake, r.config.Chain.YieldPercentage)
+		blockReward.Div(blockReward, big.NewInt(0).Mul(big.NewInt(100), r.config.Chain.BlocksPerYear))
+		return blockReward
+	}
+}
+
+func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards PeriodRewards) {
+	totalRewards := r.calculateTotalPeriodReward(totalStake)
+	totalRewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalRewards, stats.TotalVotesWeight == 0)
+	rewards = MakePeriodRewards()
 	for addr, s := range stats.ValidatorStats {
 		if !r.validators.Exists(addr) {
 			continue
 		}
-		if periodRewards.ValidatorRewards[addr] == nil {
-			periodRewards.ValidatorRewards[addr] = big.NewInt(0)
+		if rewards.ValidatorRewards[addr] == nil {
+			rewards.ValidatorRewards[addr] = big.NewInt(0)
 		}
 
 		// Add dags reward
 		if s.DagBlocksCount > 0 {
 			dag_reward := big.NewInt(0)
-			dag_reward.Mul(big.NewInt(s.DagBlocksCount), totalPeriodRewards.dags)
+			dag_reward.Mul(big.NewInt(s.DagBlocksCount), totalRewardsParts.dags)
 			dag_reward.Div(dag_reward, big.NewInt(stats.TotalDagCount))
-			periodRewards.TotalReward.Add(periodRewards.TotalReward, dag_reward)
-			periodRewards.ValidatorRewards[addr].Add(periodRewards.ValidatorRewards[addr], dag_reward)
+			rewards.TotalReward.Add(rewards.TotalReward, dag_reward)
+			rewards.ValidatorRewards[addr].Add(rewards.ValidatorRewards[addr], dag_reward)
 		}
 
 		// Add voting reward
 		if s.VoteWeight > 0 {
 			// total_votes_reward * validator_vote_weight / total_votes_weight
-			vote_reward := big.NewInt(0).Mul(totalPeriodRewards.votes, big.NewInt(s.VoteWeight))
+			vote_reward := big.NewInt(0).Mul(totalRewardsParts.votes, big.NewInt(s.VoteWeight))
 			vote_reward.Div(vote_reward, big.NewInt(stats.TotalVotesWeight))
-			periodRewards.TotalReward.Add(periodRewards.TotalReward, vote_reward)
-			periodRewards.ValidatorRewards[addr].Add(periodRewards.ValidatorRewards[addr], vote_reward)
+			rewards.TotalReward.Add(rewards.TotalReward, vote_reward)
+			rewards.ValidatorRewards[addr].Add(rewards.ValidatorRewards[addr], vote_reward)
 		}
 	}
 	blockAuthorReward := big.NewInt(0)
@@ -117,21 +150,21 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (periodRew
 		maxVotesWeight := Max(stats.MaxVotesWeight, stats.TotalVotesWeight)
 		// In case all reward votes are included we will just pass block author whole reward, this should improve rounding issues
 		if maxVotesWeight == stats.TotalVotesWeight {
-			blockAuthorReward = totalPeriodRewards.bonus
+			blockAuthorReward = totalRewardsParts.bonus
 		} else {
 			twoTPlusOne := maxVotesWeight*2/3 + 1
 			bonusVotesWeight := int64(0)
 			bonusVotesWeight = stats.TotalVotesWeight - twoTPlusOne
 			// should be zero if rewardsStats.TotalVotesWeight == twoTPlusOne
-			blockAuthorReward.Div(big.NewInt(0).Mul(totalPeriodRewards.bonus, big.NewInt(bonusVotesWeight)), big.NewInt(maxVotesWeight-twoTPlusOne))
+			blockAuthorReward.Div(big.NewInt(0).Mul(totalRewardsParts.bonus, big.NewInt(bonusVotesWeight)), big.NewInt(maxVotesWeight-twoTPlusOne))
 		}
 	}
 	if blockAuthorReward.Cmp(big.NewInt(0)) > 0 {
-		if periodRewards.ValidatorRewards[r.blockAuthor] == nil {
-			periodRewards.ValidatorRewards[r.blockAuthor] = big.NewInt(0)
+		if rewards.ValidatorRewards[r.blockAuthor] == nil {
+			rewards.ValidatorRewards[r.blockAuthor] = big.NewInt(0)
 		}
-		periodRewards.TotalReward.Add(periodRewards.TotalReward, blockAuthorReward)
-		periodRewards.ValidatorRewards[r.blockAuthor].Add(periodRewards.ValidatorRewards[r.blockAuthor], blockAuthorReward)
+		rewards.TotalReward.Add(rewards.TotalReward, blockAuthorReward)
+		rewards.ValidatorRewards[r.blockAuthor].Add(rewards.ValidatorRewards[r.blockAuthor], blockAuthorReward)
 	}
 	return
 }
