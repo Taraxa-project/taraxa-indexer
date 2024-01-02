@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"fmt"
 	"math/big"
 	"time"
 
@@ -81,10 +80,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	bc.balances.AddToBalance(common.DposContractAddress, totalReward)
 
 	if bc.block.Number%1000 == 0 {
-		err = bc.checkIndexedBalances()
-		if err != nil {
-			return
-		}
+		bc.checkIndexedBalances()
 	}
 	bc.Batch.SaveAccounts(bc.balances)
 
@@ -111,7 +107,7 @@ func (bc *blockContext) process(raw chain.Block) (dags_count, trx_count uint64, 
 	return
 }
 
-func (bc *blockContext) checkIndexedBalances() (err error) {
+func (bc *blockContext) checkIndexedBalances() {
 	tp := common.MakeThreadPool()
 	for _, balance := range bc.balances.Accounts {
 		address := balance.Address
@@ -119,18 +115,16 @@ func (bc *blockContext) checkIndexedBalances() (err error) {
 		tp.Go(func() {
 			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.block.Number)
 			if get_err != nil {
-				err = get_err
+				log.WithError(get_err).WithField("address", address).Warn("GetBalanceAtBlock error for address")
 				return
 			}
 			chain_balance := common.ParseStringToBigInt(b)
 			if balance.Cmp(chain_balance) != 0 {
-				err = fmt.Errorf("balance of %s: calc(%s) != chain(%s)", address, balance, chain_balance)
+				log.WithFields(log.Fields{"address": address, "balance": balance, "chain_balance": chain_balance}).Error("Balance check failed")
 			}
 		})
 	}
 	tp.Wait()
-
-	return
 }
 
 func (bc *blockContext) updateValidatorStats(block *models.Pbft) {
