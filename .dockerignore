@@ -4,6 +4,7 @@ bin/
 .editorconfig
 .gitattributes
 .gitignore
+.git
 Dockerfile
 LICENSE
 README.md
