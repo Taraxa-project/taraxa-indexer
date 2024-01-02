@@ -193,7 +193,7 @@ func (l *Lara) StartEpoch() {
 	opts := &bind.TransactOpts{
 		From:     l.signer.From,
 		Signer:   l.signer.Signer,
-		GasLimit: 0,
+		GasLimit: 3000000,
 		Context:  nil,
 	}
 	oracleNodeCount, err := l.oracle.NodeCount(nil)
