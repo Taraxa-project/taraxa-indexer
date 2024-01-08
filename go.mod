@@ -12,7 +12,7 @@ require (
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/nleeper/goment v1.4.4
 	github.com/oapi-codegen/echo-middleware v1.0.1
-	github.com/oapi-codegen/runtime v1.1.0
+	github.com/oapi-codegen/runtime v1.1.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spiretechnology/go-pool v1.0.0
 	github.com/stretchr/testify v1.8.4
@@ -58,7 +58,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
