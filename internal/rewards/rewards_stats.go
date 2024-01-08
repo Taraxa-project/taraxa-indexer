@@ -6,7 +6,6 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
-	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
 type validatorStats struct {
@@ -37,7 +36,7 @@ type stats struct {
 	ValidatorStats   map[string]validatorStats
 }
 
-func getPeriodTransactionsMap(trxs []models.Transaction) map[string]bool {
+func getPeriodTransactionsMap(trxs []chain.Transaction) map[string]bool {
 	period_transactions := make(map[string]bool, 0)
 	for _, t := range trxs {
 		period_transactions[t.Hash] = true
@@ -46,7 +45,7 @@ func getPeriodTransactionsMap(trxs []models.Transaction) map[string]bool {
 	return period_transactions
 }
 
-func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []models.Transaction, committee_size int64) (s *stats) {
+func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Transaction, committee_size int64) (s *stats) {
 	s = new(stats)
 	s.ValidatorStats = make(map[string]validatorStats)
 	s.MaxVotesWeight = Min(votes.PeriodTotalVotesCount, committee_size)

@@ -10,12 +10,12 @@ import (
 )
 
 func TestHandleValidatorRegistrations(t *testing.T) {
-
 	var wg sync.WaitGroup
 	concurrency := 5
 	wg.Add(concurrency)
 	// Create a mock blockContext
 	mc := chain.MakeMockClient()
+	mc.AddPbftBlock(1, chain.MakeEmptyBlockData().Pbft)
 	bc := MakeTestBlockContext(mc, 1)
 
 	// Create a slice of EventLog for testing

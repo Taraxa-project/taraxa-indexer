@@ -138,7 +138,7 @@ func (m *AddValidatorRegistrationBlock) Apply(s *pebble.Storage) error {
 	return nil
 }
 
-func GetValidatorsRegisteredInBlock(client *chain.WsClient, from, to uint64) ([]ValidatorRegistration, error) {
+func GetValidatorsRegisteredInBlock(client chain.Client, from, to uint64) ([]ValidatorRegistration, error) {
 	if from > to {
 		return nil, fmt.Errorf("from block %d is greater than to block %d", from, to)
 	}
