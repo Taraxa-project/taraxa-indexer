@@ -14,6 +14,9 @@ type validatorStats struct {
 
 	// Validator cert voted block weight
 	VoteWeight int64
+
+	// Validator fee reward amount
+	FeeReward *big.Int
 }
 
 type totalPeriodRewards struct {
@@ -36,10 +39,10 @@ type stats struct {
 	ValidatorStats   map[string]validatorStats
 }
 
-func getPeriodTransactionsMap(trxs []chain.Transaction) map[string]bool {
-	period_transactions := make(map[string]bool, 0)
+func getPeriodTransactionsFees(trxs []chain.Transaction) map[string]*big.Int {
+	period_transactions := make(map[string]*big.Int, 0)
 	for _, t := range trxs {
-		period_transactions[t.Hash] = true
+		period_transactions[t.Hash] = t.GetFee()
 	}
 
 	return period_transactions
@@ -59,26 +62,28 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Tr
 		s.ValidatorStats[voter] = entry
 	}
 
-	period_transactions := getPeriodTransactionsMap(trxs)
-	is_tx_seen := make(map[string]bool, 0)
+	transaction_fee := getPeriodTransactionsFees(trxs)
 	total_dag_count := int64(0)
 	for _, d := range dags {
 		total_dag_count += 1
-		has_unique_transactions := false
+		feeReward := big.NewInt(0)
+		has_unique_trx := false
 		for _, th := range d.Transactions {
-			if is_tx_seen[th] {
-				continue
+			// if we don't have fee for this transaction, it means that it was processed before
+			if transaction_fee[th] != nil {
+				feeReward.Add(feeReward, transaction_fee[th])
+				has_unique_trx = true
+				delete(transaction_fee, th)
 			}
-			if period_transactions[th] {
-				has_unique_transactions = true
-				period_transactions[th] = false
-			}
-			is_tx_seen[th] = true
 		}
-		if has_unique_transactions {
+		if has_unique_trx {
 			sender := strings.ToLower(d.Sender)
 			entry := s.ValidatorStats[sender]
 			entry.DagBlocksCount += 1
+			if entry.FeeReward == nil {
+				entry.FeeReward = big.NewInt(0)
+			}
+			entry.FeeReward.Add(entry.FeeReward, feeReward)
 			s.ValidatorStats[sender] = entry
 			s.TotalDagCount += 1
 		}

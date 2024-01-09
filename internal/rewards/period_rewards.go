@@ -15,8 +15,8 @@ type PeriodRewards struct {
 	BlockFee         *big.Int
 }
 
-func (p *PeriodRewards) ToStorage(blockFee *big.Int) storage.PeriodRewards {
-	sr := storage.PeriodRewards{TotalReward: p.TotalReward, BlockFee: blockFee}
+func (p *PeriodRewards) ToStorage() storage.PeriodRewards {
+	sr := storage.PeriodRewards{TotalReward: p.TotalReward, BlockFee: p.BlockFee}
 	sr.ValidatorRewards = make([]storage.ValidatorReward, 0, len(p.ValidatorRewards))
 	for addr, reward := range p.ValidatorRewards {
 		sr.ValidatorRewards = append(sr.ValidatorRewards, storage.ValidatorReward{Validator: addr, Reward: reward})
@@ -27,6 +27,7 @@ func (p *PeriodRewards) ToStorage(blockFee *big.Int) storage.PeriodRewards {
 func MakePeriodRewards() (r PeriodRewards) {
 	r.ValidatorRewards = make(map[string]*big.Int)
 	r.TotalReward = big.NewInt(0)
+	r.BlockFee = big.NewInt(0)
 	return
 }
 
@@ -36,7 +37,6 @@ func (r *Rewards) GetIntervalRewards(periodRewards PeriodRewards, distributionFr
 		return periodRewards
 	}
 
-	periodRewards.BlockFee = r.blockFee
 	fromKey := storage.FormatIntToKey(r.blockNum - uint64(distributionFrequency))
 	r.storage.ForEachFromKey([]byte(pebble.GetPrefix(storage.PeriodRewards{})), []byte(fromKey), func(key, res []byte) (stop bool) {
 		var pr storage.PeriodRewards

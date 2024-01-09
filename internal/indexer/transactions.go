@@ -24,7 +24,6 @@ func (bc *blockContext) processTransactions() (err error) {
 		bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel())
 
 		trx_fee := bc.Block.Transactions[t_idx].GetFee()
-		bc.blockFee.Add(bc.blockFee, trx_fee)
 		// Remove fee from sender balance
 		bc.accounts.AddToBalance(bc.Block.Transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
 		if !bc.Block.Transactions[t_idx].Status {
@@ -46,10 +45,6 @@ func (bc *blockContext) processTransactions() (err error) {
 		if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
 			bc.Batch.AddToBatchSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
 		}
-	}
-	// add total fee from the block to block producer balance
-	if bc.Config.Chain != nil && (bc.Block.Pbft.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
-		bc.accounts.AddToBalance(bc.Block.Pbft.Author, bc.blockFee)
 	}
 	return
 }

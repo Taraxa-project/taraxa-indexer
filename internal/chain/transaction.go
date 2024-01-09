@@ -115,7 +115,7 @@ func (b *Transaction) GetModel() (trx *models.Transaction) {
 }
 
 func (t *Transaction) GetFee() *big.Int {
-	return big.NewInt(0).Mul(big.NewInt(int64(t.GasUsed)), big.NewInt(int64(t.GasPrice)))
+	return big.NewInt(0).Mul(big.NewInt(0).SetUint64(t.GasUsed), big.NewInt(0).SetUint64(t.GasPrice))
 }
 
 func (t *Transaction) ExtractLogs() (logs []models.EventLog) {

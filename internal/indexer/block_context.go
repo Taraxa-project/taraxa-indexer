@@ -21,7 +21,6 @@ type blockContext struct {
 	Client       chain.Client
 	Block        *chain.BlockData
 	accounts     storage.Accounts
-	blockFee     *big.Int
 	addressStats *storage.AddressStatsMap
 	finalized    *storage.FinalizationData
 }
@@ -32,7 +31,6 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 	bc.Batch = s.NewBatch()
 	bc.Config = config
 	bc.accounts = bc.Storage.GetAccounts()
-	bc.blockFee = big.NewInt(0)
 	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
 	bc.Client = client
@@ -72,9 +70,10 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 
 	totalReward := common.ParseStringToBigInt(bd.Pbft.TotalReward)
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block.Pbft, bc.blockFee, bc.Block.Validators)
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block.Pbft, bc.Block.Validators)
 	blockFee := r.Process(totalReward, bc.Block.Dags, bc.Block.Transactions, bc.Block.Votes)
-	if blockFee != nil {
+
+	if blockFee != nil && blockFee.Cmp(big.NewInt(0)) > 0 {
 		bc.accounts.AddToBalance(common.DposContractAddress, blockFee)
 	}
 
@@ -104,9 +103,9 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 func (bc *blockContext) checkIndexedBalances() {
 	tp := common.MakeThreadPool()
 	for _, account := range bc.accounts {
+		address := account.Address
+		balance := account.Balance
 		tp.Go(func() {
-			address := account.Address
-			balance := account.Balance
 			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.Block.Pbft.Number)
 			if get_err != nil {
 				log.WithError(get_err).WithField("address", address).Warn("GetBalanceAtBlock error for address")

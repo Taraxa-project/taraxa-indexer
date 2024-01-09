@@ -50,6 +50,7 @@ func makeTestConfig() (config *common.Config) {
 	config = common.DefaultConfig()
 	config.Chain.BlocksPerYear = big.NewInt(1)
 	config.Chain.YieldPercentage = big.NewInt(100)
+	config.Chain.EligibilityBalanceThreshold = big.NewInt(1)
 
 	return
 }
@@ -122,7 +123,7 @@ func TestRewards(t *testing.T) {
 
 	st := pebble.NewStorage("")
 	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, validators_list)
+	r := MakeRewards(st, st.NewBatch(), config, &block, validators_list)
 
 	trxs := makeTransactions(5)
 	dags := makeDags(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
@@ -149,6 +150,8 @@ func TestRewards(t *testing.T) {
 
 func TestRewardsWithNodeData(t *testing.T) {
 	config := common.DefaultConfig()
+	config.Chain.EligibilityBalanceThreshold = big.NewInt(5000000)
+
 	st := pebble.NewStorage("")
 
 	TaraPrecision := big.NewInt(1e+18)
@@ -160,16 +163,16 @@ func TestRewardsWithNodeData(t *testing.T) {
 	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
 	validator5_addr := strings.ToLower(ce.HexToAddress("0x5").Hex())
 	validators_list := []chain.Validator{
-		{Address: validator1_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator2_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator3_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator4_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator5_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator1_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator2_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator3_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator4_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator5_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
 	}
 
 	// Simulated rewards statistics
 	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, validators_list)
+	r := MakeRewards(st, st.NewBatch(), config, &block, validators_list)
 	totalStake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
 	{
 		rewardsStats := stats{}
@@ -326,7 +329,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	batch.CommitBatch()
 
 	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, nil)
+	r := MakeRewards(st, st.NewBatch(), config, &block, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -369,7 +372,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	batch.CommitBatch()
 
 	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
-	r := MakeRewards(st, st.NewBatch(), config, &block, nil, nil)
+	r := MakeRewards(st, st.NewBatch(), config, &block, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{

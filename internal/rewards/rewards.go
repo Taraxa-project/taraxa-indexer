@@ -22,11 +22,10 @@ type Rewards struct {
 
 	blockNum    uint64
 	blockAuthor string
-	blockFee    *big.Int
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.Block, blockFee *big.Int, validators []chain.Validator) *Rewards {
-	r := Rewards{storage, batch, config, MakeValidators(config, validators), block.Number, strings.ToLower(block.Author), blockFee}
+func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.Block, validators []chain.Validator) *Rewards {
+	r := Rewards{storage, batch, config, MakeValidators(config, validators), block.Number, strings.ToLower(block.Author)}
 	return &r
 }
 
@@ -55,7 +54,7 @@ func (r *Rewards) ProcessRewards(periodRewards PeriodRewards, total_minted *big.
 		periodRewards = r.GetIntervalRewards(periodRewards, distributionFrequency)
 	} else if distributionFrequency > 1 {
 		// Save blockFee to db to process it later and return it from this method to avoid yield double counting
-		toStore := periodRewards.ToStorage(r.blockFee)
+		toStore := periodRewards.ToStorage()
 		r.batch.AddToBatchSingleKey(toStore, storage.FormatIntToKey(r.blockNum))
 		return big.NewInt(0), big.NewInt(0)
 	}
@@ -140,6 +139,10 @@ func (r *Rewards) rewardsFromStats(totalStake *big.Int, stats *stats) (rewards P
 			vote_reward.Div(vote_reward, big.NewInt(stats.TotalVotesWeight))
 			rewards.TotalReward.Add(rewards.TotalReward, vote_reward)
 			rewards.ValidatorRewards[addr].Add(rewards.ValidatorRewards[addr], vote_reward)
+		}
+
+		if s.FeeReward != nil && s.FeeReward.Cmp(big.NewInt(0)) > 0 {
+			rewards.BlockFee.Add(rewards.BlockFee, s.FeeReward)
 		}
 	}
 	blockAuthorReward := big.NewInt(0)

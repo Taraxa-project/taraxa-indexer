@@ -21,7 +21,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
 	"github.com/labstack/echo/v4"
-	"github.com/oapi-codegen/echo-middleware"
+	echomiddleware "github.com/oapi-codegen/echo-middleware"
 	log "github.com/sirupsen/logrus"
 )
 
