@@ -24,27 +24,27 @@ func (a *Account) ToModel() models.Account {
 
 type Accounts []Account
 
-func (a Accounts) SortByBalanceDescending() {
-	sort.Slice(a, func(i, j int) bool {
-		return a[i].Balance.Cmp(a[j].Balance) == 1
+func (a *Accounts) SortByBalanceDescending() {
+	sort.Slice(*a, func(i, j int) bool {
+		return (*a)[i].Balance.Cmp((*a)[j].Balance) == 1
 	})
 }
 
-func (a Accounts) findIndex(address string) int {
-	for i := 0; i < len(a); i++ {
-		if strings.EqualFold(a[i].Address, address) {
+func (a *Accounts) findIndex(address string) int {
+	for i := 0; i < len(*a); i++ {
+		if strings.EqualFold((*a)[i].Address, address) {
 			return i
 		}
 	}
 	return -1
 }
 
-func (a Accounts) FindBalance(address string) *Account {
+func (a *Accounts) FindBalance(address string) *Account {
 	i := a.findIndex(address)
 	if i == -1 {
 		return nil
 	}
-	return &a[i]
+	return &(*a)[i]
 }
 
 func (a *Accounts) RegisterBalance(address string) *Account {
@@ -64,7 +64,7 @@ func (a *Accounts) RemoveBalance(address string) {
 	}
 }
 
-func (a Accounts) AddToBalance(address string, value *big.Int) {
+func (a *Accounts) AddToBalance(address string, value *big.Int) {
 	address = strings.ToLower(address)
 	account := a.FindBalance(address)
 	if account == nil {
@@ -76,7 +76,7 @@ func (a Accounts) AddToBalance(address string, value *big.Int) {
 	}
 }
 
-func (a Accounts) UpdateBalances(from, to, value_str string) {
+func (a *Accounts) UpdateBalances(from, to, value_str string) {
 	from = strings.ToLower(from)
 	to = strings.ToLower(to)
 	value, ok := big.NewInt(0).SetString(value_str, 0)
@@ -87,7 +87,7 @@ func (a Accounts) UpdateBalances(from, to, value_str string) {
 	}
 }
 
-func (a Accounts) UpdateEvents(logs []models.EventLog) error {
+func (a *Accounts) UpdateEvents(logs []models.EventLog) error {
 	if len(logs) > 0 {
 		rewards_events, err := events.DecodeRewardsTopics(logs)
 		if err != nil {

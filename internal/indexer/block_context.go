@@ -73,8 +73,11 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block.Pbft, bc.Block.Validators)
 	blockFee := r.Process(totalReward, bc.Block.Dags, bc.Block.Transactions, bc.Block.Votes)
 
-	if blockFee != nil && blockFee.Cmp(big.NewInt(0)) > 0 {
-		bc.accounts.AddToBalance(common.DposContractAddress, blockFee)
+	// add total fee to the dpos contract balance after the magnolia hardfork(it is added to block producers commission pools)
+	if bc.Config.Chain != nil && (bc.Block.Pbft.Number >= bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
+		if blockFee != nil && blockFee.Cmp(big.NewInt(0)) > 0 {
+			bc.accounts.AddToBalance(common.DposContractAddress, blockFee)
+		}
 	}
 
 	bc.accounts.AddToBalance(common.DposContractAddress, totalReward)
@@ -82,6 +85,7 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 	if bc.Block.Pbft.Number%1000 == 0 {
 		bc.checkIndexedBalances()
 	}
+
 	bc.Batch.SaveAccounts(bc.accounts)
 
 	dags_count = uint64(len(bc.Block.Dags))
@@ -101,6 +105,9 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 }
 
 func (bc *blockContext) checkIndexedBalances() {
+	if len(bc.accounts) == 0 {
+		log.Fatal("checkIndexedBalances: No balances in the storage, something is wrong")
+	}
 	tp := common.MakeThreadPool()
 	for _, account := range bc.accounts {
 		address := account.Address
