@@ -63,6 +63,44 @@ func TestFindBalance(t *testing.T) {
 	}
 }
 
+func TestModifyBalance(t *testing.T) {
+	// Create test data
+	accounts := Accounts([]Account{
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
+		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
+	})
+
+	checkBalance := func(address string, expectedBalance *big.Int) {
+		acc := accounts.FindBalance(address)
+		assert.Equal(t, address, acc.Address, "ModifyBalance failed to update the balance correctly")
+		assert.Equal(t, expectedBalance, acc.Balance, "ModifyBalance failed to update the balance correctly")
+	}
+	checkBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
+	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
+	checkBalance("0x1111111111111111111111111111111111111111", big.NewInt(200))
+}
+
+func TestUpdateBalances(t *testing.T) {
+	// Create test data
+	accounts := Accounts([]Account{
+		{Address: "0x1111111111111111111111111111111111111111", Balance: big.NewInt(100)},
+		{Address: "0x2222222222222222222222222222222222222222", Balance: big.NewInt(50)},
+		{Address: "0x3333333333333333333333333333333333333333", Balance: big.NewInt(200)},
+	})
+
+	checkBalance := func(address string, expectedBalance *big.Int) {
+		acc := accounts.FindBalance(address)
+		assert.Equal(t, address, acc.Address, "ModifyBalance failed to update the balance correctly")
+		assert.Equal(t, expectedBalance, acc.Balance, "ModifyBalance failed to update the balance correctly")
+	}
+	checkBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
+	checkBalance("0x2222222222222222222222222222222222222222", big.NewInt(50))
+	accounts.UpdateBalances("0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222", big.NewInt(50).String())
+	checkBalance("0x1111111111111111111111111111111111111111", big.NewInt(50))
+	checkBalance("0x2222222222222222222222222222222222222222", big.NewInt(100))
+}
+
 func TestRegisterBalance(t *testing.T) {
 	// Create test data
 	accounts := Accounts([]Account{
