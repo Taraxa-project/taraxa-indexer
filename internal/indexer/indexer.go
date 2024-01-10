@@ -10,7 +10,7 @@ import (
 )
 
 type Indexer struct {
-	client                      *chain.WsClient
+	client                      chain.Client
 	storage                     storage.Storage
 	config                      *common.Config
 	retry_time                  time.Duration
@@ -97,22 +97,6 @@ func (i *Indexer) init() {
 
 }
 
-func (i *Indexer) syncPeriod(p uint64) error {
-	blk, b_err := i.client.GetBlockByNumber(p)
-	if b_err != nil {
-		return b_err
-	}
-
-	dc, tc, process_err := MakeBlockContext(i.storage, i.client, i.config).process(blk)
-	if process_err != nil {
-		return process_err
-	}
-
-	log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
-
-	return nil
-}
-
 func (i *Indexer) sync() error {
 	// start processing blocks from the next one
 	start := i.storage.GetFinalizationData().PbftCount + 1
@@ -123,16 +107,31 @@ func (i *Indexer) sync() error {
 	if start >= end {
 		return nil
 	}
-	log.WithFields(log.Fields{"start": start, "end": end}).Info("Syncing: started")
+	queue_limit := min(end-start, i.config.SyncQueueLimit)
+	log.WithFields(log.Fields{"start": start, "end": end, "queue_limit": queue_limit}).Info("Syncing: started")
+	sq := MakeSyncQueue(start, queue_limit, i.client)
+
+	go sq.Start()
 	prev := time.Now()
-	for p := uint64(start); p <= end; p++ {
-		if err := i.syncPeriod(p); err != nil {
+	for {
+		bd := sq.PopNext()
+		if bd == nil {
+			if sq.GetCurrent() > end {
+				break
+			}
+			continue
+		}
+		bc := MakeBlockContext(i.storage, i.client, i.config)
+		dc, tc, err := bc.process(bd)
+		if err != nil {
 			return err
 		}
-		if p%100 == 0 {
-			log.WithFields(log.Fields{"period": p, "elapsed_ms": time.Since(prev).Milliseconds()}).Info("Syncing: block applied")
+
+		if bd.Pbft.Number%100 == 0 {
+			log.WithFields(log.Fields{"period": bd.Pbft.Number, "elapsed_ms": time.Since(prev).Milliseconds()}).Info("Syncing: block applied")
 			prev = time.Now()
 		}
+		log.WithFields(log.Fields{"period": bd.Pbft.Number, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
 	}
 	log.WithFields(log.Fields{"period": end}).Info("Syncing: finished")
 	return nil
@@ -143,7 +142,7 @@ func (i *Indexer) run() error {
 	if err != nil {
 		return err
 	}
-
+	log.Info("Syncing: finished, subscribing to new blocks")
 	ch, sub, err := i.client.SubscribeNewHeads()
 	if err != nil {
 		return err
@@ -154,39 +153,41 @@ func (i *Indexer) run() error {
 		case err := <-sub.Err():
 			return err
 		case blk := <-ch:
-			p := common.ParseUInt(blk.Number)
 			finalized_period := i.storage.GetFinalizationData().PbftCount
-			if p != finalized_period+1 {
+			if blk.Number != finalized_period+1 {
 				err := i.sync()
 				if err != nil {
 					return err
 				}
 				continue
 			}
-			if p < finalized_period {
-				log.WithFields(log.Fields{"finalized": finalized_period, "received": p}).Warn("Received block number is lower than finalized. Node was reset?")
+			if blk.Number < finalized_period {
+				log.WithFields(log.Fields{"finalized": finalized_period, "received": blk.Number}).Warn("Received block number is lower than finalized. Node was reset?")
 				continue
 			}
 			// We need to get block from API one more time if we doesn't have it in object from subscription
+			var bd *chain.BlockData
 			if blk.Transactions == nil {
-				blk, err = i.client.GetBlockByNumber(p)
-				if err != nil {
-					return err
-				}
-			}
+				bd, err = chain.GetBlockData(i.client, blk.Number)
+			} else {
+				bd, err = chain.GetBlockDataFromPbft(i.client, &blk)
 
-			bc := MakeBlockContext(i.storage, i.client, i.config)
-			dc, tc, err := bc.process(blk)
+			}
 			if err != nil {
 				return err
 			}
 
+			bc := MakeBlockContext(i.storage, i.client, i.config)
+			dc, tc, err := bc.process(bd)
+			if err != nil {
+				return err
+			}
 			// perform consistency check on blocks from subscription
 			if i.consistency_check_available {
 				i.consistencyCheck(bc.finalized)
 			}
 
-			log.WithFields(log.Fields{"period": p, "dags": dc, "trxs": tc}).Info("Block processed")
+			log.WithFields(log.Fields{"period": blk.Number, "dags": dc, "trxs": tc}).Info("Block processed")
 		}
 	}
 }

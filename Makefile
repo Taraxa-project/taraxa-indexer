@@ -13,7 +13,7 @@ help:
 	@echo "    make         builds executable"
 
 $(GOBIN)/golangci-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.51.1
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.55.2
 
 .PHONY: tools
 tools: $(GOBIN)/golangci-lint

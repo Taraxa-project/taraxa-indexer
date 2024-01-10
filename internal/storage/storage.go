@@ -16,7 +16,7 @@ type Storage interface {
 	ForEachFromKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
-	GetAccounts() []Account
+	GetAccounts() Accounts
 	GetWeekStats(year, week int32) WeekStats
 	GetFinalizationData() *FinalizationData
 	GetAddressStats(addr string) *AddressStats

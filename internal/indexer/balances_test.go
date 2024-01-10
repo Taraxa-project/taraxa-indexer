@@ -12,7 +12,7 @@ import (
 
 func TestUpdateBalancesInternal(t *testing.T) {
 	// Prepare test data
-	accounts := &storage.Balances{Accounts: []storage.Account{
+	accounts := storage.Accounts([]storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
 			Balance: big.NewInt(100),
@@ -21,7 +21,7 @@ func TestUpdateBalancesInternal(t *testing.T) {
 			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
 			Balance: big.NewInt(50),
 		},
-	}}
+	})
 	trx := models.Transaction{
 		From:    "0x1111111111111111111111111111111111111111",
 		To:      "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
@@ -45,7 +45,7 @@ func TestUpdateBalancesInternal(t *testing.T) {
 
 func TestUpdateBalances(t *testing.T) {
 	// Prepare test data
-	accounts := &storage.Balances{Accounts: []storage.Account{
+	accounts := storage.Accounts([]storage.Account{
 		{
 			Address: "0x1111111111111111111111111111111111111111",
 			Balance: big.NewInt(100),
@@ -54,7 +54,7 @@ func TestUpdateBalances(t *testing.T) {
 			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
 			Balance: big.NewInt(50),
 		},
-	}}
+	})
 	trx := &chain.Transaction{
 		Logs: []chain.EventLog{{
 			Address:          "0x00000000000000000000000000000000000000fe",

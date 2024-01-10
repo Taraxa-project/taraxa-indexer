@@ -17,7 +17,7 @@ func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error)
 		Data: logs,
 	}
 	bc.Batch.AddToBatchSingleKey(logsResponse, tx.Hash)
-	err = bc.balances.UpdateEvents(logs)
+	err = bc.accounts.UpdateEvents(logs)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (bc *blockContext) handleValidatorRegistrations(logs []models.EventLog) (er
 			continue
 		}
 		address := common.HexToAddress(log.Topics[1])
-		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidatorBlock(bc.block.Number)
+		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidatorBlock(bc.Block.Pbft.Number)
 	}
 	return nil
 }

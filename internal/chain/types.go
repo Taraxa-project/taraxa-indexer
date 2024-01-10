@@ -10,125 +10,70 @@ import (
 
 type Block struct {
 	models.Pbft
-	Number       string   `json:"number"`
-	Timestamp    string   `json:"timestamp"`
 	Transactions []string `json:"transactions"`
 	TotalReward  string   `json:"totalReward"`
 }
 
-func (b *Block) ToModel() (pbft *models.Pbft) {
-	pbft = &b.Pbft
-	pbft.Timestamp = common.ParseUInt(b.Timestamp)
-	pbft.Number = common.ParseUInt(b.Number)
-	pbft.TransactionCount = uint64(len(b.Transactions))
+func (b *Block) UnmarshalJSON(data []byte) error {
+	var rawStruct struct {
+		Author    string `json:"author"`
+		Hash      string `json:"hash"`
+		Number    string `json:"number"`
+		Timestamp string `json:"timestamp"`
 
-	return
+		Transactions []string `json:"transactions"`
+		TotalReward  string   `json:"totalReward"`
+	}
+	if err := json.Unmarshal(data, &rawStruct); err != nil {
+		panic(err)
+	}
+	b.Transactions = rawStruct.Transactions
+	b.TotalReward = rawStruct.TotalReward
+
+	b.Author = rawStruct.Author
+	b.Hash = rawStruct.Hash
+	b.Number = common.ParseUInt(rawStruct.Number)
+	b.Timestamp = common.ParseUInt(rawStruct.Timestamp)
+
+	b.TransactionCount = uint64(len(b.Transactions))
+	return nil
+}
+
+func (b *Block) GetModel() (pbft *models.Pbft) {
+	return &b.Pbft
 }
 
 type DagBlock struct {
 	models.Dag
 	Sender       string   `json:"sender"`
-	Level        string   `json:"level"`
-	Timestamp    string   `json:"timestamp"`
 	Transactions []string `json:"transactions"`
 }
 
-func (b *DagBlock) ToModel() (dag *models.Dag) {
-	dag = &b.Dag
-	dag.Timestamp = common.ParseUInt(b.Timestamp)
-	dag.Level = common.ParseUInt(b.Level)
-	dag.TransactionCount = uint64(len(b.Transactions))
+func (b *DagBlock) UnmarshalJSON(data []byte) error {
+	var rawStruct struct {
+		Hash      string `json:"hash"`
+		Level     string `json:"level"`
+		Timestamp string `json:"timestamp"`
 
-	return
-}
-
-type EventLog struct {
-	Address          string   `json:"address"`
-	Data             string   `json:"data"`
-	LogIndex         string   `json:"logIndex"`
-	Removed          bool     `json:"removed"`
-	Topics           []string `json:"topics"`
-	TransactionHash  string   `json:"transactionHash"`
-	TransactionIndex string   `json:"transactionIndex"`
-	BlockNumber      string   `json:"blockNumber"`
-}
-
-type Transaction struct {
-	models.Transaction
-	Logs             []EventLog `json:"logs"`
-	BlockNumber      string     `json:"blockNumber"`
-	Nonce            string     `json:"nonce"`
-	GasPrice         string     `json:"gasPrice"`
-	GasUsed          string     `json:"gasUsed"`
-	Status           string     `json:"status"`
-	TransactionIndex string     `json:"transactionIndex"`
-	ContractAddress  string     `json:"contractAddress"`
-}
-
-const emptyInput = "0x"
-const emptyReceiver = ""
-
-func GetInternalTransactionTarget(trace TraceEntry) string {
-	if trace.Action.To != "" {
-		return trace.Action.To
+		Sender       string   `json:"sender"`
+		Transactions []string `json:"transactions"`
 	}
-	return trace.Result.Address
-}
-
-func GetTransactionType(to, input, txType string, internal bool) models.TransactionType {
-	if internal {
-		if txType == "create" {
-			return models.InternalContractCreation
-		} else if txType == "call" && input != emptyInput {
-			return models.InternalContractCall
-		}
-		return models.InternalTransfer
-	} else {
-		if to == emptyReceiver {
-			return models.ContractCreation
-		} else if input != emptyInput {
-			return models.ContractCall
-		}
-		return models.Transfer
+	if err := json.Unmarshal(data, &rawStruct); err != nil {
+		panic(err)
 	}
+	b.Sender = rawStruct.Sender
+	b.Transactions = rawStruct.Transactions
+
+	b.Dag.Hash = rawStruct.Hash
+	b.Dag.Level = common.ParseUInt(rawStruct.Level)
+	b.Dag.Timestamp = common.ParseUInt(rawStruct.Timestamp)
+	b.Dag.TransactionCount = uint64(len(b.Transactions))
+
+	return nil
 }
 
-func (t *Transaction) ToModelWithTimestamp(timestamp uint64) (trx models.Transaction) {
-	trx = t.Transaction
-	trx.BlockNumber = common.ParseUInt(t.BlockNumber)
-	trx.GasCost = common.ParseUInt(t.GasPrice) * common.ParseUInt(t.GasUsed)
-	trx.Status = common.ParseBool(t.Status)
-	trx.Type = GetTransactionType(trx.To, t.Input, "", false)
-	if trx.Type == models.ContractCreation {
-		trx.To = t.ContractAddress
-	}
-	trx.Timestamp = timestamp
-	return
-}
-
-func (t *Transaction) GetFee() *big.Int {
-	gasUsed, _ := big.NewInt(0).SetString(t.GasUsed, 0)
-	gasPrice, _ := big.NewInt(0).SetString(t.GasPrice, 0)
-
-	return big.NewInt(0).Mul(gasUsed, gasPrice)
-}
-
-func (t *Transaction) ExtractLogs() (logs []models.EventLog) {
-	for _, log := range t.Logs {
-		eLog := models.EventLog{
-			Address:          log.Address,
-			Data:             log.Data,
-			LogIndex:         common.ParseUInt(log.LogIndex),
-			Name:             "",
-			Params:           []string{},
-			Removed:          log.Removed,
-			Topics:           log.Topics,
-			TransactionHash:  log.TransactionHash,
-			TransactionIndex: common.ParseUInt(log.TransactionIndex),
-		}
-		logs = append(logs, eLog)
-	}
-	return logs
+func (b *DagBlock) GetModel() (pbft *models.Dag) {
+	return &b.Dag
 }
 
 type PbftBlockWithDags struct {
@@ -139,8 +84,13 @@ type PbftBlockWithDags struct {
 	} `json:"schedule"`
 }
 
-type TransactionTrace struct {
-	Trace []TraceEntry `json:"trace"`
+type Action struct {
+	CallType string `json:"callType"`
+	From     string `json:"from"`
+	Gas      string `json:"gas"`
+	Input    string `json:"input"`
+	To       string `json:"to"`
+	Value    string `json:"value"`
 }
 
 type TraceEntryResult struct {
@@ -157,13 +107,8 @@ type TraceEntry struct {
 	Result       TraceEntryResult `json:"result"`
 }
 
-type Action struct {
-	CallType string `json:"callType"`
-	From     string `json:"from"`
-	Gas      string `json:"gas"`
-	Input    string `json:"input"`
-	To       string `json:"to"`
-	Value    string `json:"value"`
+type TransactionTrace struct {
+	Trace []TraceEntry `json:"trace"`
 }
 
 type VotesResponse struct {

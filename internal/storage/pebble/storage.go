@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/big"
 	"os"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -97,7 +98,7 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 
 func GetPrefix(o interface{}) (ret string) {
 	switch tt := o.(type) {
-	case *[]storage.Account, []storage.Account:
+	case *storage.Accounts, storage.Accounts:
 		ret = accountPrefix
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = logsPrefix
@@ -133,6 +134,7 @@ func GetPrefix(o interface{}) (ret string) {
 		// We don't need to add separator in this case, so return from here
 		return
 	default:
+		debug.PrintStack()
 		log.WithFields(log.Fields{"type": tt, "value": o}).Fatalf("getPrefix: Unexpected type %T", tt)
 	}
 	ret += prefixSeparator
@@ -171,7 +173,7 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 		UpperBound: keyUpperBound(prefix),
 	}
 
-	iter, _ := s.db.NewIter(&prefixIterOptions)
+	iter := s.db.NewIter(&prefixIterOptions)
 	return iter
 }
 
@@ -234,8 +236,8 @@ func (s *Storage) GetTotalSupply() *storage.TotalSupply {
 	return ptr
 }
 
-func (s *Storage) GetAccounts() []storage.Account {
-	ptr := new([]storage.Account)
+func (s *Storage) GetAccounts() storage.Accounts {
+	ptr := new(storage.Accounts)
 	err := s.GetFromDB(ptr, getPrefixKey(GetPrefix(ptr), ""))
 	if err != nil && err != pebble.ErrNotFound {
 		log.Fatal("GetAccounts failed: ", err)

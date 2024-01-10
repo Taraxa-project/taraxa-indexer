@@ -26,7 +26,8 @@ func TestTraceInternalCreationParsing(t *testing.T) {
 		"to": "0x26d80dd41f67a8c97d5e0a233e8f7975cfaa23ed",
 		"transactionIndex": "0x0",
 		"v": "0x0",
-		"value": "0x0"
+		"value": "0x0",
+		"status": "0x1"
 	}`
 	traces_json := `[
 		{
@@ -75,16 +76,18 @@ func TestTraceInternalCreationParsing(t *testing.T) {
 
 	mc := chain.MakeMockClient()
 	mc.AddTransactionFromJson(transaction_json)
-	tt, _ := mc.GetTransactionByHash(transaction_hash)
-	trx := tt.ToModelWithTimestamp(1)
+	trx, _ := mc.GetTransactionByHash(transaction_hash)
+	trx.SetTimestamp(1)
 	assert.Equal(t, transaction_hash, trx.Hash)
 	assert.Equal(t, uint64(0x5487c), trx.BlockNumber)
 	assert.Equal(t, models.ContractCall, trx.Type)
 
+	mc.AddTracesFromJson(transaction_hash, traces_json)
+	mc.AddPbftBlock(trx.BlockNumber, &chain.Block{Pbft: models.Pbft{Number: trx.BlockNumber}, Transactions: []string{trx.Hash}})
 	bc := MakeTestBlockContext(mc, trx.BlockNumber)
 
-	mc.AddTracesFromJson(transaction_hash, traces_json)
-
+	// bc.Block.Transactions, _ = bc.Client.GetPeriodTransactions(trx.BlockNumber)
+	// bc.Block.Traces, _ = bc.Client.TraceBlockTransactions(trx.BlockNumber)
 	transactions_trace, _ := bc.Client.TraceBlockTransactions(trx.BlockNumber)
 	// Have one transaction with 2 internal transactions
 	trx_count := 1
@@ -92,7 +95,7 @@ func TestTraceInternalCreationParsing(t *testing.T) {
 	assert.Equal(t, trx_count, len(transactions_trace))
 	assert.Equal(t, trx_count+internal_count, len(transactions_trace[0].Trace))
 
-	err := bc.processTransactions([]string{trx.Hash})
+	err := bc.processTransactions()
 
 	assert.Equal(t, err, nil)
 	bc.commit()

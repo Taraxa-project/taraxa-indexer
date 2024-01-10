@@ -1,4 +1,4 @@
-//go:generate go run github.com/deepmap/oapi-codegen/cmd/oapi-codegen --config=models/models.cfg.yaml api/openapi.yaml
+//go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=models/models.cfg.yaml api/openapi.yaml
 
 package main
 
@@ -20,8 +20,8 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
-	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/labstack/echo/v4"
+	echomiddleware "github.com/oapi-codegen/echo-middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,6 +33,7 @@ var (
 	log_level                        *string
 	yield_saving_interval            *int
 	validators_yield_saving_interval *int
+	sync_queue_limit                 *int
 )
 
 func init() {
@@ -43,6 +44,7 @@ func init() {
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
 	yield_saving_interval = flag.Int("yield_saving_interval", 150000, "interval for saving total yield")
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 150000, "interval for saving validators yield")
+	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
 
 	flag.Parse()
 
@@ -85,7 +87,7 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(middleware.OapiRequestValidator(swagger))
+	e.Use(echomiddleware.OapiRequestValidator(swagger))
 	// Add http error handler to return a proper error JSON on request error
 	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
 		_ = ctx.JSON(http.StatusInternalServerError, map[string]any{"message": err.Error()})
@@ -94,6 +96,7 @@ func main() {
 	c := common.DefaultConfig()
 	c.TotalYieldSavingInterval = uint64(*yield_saving_interval)
 	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
+	c.SyncQueueLimit = uint64(*sync_queue_limit)
 
 	fin := st.GetFinalizationData()
 	log.WithFields(log.Fields{"pbft_count": fin.PbftCount, "dag_count": fin.DagCount, "trx_count": fin.TrxCount}).Info("Loaded db with")

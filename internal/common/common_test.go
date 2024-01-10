@@ -42,3 +42,13 @@ func TestDistributionFrequency(t *testing.T) {
 		}
 	}
 }
+
+func TestDistributionFrequencyZero(t *testing.T) {
+	config := HardforksConfig{RewardsDistributionFrequency: map[uint64]uint32{0: 10}}
+	for period, frequency := range map[uint64]uint32{1: 10, 100: 10, 1000: 10} {
+		df := config.GetDistributionFrequency(period)
+		if frequency != df {
+			t.Errorf("Expected frequency %d for period %d, but got %d", frequency, period, df)
+		}
+	}
+}
