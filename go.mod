@@ -6,7 +6,7 @@ require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.6
 	github.com/cockroachdb/pebble v1.0.0
 	github.com/deepmap/oapi-codegen/v2 v2.0.0
-	github.com/ethereum/go-ethereum v1.13.7
+	github.com/ethereum/go-ethereum v1.13.10
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.11.4
