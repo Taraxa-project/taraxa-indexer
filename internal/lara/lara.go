@@ -19,13 +19,12 @@ import (
 
 type State struct {
 	epochDuration                 *big.Int
-	lastEpochStartBlock           *big.Int
-	isEpochRunning                bool
+	lastSnapshot                  *big.Int
+	lastRebalance                 *big.Int
 	lastEpochTotalDelegatedAmount *big.Int
 	validatorStakes               map[common.Address]*big.Int
 	validators                    []oracle.NodeData
-	isStartingEpoch               bool
-	isEndingEpoch                 bool
+	isMakingSnapshot              bool
 	isRebalancing                 bool
 }
 type Lara struct {
@@ -77,23 +76,16 @@ func (l *Lara) Run() {
 			log.Fatalf("Failed to get block by number: %v", err)
 		}
 		// if we pass the time to end epoch
-		expectedEpochEnd := l.state.lastEpochStartBlock.Int64() + l.state.epochDuration.Int64()
+		expenctedSnapshotTime := l.state.lastSnapshot.Int64() + l.state.epochDuration.Int64()
 		l.SyncState()
-		if int64(currentBlock) > expectedEpochEnd {
+		if int64(currentBlock) > expenctedSnapshotTime {
 			// if the epoch is running
-			if l.state.isEpochRunning {
-				// end the epoch
-				l.EndEpoch()
-				time.Sleep(5 * time.Second)
-				l.Rebalance()
-				// wait 3 sec
-				time.Sleep(3 * time.Second)
-			} else {
-				// start the epoch
-				l.StartEpoch()
-				// wait 3 sec
-				time.Sleep(3 * time.Second)
-			}
+			// end the epoch
+			l.Snapshot()
+			time.Sleep(4 * time.Second)
+			l.Rebalance()
+			// wait 3 sec
+			time.Sleep(4 * time.Second)
 		}
 	}
 
@@ -111,17 +103,17 @@ func (l *Lara) SyncState() {
 		log.Fatalf("Failed to get epoch duration: %v", err)
 	}
 
-	epochStartBlock, err := l.contract.LastEpochStartBlock(opts)
+	lastSnapshotBlock, err := l.contract.LastSnapshot(opts)
 	if err != nil {
 		log.Fatalf("Failed to get epoch start block: %v", err)
 	}
 
-	isEpochRunning, err := l.contract.IsEpochRunning(opts)
+	lastRebalanceBlock, err := l.contract.LastRebalance(opts)
 	if err != nil {
 		log.Fatalf("Failed to get epoch running: %v", err)
 	}
 
-	lastEpochTotalDelegatedAmount, err := l.contract.LastEpochTotalDelegatedAmount(opts)
+	lastEpochTotalDelegatedAmount, err := l.contract.TotalDelegated(opts)
 	if err != nil {
 		log.Fatalf("Failed to get last epoch total delegated amount: %v", err)
 	}
@@ -171,23 +163,23 @@ func (l *Lara) SyncState() {
 	}
 	l.state = State{
 		epochDuration:                 epochDuration,
-		lastEpochStartBlock:           epochStartBlock,
-		isEpochRunning:                isEpochRunning,
+		lastSnapshot:                  lastSnapshotBlock,
+		lastRebalance:                 lastRebalanceBlock,
 		lastEpochTotalDelegatedAmount: lastEpochTotalDelegatedAmount,
 		validatorStakes:               validatorStakes,
 		validators:                    validators,
 	}
-	epochEndBlock := big.NewInt(0).Add(epochStartBlock, epochDuration)
+	nextSnapshot := big.NewInt(0).Add(lastSnapshotBlock, epochDuration)
 	currentBlock, err := l.Eth.BlockNumber(context.Background())
 	if err != nil {
 		log.Fatalf("Failed to get current block: %v", err)
 	}
-	log.WithFields(log.Fields{"isRunning": l.state.isEpochRunning, "currentBlock": currentBlock, "epochStartBlock": l.state.lastEpochStartBlock, "epochEndBlock": epochEndBlock, "nodesDelegatedTo": len(l.state.validators), "totalDelegated": l.state.lastEpochTotalDelegatedAmount}).Info("LARA STATE: ")
+	log.WithFields(log.Fields{"currentBlock": currentBlock, "lastRebalance": l.state.lastRebalance, "lastSnapshotBlock": l.state.lastSnapshot, "nextSnapshotBlock": nextSnapshot, "nodesDelegatedTo": len(l.state.validators), "totalDelegated": l.state.lastEpochTotalDelegatedAmount}).Info("LARA STATE: ")
 }
 
-func (l *Lara) StartEpoch() {
-	if l.state.isStartingEpoch {
-		log.Warn("WARN: PENDING START EPOCH")
+func (l *Lara) Snapshot() {
+	if l.state.isMakingSnapshot {
+		log.Warn("WARN: PENDING SNPAHSOT")
 		return
 	}
 	opts := &bind.TransactOpts{
@@ -204,58 +196,31 @@ func (l *Lara) StartEpoch() {
 		log.Warn("LARA == No oracle nodes")
 		return
 	}
-	l.state.isStartingEpoch = true
-	tx, err := l.contract.StartEpoch(opts)
+	l.state.isMakingSnapshot = true
+	tx, err := l.contract.Snapshot(opts)
+	timer := time.NewTimer(5 * time.Second)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
-			if strings.Contains(err.Error(), "Epoch already running") {
-				log.Warn("Epoch already running")
-			} else {
-				log.Warn("Start epoch tx already in pool")
-			}
 		} else {
-			log.Fatalf("Failed to start epoch: %v", err)
+			log.Fatalf("Failed to make snapshot: %v", err)
 		}
 	}
 	if tx != nil {
-		log.Warnf("Started epoch at timestamp: %d", tx.Time().Unix())
-		l.state.isStartingEpoch = false
+		receipt, err := l.Eth.TransactionReceipt(context.Background(), tx.Hash())
+		if err != nil {
+			log.Fatalf("Failed to get receipt: %v", err)
+		}
+		log.Warnf("Made snapshot at timestamp: %d, hash: %s", receipt.BlockNumber, tx.Hash().Hex())
+		l.state.isMakingSnapshot = false
 	}
 	// wait 3 sec
 	time.Sleep(3 * time.Second)
 	l.SyncState()
 	time.Sleep(3 * time.Second)
-	log.Warnf("Started epoch: %s", l.state.lastEpochStartBlock)
-}
-
-func (l *Lara) EndEpoch() {
-	if l.state.isEndingEpoch {
-		log.Warn("WARN: PENDING END EPOCH")
-		return
+	if l.state.isMakingSnapshot {
+		log.Warnf("Snapshot not made after : %d", timer.C)
+		timer.Stop()
 	}
-	opts := &bind.TransactOpts{
-		From:     l.signer.From,
-		Signer:   l.signer.Signer,
-		GasLimit: 0,
-		Context:  nil,
-	}
-	l.state.isEndingEpoch = true
-	tx, err := l.contract.EndEpoch(opts)
-	if err != nil {
-		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
-			log.Warn("End epoch tx already in pool")
-		} else {
-			log.Warnf("Failed to end epoch: %v", err)
-		}
-	}
-	if tx != nil {
-		l.state.isEndingEpoch = false
-		log.Warnf("Ended epoch at timestamp: %d", tx.Time().Unix())
-	}
-	// wait one block
-	time.Sleep(3 * time.Second)
-	l.SyncState()
-	time.Sleep(3 * time.Second)
 }
 
 func (l *Lara) GetState() State {
@@ -267,8 +232,8 @@ func (l *Lara) Rebalance() {
 		log.Warn("WARN: PENDING REBALANCE")
 		return
 	}
-	if l.state.isEpochRunning {
-		log.Warn("WARN: EPOCH RUNNING")
+	if l.state.isMakingSnapshot {
+		log.Warn("WARN: SNAPSHOT IN PROGRESS")
 		return
 	}
 	opts := &bind.TransactOpts{

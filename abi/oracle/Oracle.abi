@@ -42,7 +42,7 @@
     },
     {
       "inputs": [],
-      "name": "_dataFeed",
+      "name": "DATA_FEED",
       "outputs": [
         {
           "internalType": "address",
@@ -55,7 +55,7 @@
     },
     {
       "inputs": [],
-      "name": "_dpos",
+      "name": "DPOS",
       "outputs": [
         {
           "internalType": "contract DposInterface",

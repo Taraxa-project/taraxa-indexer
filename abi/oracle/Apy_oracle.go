@@ -56,7 +56,7 @@ type IApyOracleTentativeReDelegation struct {
 
 // ApyOracleMetaData contains all meta data concerning the ApyOracle contract.
 var ApyOracleMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dataFeed\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"dpos\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"pbftCount\",\"type\":\"uint256\"}],\"name\":\"NodeDataUpdated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"_dataFeed\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"_dpos\",\"outputs\":[{\"internalType\":\"contractDposInterface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData[]\",\"name\":\"data\",\"type\":\"tuple[]\"}],\"name\":\"batchUpdateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getDataFeedAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getNodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"}],\"name\":\"getNodeData\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"getNodesForDelegation\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"currentValidators\",\"type\":\"tuple[]\"}],\"name\":\"getRebalanceList\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"toRating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeReDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lara\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxValidatorStakeCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"nodes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"nodesList\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_lara\",\"type\":\"address\"}],\"name\":\"setLara\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"capacity\",\"type\":\"uint256\"}],\"name\":\"setMaxValidatorStakeCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"count\",\"type\":\"uint256\"}],\"name\":\"updateNodeCount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"data\",\"type\":\"tuple\"}],\"name\":\"updateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"dataFeed\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"dpos\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"pbftCount\",\"type\":\"uint256\"}],\"name\":\"NodeDataUpdated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"DATA_FEED\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"DPOS\",\"outputs\":[{\"internalType\":\"contractDposInterface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData[]\",\"name\":\"data\",\"type\":\"tuple[]\"}],\"name\":\"batchUpdateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getDataFeedAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getNodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"}],\"name\":\"getNodeData\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"getNodesForDelegation\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"currentValidators\",\"type\":\"tuple[]\"}],\"name\":\"getRebalanceList\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"toRating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeReDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lara\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxValidatorStakeCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nodeCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"nodes\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"nodesList\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_lara\",\"type\":\"address\"}],\"name\":\"setLara\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"capacity\",\"type\":\"uint256\"}],\"name\":\"setMaxValidatorStakeCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"count\",\"type\":\"uint256\"}],\"name\":\"updateNodeCount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"fromBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"toBlock\",\"type\":\"uint64\"},{\"internalType\":\"uint16\",\"name\":\"rank\",\"type\":\"uint16\"},{\"internalType\":\"uint16\",\"name\":\"apy\",\"type\":\"uint16\"}],\"internalType\":\"structIApyOracle.NodeData\",\"name\":\"data\",\"type\":\"tuple\"}],\"name\":\"updateNodeData\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // ApyOracleABI is the input ABI used to generate the binding from.
@@ -205,12 +205,12 @@ func (_ApyOracle *ApyOracleTransactorRaw) Transact(opts *bind.TransactOpts, meth
 	return _ApyOracle.Contract.contract.Transact(opts, method, params...)
 }
 
-// DataFeed is a free data retrieval call binding the contract method 0x486146d4.
+// DATAFEED is a free data retrieval call binding the contract method 0x21db50a1.
 //
-// Solidity: function _dataFeed() view returns(address)
-func (_ApyOracle *ApyOracleCaller) DataFeed(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function DATA_FEED() view returns(address)
+func (_ApyOracle *ApyOracleCaller) DATAFEED(opts *bind.CallOpts) (common.Address, error) {
 	var out []interface{}
-	err := _ApyOracle.contract.Call(opts, &out, "_dataFeed")
+	err := _ApyOracle.contract.Call(opts, &out, "DATA_FEED")
 
 	if err != nil {
 		return *new(common.Address), err
@@ -222,26 +222,26 @@ func (_ApyOracle *ApyOracleCaller) DataFeed(opts *bind.CallOpts) (common.Address
 
 }
 
-// DataFeed is a free data retrieval call binding the contract method 0x486146d4.
+// DATAFEED is a free data retrieval call binding the contract method 0x21db50a1.
 //
-// Solidity: function _dataFeed() view returns(address)
-func (_ApyOracle *ApyOracleSession) DataFeed() (common.Address, error) {
-	return _ApyOracle.Contract.DataFeed(&_ApyOracle.CallOpts)
+// Solidity: function DATA_FEED() view returns(address)
+func (_ApyOracle *ApyOracleSession) DATAFEED() (common.Address, error) {
+	return _ApyOracle.Contract.DATAFEED(&_ApyOracle.CallOpts)
 }
 
-// DataFeed is a free data retrieval call binding the contract method 0x486146d4.
+// DATAFEED is a free data retrieval call binding the contract method 0x21db50a1.
 //
-// Solidity: function _dataFeed() view returns(address)
-func (_ApyOracle *ApyOracleCallerSession) DataFeed() (common.Address, error) {
-	return _ApyOracle.Contract.DataFeed(&_ApyOracle.CallOpts)
+// Solidity: function DATA_FEED() view returns(address)
+func (_ApyOracle *ApyOracleCallerSession) DATAFEED() (common.Address, error) {
+	return _ApyOracle.Contract.DATAFEED(&_ApyOracle.CallOpts)
 }
 
-// Dpos is a free data retrieval call binding the contract method 0x4cb1a454.
+// DPOS is a free data retrieval call binding the contract method 0x6943935e.
 //
-// Solidity: function _dpos() view returns(address)
-func (_ApyOracle *ApyOracleCaller) Dpos(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function DPOS() view returns(address)
+func (_ApyOracle *ApyOracleCaller) DPOS(opts *bind.CallOpts) (common.Address, error) {
 	var out []interface{}
-	err := _ApyOracle.contract.Call(opts, &out, "_dpos")
+	err := _ApyOracle.contract.Call(opts, &out, "DPOS")
 
 	if err != nil {
 		return *new(common.Address), err
@@ -253,18 +253,18 @@ func (_ApyOracle *ApyOracleCaller) Dpos(opts *bind.CallOpts) (common.Address, er
 
 }
 
-// Dpos is a free data retrieval call binding the contract method 0x4cb1a454.
+// DPOS is a free data retrieval call binding the contract method 0x6943935e.
 //
-// Solidity: function _dpos() view returns(address)
-func (_ApyOracle *ApyOracleSession) Dpos() (common.Address, error) {
-	return _ApyOracle.Contract.Dpos(&_ApyOracle.CallOpts)
+// Solidity: function DPOS() view returns(address)
+func (_ApyOracle *ApyOracleSession) DPOS() (common.Address, error) {
+	return _ApyOracle.Contract.DPOS(&_ApyOracle.CallOpts)
 }
 
-// Dpos is a free data retrieval call binding the contract method 0x4cb1a454.
+// DPOS is a free data retrieval call binding the contract method 0x6943935e.
 //
-// Solidity: function _dpos() view returns(address)
-func (_ApyOracle *ApyOracleCallerSession) Dpos() (common.Address, error) {
-	return _ApyOracle.Contract.Dpos(&_ApyOracle.CallOpts)
+// Solidity: function DPOS() view returns(address)
+func (_ApyOracle *ApyOracleCallerSession) DPOS() (common.Address, error) {
+	return _ApyOracle.Contract.DPOS(&_ApyOracle.CallOpts)
 }
 
 // GetDataFeedAddress is a free data retrieval call binding the contract method 0xa50d1850.

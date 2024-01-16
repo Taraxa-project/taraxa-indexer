@@ -239,21 +239,9 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint32",
-          "name": "batch",
-          "type": "uint32"
-        }
-      ],
+      "inputs": [],
       "name": "claimAllRewards",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "end",
-          "type": "bool"
-        }
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },

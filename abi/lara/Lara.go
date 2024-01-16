@@ -29,16 +29,15 @@ var (
 	_ = abi.ConvertType
 )
 
-// IApyOracleTentativeDelegation is an auto generated low-level Go binding around an user-defined struct.
-type IApyOracleTentativeDelegation struct {
+// UtilsUndelegation is an auto generated low-level Go binding around an user-defined struct.
+type UtilsUndelegation struct {
 	Validator common.Address
 	Amount    *big.Int
-	Rating    *big.Int
 }
 
 // LaraContractMetaData contains all meta data concerning the LaraContract contract.
 var LaraContractMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_sttaraToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_dposContract\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_apyOracle\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_treasuryAddress\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"CancelUndelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"ConfirmUndelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"DelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"lastEpochStart\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"currentBlockNumber\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochDuration\",\"type\":\"uint256\"}],\"name\":\"EpochDurationNotMet\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"RedelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"batch\",\"type\":\"uint32\"}],\"name\":\"RewardClaimFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minAmount\",\"type\":\"uint256\"}],\"name\":\"StakeAmountTooLow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"sentAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"targetAmount\",\"type\":\"uint256\"}],\"name\":\"StakeValueTooLow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"UndelegationFailed\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"AllRewardsClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newCommission\",\"type\":\"uint256\"}],\"name\":\"CommissionChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"CommissionWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"value\",\"type\":\"bool\"}],\"name\":\"CompoundChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Delegated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalEpochDelegation\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalEpochReward\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"EpochEnded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalEpochDelegation\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"EpochStarted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"RedelegationRewardsClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"RewardsClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"StakeRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Staked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"blockNumber\",\"type\":\"uint256\"}],\"name\":\"TaraSent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newTreasury\",\"type\":\"address\"}],\"name\":\"TreasuryChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Undelegated\",\"type\":\"event\"},{\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"inputs\":[],\"name\":\"apyOracle\",\"outputs\":[{\"internalType\":\"contractIApyOracle\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"cancelUndelegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claimRewards\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"claimableRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"commission\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"confirmUndelegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"delegateToValidators\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"remainingAmount\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"delegatedAmounts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"delegators\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"dposContract\",\"outputs\":[{\"internalType\":\"contractDposInterface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"endEpoch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"epochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"getDelegatorAtIndex\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"getValidatorsForAmount\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rating\",\"type\":\"uint256\"}],\"internalType\":\"structIApyOracle.TentativeDelegation[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isCompounding\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isEpochRunning\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"isValidatorRegistered\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastEpochStartBlock\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastEpochTotalDelegatedAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxValidatorStakeCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"minStakeAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocolStartTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"protocolTotalStakeAtValidator\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"protocolValidatorRatingAtDelegation\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rebalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"removeStake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"requestUndelegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_commission\",\"type\":\"uint256\"}],\"name\":\"setCommission\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"value\",\"type\":\"bool\"}],\"name\":\"setCompound\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochDuration\",\"type\":\"uint256\"}],\"name\":\"setEpochDuration\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_maxValidatorStakeCapacity\",\"type\":\"uint256\"}],\"name\":\"setMaxValidatorStakeCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_minStakeAmount\",\"type\":\"uint256\"}],\"name\":\"setMinStakeAmount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_treasuryAddress\",\"type\":\"address\"}],\"name\":\"setTreasuryAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stTaraToken\",\"outputs\":[{\"internalType\":\"contractIstTara\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"stakedAmounts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"startEpoch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"treasuryAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"undelegated\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"validators\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_sttaraToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_dposContract\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_apyOracle\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_treasuryAddress\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"CancelUndelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"ConfirmUndelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"DelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"lastEpochStart\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"currentBlockNumber\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"epochDuration\",\"type\":\"uint256\"}],\"name\":\"EpochDurationNotMet\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"RedelegationFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"RewardClaimFailed\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minAmount\",\"type\":\"uint256\"}],\"name\":\"StakeAmountTooLow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"sentAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"targetAmount\",\"type\":\"uint256\"}],\"name\":\"StakeValueTooLow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"delegator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"UndelegationFailed\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"AllRewardsClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"newCommission\",\"type\":\"uint256\"}],\"name\":\"CommissionChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"CommissionWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"value\",\"type\":\"bool\"}],\"name\":\"CompoundChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Delegated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"RedelegationRewardsClaimed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"totalDelegation\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"totalRewards\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"nextSnapshotBlock\",\"type\":\"uint256\"}],\"name\":\"SnapshotTaken\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"StakeRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Staked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TaraSent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newTreasury\",\"type\":\"address\"}],\"name\":\"TreasuryChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Undelegated\",\"type\":\"event\"},{\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"inputs\":[],\"name\":\"apyOracle\",\"outputs\":[{\"internalType\":\"contractIApyOracle\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"cancelUndelegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"commission\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"confirmUndelegate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"delegateToValidators\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"remainingAmount\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"delegators\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"dposContract\",\"outputs\":[{\"internalType\":\"contractDposInterface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"epochDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"}],\"name\":\"isValidatorRegistered\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastRebalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastSnapshot\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxValidatorStakeCapacity\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"minStakeAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"protocolStartTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"protocolTotalStakeAtValidator\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"protocolValidatorRatingAtDelegation\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rebalance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"requestUndelegate\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"validator\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"internalType\":\"structUtils.Undelegation[]\",\"name\":\"undelegations\",\"type\":\"tuple[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_commission\",\"type\":\"uint256\"}],\"name\":\"setCommission\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_epochDuration\",\"type\":\"uint256\"}],\"name\":\"setEpochDuration\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_maxValidatorStakeCapacity\",\"type\":\"uint256\"}],\"name\":\"setMaxValidatorStakeCapacity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_minStakeAmount\",\"type\":\"uint256\"}],\"name\":\"setMinStakeAmount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_treasuryAddress\",\"type\":\"address\"}],\"name\":\"setTreasuryAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"snapshot\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"stTaraToken\",\"outputs\":[{\"internalType\":\"contractIstTara\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"stake\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalDelegated\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"treasuryAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"undelegated\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"validators\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
 }
 
 // LaraContractABI is the input ABI used to generate the binding from.
@@ -218,37 +217,6 @@ func (_LaraContract *LaraContractCallerSession) ApyOracle() (common.Address, err
 	return _LaraContract.Contract.ApyOracle(&_LaraContract.CallOpts)
 }
 
-// ClaimableRewards is a free data retrieval call binding the contract method 0xdc01f60d.
-//
-// Solidity: function claimableRewards(address ) view returns(uint256)
-func (_LaraContract *LaraContractCaller) ClaimableRewards(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "claimableRewards", arg0)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// ClaimableRewards is a free data retrieval call binding the contract method 0xdc01f60d.
-//
-// Solidity: function claimableRewards(address ) view returns(uint256)
-func (_LaraContract *LaraContractSession) ClaimableRewards(arg0 common.Address) (*big.Int, error) {
-	return _LaraContract.Contract.ClaimableRewards(&_LaraContract.CallOpts, arg0)
-}
-
-// ClaimableRewards is a free data retrieval call binding the contract method 0xdc01f60d.
-//
-// Solidity: function claimableRewards(address ) view returns(uint256)
-func (_LaraContract *LaraContractCallerSession) ClaimableRewards(arg0 common.Address) (*big.Int, error) {
-	return _LaraContract.Contract.ClaimableRewards(&_LaraContract.CallOpts, arg0)
-}
-
 // Commission is a free data retrieval call binding the contract method 0xe1489191.
 //
 // Solidity: function commission() view returns(uint256)
@@ -278,37 +246,6 @@ func (_LaraContract *LaraContractSession) Commission() (*big.Int, error) {
 // Solidity: function commission() view returns(uint256)
 func (_LaraContract *LaraContractCallerSession) Commission() (*big.Int, error) {
 	return _LaraContract.Contract.Commission(&_LaraContract.CallOpts)
-}
-
-// DelegatedAmounts is a free data retrieval call binding the contract method 0xf472b8d7.
-//
-// Solidity: function delegatedAmounts(address ) view returns(uint256)
-func (_LaraContract *LaraContractCaller) DelegatedAmounts(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "delegatedAmounts", arg0)
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// DelegatedAmounts is a free data retrieval call binding the contract method 0xf472b8d7.
-//
-// Solidity: function delegatedAmounts(address ) view returns(uint256)
-func (_LaraContract *LaraContractSession) DelegatedAmounts(arg0 common.Address) (*big.Int, error) {
-	return _LaraContract.Contract.DelegatedAmounts(&_LaraContract.CallOpts, arg0)
-}
-
-// DelegatedAmounts is a free data retrieval call binding the contract method 0xf472b8d7.
-//
-// Solidity: function delegatedAmounts(address ) view returns(uint256)
-func (_LaraContract *LaraContractCallerSession) DelegatedAmounts(arg0 common.Address) (*big.Int, error) {
-	return _LaraContract.Contract.DelegatedAmounts(&_LaraContract.CallOpts, arg0)
 }
 
 // Delegators is a free data retrieval call binding the contract method 0x5be612c7.
@@ -404,99 +341,6 @@ func (_LaraContract *LaraContractCallerSession) EpochDuration() (*big.Int, error
 	return _LaraContract.Contract.EpochDuration(&_LaraContract.CallOpts)
 }
 
-// GetDelegatorAtIndex is a free data retrieval call binding the contract method 0x34b3e1d3.
-//
-// Solidity: function getDelegatorAtIndex(uint256 index) view returns(address)
-func (_LaraContract *LaraContractCaller) GetDelegatorAtIndex(opts *bind.CallOpts, index *big.Int) (common.Address, error) {
-	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "getDelegatorAtIndex", index)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// GetDelegatorAtIndex is a free data retrieval call binding the contract method 0x34b3e1d3.
-//
-// Solidity: function getDelegatorAtIndex(uint256 index) view returns(address)
-func (_LaraContract *LaraContractSession) GetDelegatorAtIndex(index *big.Int) (common.Address, error) {
-	return _LaraContract.Contract.GetDelegatorAtIndex(&_LaraContract.CallOpts, index)
-}
-
-// GetDelegatorAtIndex is a free data retrieval call binding the contract method 0x34b3e1d3.
-//
-// Solidity: function getDelegatorAtIndex(uint256 index) view returns(address)
-func (_LaraContract *LaraContractCallerSession) GetDelegatorAtIndex(index *big.Int) (common.Address, error) {
-	return _LaraContract.Contract.GetDelegatorAtIndex(&_LaraContract.CallOpts, index)
-}
-
-// IsCompounding is a free data retrieval call binding the contract method 0xf042d758.
-//
-// Solidity: function isCompounding(address ) view returns(bool)
-func (_LaraContract *LaraContractCaller) IsCompounding(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
-	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "isCompounding", arg0)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsCompounding is a free data retrieval call binding the contract method 0xf042d758.
-//
-// Solidity: function isCompounding(address ) view returns(bool)
-func (_LaraContract *LaraContractSession) IsCompounding(arg0 common.Address) (bool, error) {
-	return _LaraContract.Contract.IsCompounding(&_LaraContract.CallOpts, arg0)
-}
-
-// IsCompounding is a free data retrieval call binding the contract method 0xf042d758.
-//
-// Solidity: function isCompounding(address ) view returns(bool)
-func (_LaraContract *LaraContractCallerSession) IsCompounding(arg0 common.Address) (bool, error) {
-	return _LaraContract.Contract.IsCompounding(&_LaraContract.CallOpts, arg0)
-}
-
-// IsEpochRunning is a free data retrieval call binding the contract method 0xc5c75098.
-//
-// Solidity: function isEpochRunning() view returns(bool)
-func (_LaraContract *LaraContractCaller) IsEpochRunning(opts *bind.CallOpts) (bool, error) {
-	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "isEpochRunning")
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// IsEpochRunning is a free data retrieval call binding the contract method 0xc5c75098.
-//
-// Solidity: function isEpochRunning() view returns(bool)
-func (_LaraContract *LaraContractSession) IsEpochRunning() (bool, error) {
-	return _LaraContract.Contract.IsEpochRunning(&_LaraContract.CallOpts)
-}
-
-// IsEpochRunning is a free data retrieval call binding the contract method 0xc5c75098.
-//
-// Solidity: function isEpochRunning() view returns(bool)
-func (_LaraContract *LaraContractCallerSession) IsEpochRunning() (bool, error) {
-	return _LaraContract.Contract.IsEpochRunning(&_LaraContract.CallOpts)
-}
-
 // IsValidatorRegistered is a free data retrieval call binding the contract method 0xd04a68c7.
 //
 // Solidity: function isValidatorRegistered(address validator) view returns(bool)
@@ -528,12 +372,12 @@ func (_LaraContract *LaraContractCallerSession) IsValidatorRegistered(validator 
 	return _LaraContract.Contract.IsValidatorRegistered(&_LaraContract.CallOpts, validator)
 }
 
-// LastEpochStartBlock is a free data retrieval call binding the contract method 0x04da5740.
+// LastRebalance is a free data retrieval call binding the contract method 0x106b9ca1.
 //
-// Solidity: function lastEpochStartBlock() view returns(uint256)
-func (_LaraContract *LaraContractCaller) LastEpochStartBlock(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function lastRebalance() view returns(uint256)
+func (_LaraContract *LaraContractCaller) LastRebalance(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "lastEpochStartBlock")
+	err := _LaraContract.contract.Call(opts, &out, "lastRebalance")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -545,26 +389,26 @@ func (_LaraContract *LaraContractCaller) LastEpochStartBlock(opts *bind.CallOpts
 
 }
 
-// LastEpochStartBlock is a free data retrieval call binding the contract method 0x04da5740.
+// LastRebalance is a free data retrieval call binding the contract method 0x106b9ca1.
 //
-// Solidity: function lastEpochStartBlock() view returns(uint256)
-func (_LaraContract *LaraContractSession) LastEpochStartBlock() (*big.Int, error) {
-	return _LaraContract.Contract.LastEpochStartBlock(&_LaraContract.CallOpts)
+// Solidity: function lastRebalance() view returns(uint256)
+func (_LaraContract *LaraContractSession) LastRebalance() (*big.Int, error) {
+	return _LaraContract.Contract.LastRebalance(&_LaraContract.CallOpts)
 }
 
-// LastEpochStartBlock is a free data retrieval call binding the contract method 0x04da5740.
+// LastRebalance is a free data retrieval call binding the contract method 0x106b9ca1.
 //
-// Solidity: function lastEpochStartBlock() view returns(uint256)
-func (_LaraContract *LaraContractCallerSession) LastEpochStartBlock() (*big.Int, error) {
-	return _LaraContract.Contract.LastEpochStartBlock(&_LaraContract.CallOpts)
+// Solidity: function lastRebalance() view returns(uint256)
+func (_LaraContract *LaraContractCallerSession) LastRebalance() (*big.Int, error) {
+	return _LaraContract.Contract.LastRebalance(&_LaraContract.CallOpts)
 }
 
-// LastEpochTotalDelegatedAmount is a free data retrieval call binding the contract method 0x9a99670e.
+// LastSnapshot is a free data retrieval call binding the contract method 0xfb861ac1.
 //
-// Solidity: function lastEpochTotalDelegatedAmount() view returns(uint256)
-func (_LaraContract *LaraContractCaller) LastEpochTotalDelegatedAmount(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function lastSnapshot() view returns(uint256)
+func (_LaraContract *LaraContractCaller) LastSnapshot(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "lastEpochTotalDelegatedAmount")
+	err := _LaraContract.contract.Call(opts, &out, "lastSnapshot")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -576,18 +420,18 @@ func (_LaraContract *LaraContractCaller) LastEpochTotalDelegatedAmount(opts *bin
 
 }
 
-// LastEpochTotalDelegatedAmount is a free data retrieval call binding the contract method 0x9a99670e.
+// LastSnapshot is a free data retrieval call binding the contract method 0xfb861ac1.
 //
-// Solidity: function lastEpochTotalDelegatedAmount() view returns(uint256)
-func (_LaraContract *LaraContractSession) LastEpochTotalDelegatedAmount() (*big.Int, error) {
-	return _LaraContract.Contract.LastEpochTotalDelegatedAmount(&_LaraContract.CallOpts)
+// Solidity: function lastSnapshot() view returns(uint256)
+func (_LaraContract *LaraContractSession) LastSnapshot() (*big.Int, error) {
+	return _LaraContract.Contract.LastSnapshot(&_LaraContract.CallOpts)
 }
 
-// LastEpochTotalDelegatedAmount is a free data retrieval call binding the contract method 0x9a99670e.
+// LastSnapshot is a free data retrieval call binding the contract method 0xfb861ac1.
 //
-// Solidity: function lastEpochTotalDelegatedAmount() view returns(uint256)
-func (_LaraContract *LaraContractCallerSession) LastEpochTotalDelegatedAmount() (*big.Int, error) {
-	return _LaraContract.Contract.LastEpochTotalDelegatedAmount(&_LaraContract.CallOpts)
+// Solidity: function lastSnapshot() view returns(uint256)
+func (_LaraContract *LaraContractCallerSession) LastSnapshot() (*big.Int, error) {
+	return _LaraContract.Contract.LastSnapshot(&_LaraContract.CallOpts)
 }
 
 // MaxValidatorStakeCapacity is a free data retrieval call binding the contract method 0x2a8cf87f.
@@ -807,12 +651,12 @@ func (_LaraContract *LaraContractCallerSession) StTaraToken() (common.Address, e
 	return _LaraContract.Contract.StTaraToken(&_LaraContract.CallOpts)
 }
 
-// StakedAmounts is a free data retrieval call binding the contract method 0x10c1c103.
+// TotalDelegated is a free data retrieval call binding the contract method 0x80d04de8.
 //
-// Solidity: function stakedAmounts(address ) view returns(uint256)
-func (_LaraContract *LaraContractCaller) StakedAmounts(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
+// Solidity: function totalDelegated() view returns(uint256)
+func (_LaraContract *LaraContractCaller) TotalDelegated(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "stakedAmounts", arg0)
+	err := _LaraContract.contract.Call(opts, &out, "totalDelegated")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -824,18 +668,18 @@ func (_LaraContract *LaraContractCaller) StakedAmounts(opts *bind.CallOpts, arg0
 
 }
 
-// StakedAmounts is a free data retrieval call binding the contract method 0x10c1c103.
+// TotalDelegated is a free data retrieval call binding the contract method 0x80d04de8.
 //
-// Solidity: function stakedAmounts(address ) view returns(uint256)
-func (_LaraContract *LaraContractSession) StakedAmounts(arg0 common.Address) (*big.Int, error) {
-	return _LaraContract.Contract.StakedAmounts(&_LaraContract.CallOpts, arg0)
+// Solidity: function totalDelegated() view returns(uint256)
+func (_LaraContract *LaraContractSession) TotalDelegated() (*big.Int, error) {
+	return _LaraContract.Contract.TotalDelegated(&_LaraContract.CallOpts)
 }
 
-// StakedAmounts is a free data retrieval call binding the contract method 0x10c1c103.
+// TotalDelegated is a free data retrieval call binding the contract method 0x80d04de8.
 //
-// Solidity: function stakedAmounts(address ) view returns(uint256)
-func (_LaraContract *LaraContractCallerSession) StakedAmounts(arg0 common.Address) (*big.Int, error) {
-	return _LaraContract.Contract.StakedAmounts(&_LaraContract.CallOpts, arg0)
+// Solidity: function totalDelegated() view returns(uint256)
+func (_LaraContract *LaraContractCallerSession) TotalDelegated() (*big.Int, error) {
+	return _LaraContract.Contract.TotalDelegated(&_LaraContract.CallOpts)
 }
 
 // TreasuryAddress is a free data retrieval call binding the contract method 0xc5f956af.
@@ -952,27 +796,6 @@ func (_LaraContract *LaraContractTransactorSession) CancelUndelegate(validator c
 	return _LaraContract.Contract.CancelUndelegate(&_LaraContract.TransactOpts, validator, amount)
 }
 
-// ClaimRewards is a paid mutator transaction binding the contract method 0x372500ab.
-//
-// Solidity: function claimRewards() returns()
-func (_LaraContract *LaraContractTransactor) ClaimRewards(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _LaraContract.contract.Transact(opts, "claimRewards")
-}
-
-// ClaimRewards is a paid mutator transaction binding the contract method 0x372500ab.
-//
-// Solidity: function claimRewards() returns()
-func (_LaraContract *LaraContractSession) ClaimRewards() (*types.Transaction, error) {
-	return _LaraContract.Contract.ClaimRewards(&_LaraContract.TransactOpts)
-}
-
-// ClaimRewards is a paid mutator transaction binding the contract method 0x372500ab.
-//
-// Solidity: function claimRewards() returns()
-func (_LaraContract *LaraContractTransactorSession) ClaimRewards() (*types.Transaction, error) {
-	return _LaraContract.Contract.ClaimRewards(&_LaraContract.TransactOpts)
-}
-
 // ConfirmUndelegate is a paid mutator transaction binding the contract method 0x689ad336.
 //
 // Solidity: function confirmUndelegate(address validator, uint256 amount) returns()
@@ -1015,48 +838,6 @@ func (_LaraContract *LaraContractTransactorSession) DelegateToValidators(amount 
 	return _LaraContract.Contract.DelegateToValidators(&_LaraContract.TransactOpts, amount)
 }
 
-// EndEpoch is a paid mutator transaction binding the contract method 0x0b9663db.
-//
-// Solidity: function endEpoch() returns()
-func (_LaraContract *LaraContractTransactor) EndEpoch(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _LaraContract.contract.Transact(opts, "endEpoch")
-}
-
-// EndEpoch is a paid mutator transaction binding the contract method 0x0b9663db.
-//
-// Solidity: function endEpoch() returns()
-func (_LaraContract *LaraContractSession) EndEpoch() (*types.Transaction, error) {
-	return _LaraContract.Contract.EndEpoch(&_LaraContract.TransactOpts)
-}
-
-// EndEpoch is a paid mutator transaction binding the contract method 0x0b9663db.
-//
-// Solidity: function endEpoch() returns()
-func (_LaraContract *LaraContractTransactorSession) EndEpoch() (*types.Transaction, error) {
-	return _LaraContract.Contract.EndEpoch(&_LaraContract.TransactOpts)
-}
-
-// GetValidatorsForAmount is a paid mutator transaction binding the contract method 0x621c067d.
-//
-// Solidity: function getValidatorsForAmount(uint256 amount) returns((address,uint256,uint256)[])
-func (_LaraContract *LaraContractTransactor) GetValidatorsForAmount(opts *bind.TransactOpts, amount *big.Int) (*types.Transaction, error) {
-	return _LaraContract.contract.Transact(opts, "getValidatorsForAmount", amount)
-}
-
-// GetValidatorsForAmount is a paid mutator transaction binding the contract method 0x621c067d.
-//
-// Solidity: function getValidatorsForAmount(uint256 amount) returns((address,uint256,uint256)[])
-func (_LaraContract *LaraContractSession) GetValidatorsForAmount(amount *big.Int) (*types.Transaction, error) {
-	return _LaraContract.Contract.GetValidatorsForAmount(&_LaraContract.TransactOpts, amount)
-}
-
-// GetValidatorsForAmount is a paid mutator transaction binding the contract method 0x621c067d.
-//
-// Solidity: function getValidatorsForAmount(uint256 amount) returns((address,uint256,uint256)[])
-func (_LaraContract *LaraContractTransactorSession) GetValidatorsForAmount(amount *big.Int) (*types.Transaction, error) {
-	return _LaraContract.Contract.GetValidatorsForAmount(&_LaraContract.TransactOpts, amount)
-}
-
 // Rebalance is a paid mutator transaction binding the contract method 0x7d7c2a1c.
 //
 // Solidity: function rebalance() returns()
@@ -1076,27 +857,6 @@ func (_LaraContract *LaraContractSession) Rebalance() (*types.Transaction, error
 // Solidity: function rebalance() returns()
 func (_LaraContract *LaraContractTransactorSession) Rebalance() (*types.Transaction, error) {
 	return _LaraContract.Contract.Rebalance(&_LaraContract.TransactOpts)
-}
-
-// RemoveStake is a paid mutator transaction binding the contract method 0x939624ab.
-//
-// Solidity: function removeStake(uint256 amount) returns()
-func (_LaraContract *LaraContractTransactor) RemoveStake(opts *bind.TransactOpts, amount *big.Int) (*types.Transaction, error) {
-	return _LaraContract.contract.Transact(opts, "removeStake", amount)
-}
-
-// RemoveStake is a paid mutator transaction binding the contract method 0x939624ab.
-//
-// Solidity: function removeStake(uint256 amount) returns()
-func (_LaraContract *LaraContractSession) RemoveStake(amount *big.Int) (*types.Transaction, error) {
-	return _LaraContract.Contract.RemoveStake(&_LaraContract.TransactOpts, amount)
-}
-
-// RemoveStake is a paid mutator transaction binding the contract method 0x939624ab.
-//
-// Solidity: function removeStake(uint256 amount) returns()
-func (_LaraContract *LaraContractTransactorSession) RemoveStake(amount *big.Int) (*types.Transaction, error) {
-	return _LaraContract.Contract.RemoveStake(&_LaraContract.TransactOpts, amount)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
@@ -1122,21 +882,21 @@ func (_LaraContract *LaraContractTransactorSession) RenounceOwnership() (*types.
 
 // RequestUndelegate is a paid mutator transaction binding the contract method 0xf86bc80c.
 //
-// Solidity: function requestUndelegate(uint256 amount) returns()
+// Solidity: function requestUndelegate(uint256 amount) returns((address,uint256)[] undelegations)
 func (_LaraContract *LaraContractTransactor) RequestUndelegate(opts *bind.TransactOpts, amount *big.Int) (*types.Transaction, error) {
 	return _LaraContract.contract.Transact(opts, "requestUndelegate", amount)
 }
 
 // RequestUndelegate is a paid mutator transaction binding the contract method 0xf86bc80c.
 //
-// Solidity: function requestUndelegate(uint256 amount) returns()
+// Solidity: function requestUndelegate(uint256 amount) returns((address,uint256)[] undelegations)
 func (_LaraContract *LaraContractSession) RequestUndelegate(amount *big.Int) (*types.Transaction, error) {
 	return _LaraContract.Contract.RequestUndelegate(&_LaraContract.TransactOpts, amount)
 }
 
 // RequestUndelegate is a paid mutator transaction binding the contract method 0xf86bc80c.
 //
-// Solidity: function requestUndelegate(uint256 amount) returns()
+// Solidity: function requestUndelegate(uint256 amount) returns((address,uint256)[] undelegations)
 func (_LaraContract *LaraContractTransactorSession) RequestUndelegate(amount *big.Int) (*types.Transaction, error) {
 	return _LaraContract.Contract.RequestUndelegate(&_LaraContract.TransactOpts, amount)
 }
@@ -1160,27 +920,6 @@ func (_LaraContract *LaraContractSession) SetCommission(_commission *big.Int) (*
 // Solidity: function setCommission(uint256 _commission) returns()
 func (_LaraContract *LaraContractTransactorSession) SetCommission(_commission *big.Int) (*types.Transaction, error) {
 	return _LaraContract.Contract.SetCommission(&_LaraContract.TransactOpts, _commission)
-}
-
-// SetCompound is a paid mutator transaction binding the contract method 0xabfdc73b.
-//
-// Solidity: function setCompound(bool value) returns()
-func (_LaraContract *LaraContractTransactor) SetCompound(opts *bind.TransactOpts, value bool) (*types.Transaction, error) {
-	return _LaraContract.contract.Transact(opts, "setCompound", value)
-}
-
-// SetCompound is a paid mutator transaction binding the contract method 0xabfdc73b.
-//
-// Solidity: function setCompound(bool value) returns()
-func (_LaraContract *LaraContractSession) SetCompound(value bool) (*types.Transaction, error) {
-	return _LaraContract.Contract.SetCompound(&_LaraContract.TransactOpts, value)
-}
-
-// SetCompound is a paid mutator transaction binding the contract method 0xabfdc73b.
-//
-// Solidity: function setCompound(bool value) returns()
-func (_LaraContract *LaraContractTransactorSession) SetCompound(value bool) (*types.Transaction, error) {
-	return _LaraContract.Contract.SetCompound(&_LaraContract.TransactOpts, value)
 }
 
 // SetEpochDuration is a paid mutator transaction binding the contract method 0x30024dfe.
@@ -1267,46 +1006,46 @@ func (_LaraContract *LaraContractTransactorSession) SetTreasuryAddress(_treasury
 	return _LaraContract.Contract.SetTreasuryAddress(&_LaraContract.TransactOpts, _treasuryAddress)
 }
 
+// Snapshot is a paid mutator transaction binding the contract method 0x9711715a.
+//
+// Solidity: function snapshot() returns()
+func (_LaraContract *LaraContractTransactor) Snapshot(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _LaraContract.contract.Transact(opts, "snapshot")
+}
+
+// Snapshot is a paid mutator transaction binding the contract method 0x9711715a.
+//
+// Solidity: function snapshot() returns()
+func (_LaraContract *LaraContractSession) Snapshot() (*types.Transaction, error) {
+	return _LaraContract.Contract.Snapshot(&_LaraContract.TransactOpts)
+}
+
+// Snapshot is a paid mutator transaction binding the contract method 0x9711715a.
+//
+// Solidity: function snapshot() returns()
+func (_LaraContract *LaraContractTransactorSession) Snapshot() (*types.Transaction, error) {
+	return _LaraContract.Contract.Snapshot(&_LaraContract.TransactOpts)
+}
+
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 amount) payable returns()
+// Solidity: function stake(uint256 amount) payable returns(uint256)
 func (_LaraContract *LaraContractTransactor) Stake(opts *bind.TransactOpts, amount *big.Int) (*types.Transaction, error) {
 	return _LaraContract.contract.Transact(opts, "stake", amount)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 amount) payable returns()
+// Solidity: function stake(uint256 amount) payable returns(uint256)
 func (_LaraContract *LaraContractSession) Stake(amount *big.Int) (*types.Transaction, error) {
 	return _LaraContract.Contract.Stake(&_LaraContract.TransactOpts, amount)
 }
 
 // Stake is a paid mutator transaction binding the contract method 0xa694fc3a.
 //
-// Solidity: function stake(uint256 amount) payable returns()
+// Solidity: function stake(uint256 amount) payable returns(uint256)
 func (_LaraContract *LaraContractTransactorSession) Stake(amount *big.Int) (*types.Transaction, error) {
 	return _LaraContract.Contract.Stake(&_LaraContract.TransactOpts, amount)
-}
-
-// StartEpoch is a paid mutator transaction binding the contract method 0xa2c8b177.
-//
-// Solidity: function startEpoch() returns()
-func (_LaraContract *LaraContractTransactor) StartEpoch(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _LaraContract.contract.Transact(opts, "startEpoch")
-}
-
-// StartEpoch is a paid mutator transaction binding the contract method 0xa2c8b177.
-//
-// Solidity: function startEpoch() returns()
-func (_LaraContract *LaraContractSession) StartEpoch() (*types.Transaction, error) {
-	return _LaraContract.Contract.StartEpoch(&_LaraContract.TransactOpts)
-}
-
-// StartEpoch is a paid mutator transaction binding the contract method 0xa2c8b177.
-//
-// Solidity: function startEpoch() returns()
-func (_LaraContract *LaraContractTransactorSession) StartEpoch() (*types.Transaction, error) {
-	return _LaraContract.Contract.StartEpoch(&_LaraContract.TransactOpts)
 }
 
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
@@ -1447,10 +1186,15 @@ type LaraContractAllRewardsClaimed struct {
 
 // FilterAllRewardsClaimed is a free log retrieval operation binding the contract event 0x06b7f38a79869900bd1aadf75f7322983f44648a0899421e4b8ade76235f63c3.
 //
-// Solidity: event AllRewardsClaimed(uint256 amount)
-func (_LaraContract *LaraContractFilterer) FilterAllRewardsClaimed(opts *bind.FilterOpts) (*LaraContractAllRewardsClaimedIterator, error) {
+// Solidity: event AllRewardsClaimed(uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) FilterAllRewardsClaimed(opts *bind.FilterOpts, amount []*big.Int) (*LaraContractAllRewardsClaimedIterator, error) {
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "AllRewardsClaimed")
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
+
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "AllRewardsClaimed", amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1459,10 +1203,15 @@ func (_LaraContract *LaraContractFilterer) FilterAllRewardsClaimed(opts *bind.Fi
 
 // WatchAllRewardsClaimed is a free log subscription operation binding the contract event 0x06b7f38a79869900bd1aadf75f7322983f44648a0899421e4b8ade76235f63c3.
 //
-// Solidity: event AllRewardsClaimed(uint256 amount)
-func (_LaraContract *LaraContractFilterer) WatchAllRewardsClaimed(opts *bind.WatchOpts, sink chan<- *LaraContractAllRewardsClaimed) (event.Subscription, error) {
+// Solidity: event AllRewardsClaimed(uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) WatchAllRewardsClaimed(opts *bind.WatchOpts, sink chan<- *LaraContractAllRewardsClaimed, amount []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "AllRewardsClaimed")
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
+
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "AllRewardsClaimed", amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1496,7 +1245,7 @@ func (_LaraContract *LaraContractFilterer) WatchAllRewardsClaimed(opts *bind.Wat
 
 // ParseAllRewardsClaimed is a log parse operation binding the contract event 0x06b7f38a79869900bd1aadf75f7322983f44648a0899421e4b8ade76235f63c3.
 //
-// Solidity: event AllRewardsClaimed(uint256 amount)
+// Solidity: event AllRewardsClaimed(uint256 indexed amount)
 func (_LaraContract *LaraContractFilterer) ParseAllRewardsClaimed(log types.Log) (*LaraContractAllRewardsClaimed, error) {
 	event := new(LaraContractAllRewardsClaimed)
 	if err := _LaraContract.contract.UnpackLog(event, "AllRewardsClaimed", log); err != nil {
@@ -1581,10 +1330,15 @@ type LaraContractCommissionChanged struct {
 
 // FilterCommissionChanged is a free log retrieval operation binding the contract event 0x839e4456845dbc05c7d8638cf0b0976161331b5f9163980d71d9a6444a326c61.
 //
-// Solidity: event CommissionChanged(uint256 newCommission)
-func (_LaraContract *LaraContractFilterer) FilterCommissionChanged(opts *bind.FilterOpts) (*LaraContractCommissionChangedIterator, error) {
+// Solidity: event CommissionChanged(uint256 indexed newCommission)
+func (_LaraContract *LaraContractFilterer) FilterCommissionChanged(opts *bind.FilterOpts, newCommission []*big.Int) (*LaraContractCommissionChangedIterator, error) {
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "CommissionChanged")
+	var newCommissionRule []interface{}
+	for _, newCommissionItem := range newCommission {
+		newCommissionRule = append(newCommissionRule, newCommissionItem)
+	}
+
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "CommissionChanged", newCommissionRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1593,10 +1347,15 @@ func (_LaraContract *LaraContractFilterer) FilterCommissionChanged(opts *bind.Fi
 
 // WatchCommissionChanged is a free log subscription operation binding the contract event 0x839e4456845dbc05c7d8638cf0b0976161331b5f9163980d71d9a6444a326c61.
 //
-// Solidity: event CommissionChanged(uint256 newCommission)
-func (_LaraContract *LaraContractFilterer) WatchCommissionChanged(opts *bind.WatchOpts, sink chan<- *LaraContractCommissionChanged) (event.Subscription, error) {
+// Solidity: event CommissionChanged(uint256 indexed newCommission)
+func (_LaraContract *LaraContractFilterer) WatchCommissionChanged(opts *bind.WatchOpts, sink chan<- *LaraContractCommissionChanged, newCommission []*big.Int) (event.Subscription, error) {
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "CommissionChanged")
+	var newCommissionRule []interface{}
+	for _, newCommissionItem := range newCommission {
+		newCommissionRule = append(newCommissionRule, newCommissionItem)
+	}
+
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "CommissionChanged", newCommissionRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1630,7 +1389,7 @@ func (_LaraContract *LaraContractFilterer) WatchCommissionChanged(opts *bind.Wat
 
 // ParseCommissionChanged is a log parse operation binding the contract event 0x839e4456845dbc05c7d8638cf0b0976161331b5f9163980d71d9a6444a326c61.
 //
-// Solidity: event CommissionChanged(uint256 newCommission)
+// Solidity: event CommissionChanged(uint256 indexed newCommission)
 func (_LaraContract *LaraContractFilterer) ParseCommissionChanged(log types.Log) (*LaraContractCommissionChanged, error) {
 	event := new(LaraContractCommissionChanged)
 	if err := _LaraContract.contract.UnpackLog(event, "CommissionChanged", log); err != nil {
@@ -1716,15 +1475,19 @@ type LaraContractCommissionWithdrawn struct {
 
 // FilterCommissionWithdrawn is a free log retrieval operation binding the contract event 0xd244b5a3b2e3977ecffe1a5e5ab7661aadfecbae24be711b7a72bb42bd1b2db0.
 //
-// Solidity: event CommissionWithdrawn(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) FilterCommissionWithdrawn(opts *bind.FilterOpts, user []common.Address) (*LaraContractCommissionWithdrawnIterator, error) {
+// Solidity: event CommissionWithdrawn(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) FilterCommissionWithdrawn(opts *bind.FilterOpts, user []common.Address, amount []*big.Int) (*LaraContractCommissionWithdrawnIterator, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "CommissionWithdrawn", userRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "CommissionWithdrawn", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1733,15 +1496,19 @@ func (_LaraContract *LaraContractFilterer) FilterCommissionWithdrawn(opts *bind.
 
 // WatchCommissionWithdrawn is a free log subscription operation binding the contract event 0xd244b5a3b2e3977ecffe1a5e5ab7661aadfecbae24be711b7a72bb42bd1b2db0.
 //
-// Solidity: event CommissionWithdrawn(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) WatchCommissionWithdrawn(opts *bind.WatchOpts, sink chan<- *LaraContractCommissionWithdrawn, user []common.Address) (event.Subscription, error) {
+// Solidity: event CommissionWithdrawn(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) WatchCommissionWithdrawn(opts *bind.WatchOpts, sink chan<- *LaraContractCommissionWithdrawn, user []common.Address, amount []*big.Int) (event.Subscription, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "CommissionWithdrawn", userRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "CommissionWithdrawn", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1775,7 +1542,7 @@ func (_LaraContract *LaraContractFilterer) WatchCommissionWithdrawn(opts *bind.W
 
 // ParseCommissionWithdrawn is a log parse operation binding the contract event 0xd244b5a3b2e3977ecffe1a5e5ab7661aadfecbae24be711b7a72bb42bd1b2db0.
 //
-// Solidity: event CommissionWithdrawn(address indexed user, uint256 amount)
+// Solidity: event CommissionWithdrawn(address indexed user, uint256 indexed amount)
 func (_LaraContract *LaraContractFilterer) ParseCommissionWithdrawn(log types.Log) (*LaraContractCommissionWithdrawn, error) {
 	event := new(LaraContractCommissionWithdrawn)
 	if err := _LaraContract.contract.UnpackLog(event, "CommissionWithdrawn", log); err != nil {
@@ -2006,15 +1773,19 @@ type LaraContractDelegated struct {
 
 // FilterDelegated is a free log retrieval operation binding the contract event 0x83b3f5ce88736f0128f880f5cac19836da52ea5c5ca7704c7b38f3b06fffd7ab.
 //
-// Solidity: event Delegated(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) FilterDelegated(opts *bind.FilterOpts, user []common.Address) (*LaraContractDelegatedIterator, error) {
+// Solidity: event Delegated(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) FilterDelegated(opts *bind.FilterOpts, user []common.Address, amount []*big.Int) (*LaraContractDelegatedIterator, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "Delegated", userRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "Delegated", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2023,15 +1794,19 @@ func (_LaraContract *LaraContractFilterer) FilterDelegated(opts *bind.FilterOpts
 
 // WatchDelegated is a free log subscription operation binding the contract event 0x83b3f5ce88736f0128f880f5cac19836da52ea5c5ca7704c7b38f3b06fffd7ab.
 //
-// Solidity: event Delegated(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) WatchDelegated(opts *bind.WatchOpts, sink chan<- *LaraContractDelegated, user []common.Address) (event.Subscription, error) {
+// Solidity: event Delegated(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) WatchDelegated(opts *bind.WatchOpts, sink chan<- *LaraContractDelegated, user []common.Address, amount []*big.Int) (event.Subscription, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "Delegated", userRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "Delegated", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2065,281 +1840,10 @@ func (_LaraContract *LaraContractFilterer) WatchDelegated(opts *bind.WatchOpts, 
 
 // ParseDelegated is a log parse operation binding the contract event 0x83b3f5ce88736f0128f880f5cac19836da52ea5c5ca7704c7b38f3b06fffd7ab.
 //
-// Solidity: event Delegated(address indexed user, uint256 amount)
+// Solidity: event Delegated(address indexed user, uint256 indexed amount)
 func (_LaraContract *LaraContractFilterer) ParseDelegated(log types.Log) (*LaraContractDelegated, error) {
 	event := new(LaraContractDelegated)
 	if err := _LaraContract.contract.UnpackLog(event, "Delegated", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// LaraContractEpochEndedIterator is returned from FilterEpochEnded and is used to iterate over the raw logs and unpacked data for EpochEnded events raised by the LaraContract contract.
-type LaraContractEpochEndedIterator struct {
-	Event *LaraContractEpochEnded // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *LaraContractEpochEndedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(LaraContractEpochEnded)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(LaraContractEpochEnded)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *LaraContractEpochEndedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *LaraContractEpochEndedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// LaraContractEpochEnded represents a EpochEnded event raised by the LaraContract contract.
-type LaraContractEpochEnded struct {
-	TotalEpochDelegation *big.Int
-	TotalEpochReward     *big.Int
-	Timestamp            *big.Int
-	Raw                  types.Log // Blockchain specific contextual infos
-}
-
-// FilterEpochEnded is a free log retrieval operation binding the contract event 0x469dcd0c8170c8faf3678737ed5cc64107d6d30846f97438a0feefacbed00ec2.
-//
-// Solidity: event EpochEnded(uint256 totalEpochDelegation, uint256 totalEpochReward, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) FilterEpochEnded(opts *bind.FilterOpts) (*LaraContractEpochEndedIterator, error) {
-
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "EpochEnded")
-	if err != nil {
-		return nil, err
-	}
-	return &LaraContractEpochEndedIterator{contract: _LaraContract.contract, event: "EpochEnded", logs: logs, sub: sub}, nil
-}
-
-// WatchEpochEnded is a free log subscription operation binding the contract event 0x469dcd0c8170c8faf3678737ed5cc64107d6d30846f97438a0feefacbed00ec2.
-//
-// Solidity: event EpochEnded(uint256 totalEpochDelegation, uint256 totalEpochReward, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) WatchEpochEnded(opts *bind.WatchOpts, sink chan<- *LaraContractEpochEnded) (event.Subscription, error) {
-
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "EpochEnded")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(LaraContractEpochEnded)
-				if err := _LaraContract.contract.UnpackLog(event, "EpochEnded", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseEpochEnded is a log parse operation binding the contract event 0x469dcd0c8170c8faf3678737ed5cc64107d6d30846f97438a0feefacbed00ec2.
-//
-// Solidity: event EpochEnded(uint256 totalEpochDelegation, uint256 totalEpochReward, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) ParseEpochEnded(log types.Log) (*LaraContractEpochEnded, error) {
-	event := new(LaraContractEpochEnded)
-	if err := _LaraContract.contract.UnpackLog(event, "EpochEnded", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// LaraContractEpochStartedIterator is returned from FilterEpochStarted and is used to iterate over the raw logs and unpacked data for EpochStarted events raised by the LaraContract contract.
-type LaraContractEpochStartedIterator struct {
-	Event *LaraContractEpochStarted // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *LaraContractEpochStartedIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(LaraContractEpochStarted)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(LaraContractEpochStarted)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *LaraContractEpochStartedIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *LaraContractEpochStartedIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// LaraContractEpochStarted represents a EpochStarted event raised by the LaraContract contract.
-type LaraContractEpochStarted struct {
-	TotalEpochDelegation *big.Int
-	Timestamp            *big.Int
-	Raw                  types.Log // Blockchain specific contextual infos
-}
-
-// FilterEpochStarted is a free log retrieval operation binding the contract event 0x41787f1277821474072e18df95f0bd9ed9f117003aa97732ebbd737225b32b02.
-//
-// Solidity: event EpochStarted(uint256 totalEpochDelegation, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) FilterEpochStarted(opts *bind.FilterOpts) (*LaraContractEpochStartedIterator, error) {
-
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "EpochStarted")
-	if err != nil {
-		return nil, err
-	}
-	return &LaraContractEpochStartedIterator{contract: _LaraContract.contract, event: "EpochStarted", logs: logs, sub: sub}, nil
-}
-
-// WatchEpochStarted is a free log subscription operation binding the contract event 0x41787f1277821474072e18df95f0bd9ed9f117003aa97732ebbd737225b32b02.
-//
-// Solidity: event EpochStarted(uint256 totalEpochDelegation, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) WatchEpochStarted(opts *bind.WatchOpts, sink chan<- *LaraContractEpochStarted) (event.Subscription, error) {
-
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "EpochStarted")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(LaraContractEpochStarted)
-				if err := _LaraContract.contract.UnpackLog(event, "EpochStarted", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseEpochStarted is a log parse operation binding the contract event 0x41787f1277821474072e18df95f0bd9ed9f117003aa97732ebbd737225b32b02.
-//
-// Solidity: event EpochStarted(uint256 totalEpochDelegation, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) ParseEpochStarted(log types.Log) (*LaraContractEpochStarted, error) {
-	event := new(LaraContractEpochStarted)
-	if err := _LaraContract.contract.UnpackLog(event, "EpochStarted", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2575,10 +2079,19 @@ type LaraContractRedelegationRewardsClaimed struct {
 
 // FilterRedelegationRewardsClaimed is a free log retrieval operation binding the contract event 0x126041a9ce96bf0b59451f9688c03fa384b673c2a8ba3c8dc59adc393a69862e.
 //
-// Solidity: event RedelegationRewardsClaimed(uint256 amount, address validator)
-func (_LaraContract *LaraContractFilterer) FilterRedelegationRewardsClaimed(opts *bind.FilterOpts) (*LaraContractRedelegationRewardsClaimedIterator, error) {
+// Solidity: event RedelegationRewardsClaimed(uint256 indexed amount, address indexed validator)
+func (_LaraContract *LaraContractFilterer) FilterRedelegationRewardsClaimed(opts *bind.FilterOpts, amount []*big.Int, validator []common.Address) (*LaraContractRedelegationRewardsClaimedIterator, error) {
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "RedelegationRewardsClaimed")
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
+	var validatorRule []interface{}
+	for _, validatorItem := range validator {
+		validatorRule = append(validatorRule, validatorItem)
+	}
+
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "RedelegationRewardsClaimed", amountRule, validatorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2587,10 +2100,19 @@ func (_LaraContract *LaraContractFilterer) FilterRedelegationRewardsClaimed(opts
 
 // WatchRedelegationRewardsClaimed is a free log subscription operation binding the contract event 0x126041a9ce96bf0b59451f9688c03fa384b673c2a8ba3c8dc59adc393a69862e.
 //
-// Solidity: event RedelegationRewardsClaimed(uint256 amount, address validator)
-func (_LaraContract *LaraContractFilterer) WatchRedelegationRewardsClaimed(opts *bind.WatchOpts, sink chan<- *LaraContractRedelegationRewardsClaimed) (event.Subscription, error) {
+// Solidity: event RedelegationRewardsClaimed(uint256 indexed amount, address indexed validator)
+func (_LaraContract *LaraContractFilterer) WatchRedelegationRewardsClaimed(opts *bind.WatchOpts, sink chan<- *LaraContractRedelegationRewardsClaimed, amount []*big.Int, validator []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "RedelegationRewardsClaimed")
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
+	var validatorRule []interface{}
+	for _, validatorItem := range validator {
+		validatorRule = append(validatorRule, validatorItem)
+	}
+
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "RedelegationRewardsClaimed", amountRule, validatorRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2624,7 +2146,7 @@ func (_LaraContract *LaraContractFilterer) WatchRedelegationRewardsClaimed(opts 
 
 // ParseRedelegationRewardsClaimed is a log parse operation binding the contract event 0x126041a9ce96bf0b59451f9688c03fa384b673c2a8ba3c8dc59adc393a69862e.
 //
-// Solidity: event RedelegationRewardsClaimed(uint256 amount, address validator)
+// Solidity: event RedelegationRewardsClaimed(uint256 indexed amount, address indexed validator)
 func (_LaraContract *LaraContractFilterer) ParseRedelegationRewardsClaimed(log types.Log) (*LaraContractRedelegationRewardsClaimed, error) {
 	event := new(LaraContractRedelegationRewardsClaimed)
 	if err := _LaraContract.contract.UnpackLog(event, "RedelegationRewardsClaimed", log); err != nil {
@@ -2634,9 +2156,9 @@ func (_LaraContract *LaraContractFilterer) ParseRedelegationRewardsClaimed(log t
 	return event, nil
 }
 
-// LaraContractRewardsClaimedIterator is returned from FilterRewardsClaimed and is used to iterate over the raw logs and unpacked data for RewardsClaimed events raised by the LaraContract contract.
-type LaraContractRewardsClaimedIterator struct {
-	Event *LaraContractRewardsClaimed // Event containing the contract specifics and raw log
+// LaraContractSnapshotTakenIterator is returned from FilterSnapshotTaken and is used to iterate over the raw logs and unpacked data for SnapshotTaken events raised by the LaraContract contract.
+type LaraContractSnapshotTakenIterator struct {
+	Event *LaraContractSnapshotTaken // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -2650,7 +2172,7 @@ type LaraContractRewardsClaimedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *LaraContractRewardsClaimedIterator) Next() bool {
+func (it *LaraContractSnapshotTakenIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -2659,7 +2181,7 @@ func (it *LaraContractRewardsClaimedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(LaraContractRewardsClaimed)
+			it.Event = new(LaraContractSnapshotTaken)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -2674,7 +2196,7 @@ func (it *LaraContractRewardsClaimedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(LaraContractRewardsClaimed)
+		it.Event = new(LaraContractSnapshotTaken)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -2690,53 +2212,69 @@ func (it *LaraContractRewardsClaimedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *LaraContractRewardsClaimedIterator) Error() error {
+func (it *LaraContractSnapshotTakenIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *LaraContractRewardsClaimedIterator) Close() error {
+func (it *LaraContractSnapshotTakenIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// LaraContractRewardsClaimed represents a RewardsClaimed event raised by the LaraContract contract.
-type LaraContractRewardsClaimed struct {
-	User      common.Address
-	Amount    *big.Int
-	Timestamp *big.Int
-	Raw       types.Log // Blockchain specific contextual infos
+// LaraContractSnapshotTaken represents a SnapshotTaken event raised by the LaraContract contract.
+type LaraContractSnapshotTaken struct {
+	TotalDelegation   *big.Int
+	TotalRewards      *big.Int
+	NextSnapshotBlock *big.Int
+	Raw               types.Log // Blockchain specific contextual infos
 }
 
-// FilterRewardsClaimed is a free log retrieval operation binding the contract event 0xdacbdde355ba930696a362ea6738feb9f8bd52dfb3d81947558fd3217e23e325.
+// FilterSnapshotTaken is a free log retrieval operation binding the contract event 0x7be9d0a76c3aa32b2063c1e71a2737740371887411d23841efd15985cce48f53.
 //
-// Solidity: event RewardsClaimed(address indexed user, uint256 amount, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) FilterRewardsClaimed(opts *bind.FilterOpts, user []common.Address) (*LaraContractRewardsClaimedIterator, error) {
+// Solidity: event SnapshotTaken(uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 indexed nextSnapshotBlock)
+func (_LaraContract *LaraContractFilterer) FilterSnapshotTaken(opts *bind.FilterOpts, totalDelegation []*big.Int, totalRewards []*big.Int, nextSnapshotBlock []*big.Int) (*LaraContractSnapshotTakenIterator, error) {
 
-	var userRule []interface{}
-	for _, userItem := range user {
-		userRule = append(userRule, userItem)
+	var totalDelegationRule []interface{}
+	for _, totalDelegationItem := range totalDelegation {
+		totalDelegationRule = append(totalDelegationRule, totalDelegationItem)
+	}
+	var totalRewardsRule []interface{}
+	for _, totalRewardsItem := range totalRewards {
+		totalRewardsRule = append(totalRewardsRule, totalRewardsItem)
+	}
+	var nextSnapshotBlockRule []interface{}
+	for _, nextSnapshotBlockItem := range nextSnapshotBlock {
+		nextSnapshotBlockRule = append(nextSnapshotBlockRule, nextSnapshotBlockItem)
 	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "RewardsClaimed", userRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "SnapshotTaken", totalDelegationRule, totalRewardsRule, nextSnapshotBlockRule)
 	if err != nil {
 		return nil, err
 	}
-	return &LaraContractRewardsClaimedIterator{contract: _LaraContract.contract, event: "RewardsClaimed", logs: logs, sub: sub}, nil
+	return &LaraContractSnapshotTakenIterator{contract: _LaraContract.contract, event: "SnapshotTaken", logs: logs, sub: sub}, nil
 }
 
-// WatchRewardsClaimed is a free log subscription operation binding the contract event 0xdacbdde355ba930696a362ea6738feb9f8bd52dfb3d81947558fd3217e23e325.
+// WatchSnapshotTaken is a free log subscription operation binding the contract event 0x7be9d0a76c3aa32b2063c1e71a2737740371887411d23841efd15985cce48f53.
 //
-// Solidity: event RewardsClaimed(address indexed user, uint256 amount, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) WatchRewardsClaimed(opts *bind.WatchOpts, sink chan<- *LaraContractRewardsClaimed, user []common.Address) (event.Subscription, error) {
+// Solidity: event SnapshotTaken(uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 indexed nextSnapshotBlock)
+func (_LaraContract *LaraContractFilterer) WatchSnapshotTaken(opts *bind.WatchOpts, sink chan<- *LaraContractSnapshotTaken, totalDelegation []*big.Int, totalRewards []*big.Int, nextSnapshotBlock []*big.Int) (event.Subscription, error) {
 
-	var userRule []interface{}
-	for _, userItem := range user {
-		userRule = append(userRule, userItem)
+	var totalDelegationRule []interface{}
+	for _, totalDelegationItem := range totalDelegation {
+		totalDelegationRule = append(totalDelegationRule, totalDelegationItem)
+	}
+	var totalRewardsRule []interface{}
+	for _, totalRewardsItem := range totalRewards {
+		totalRewardsRule = append(totalRewardsRule, totalRewardsItem)
+	}
+	var nextSnapshotBlockRule []interface{}
+	for _, nextSnapshotBlockItem := range nextSnapshotBlock {
+		nextSnapshotBlockRule = append(nextSnapshotBlockRule, nextSnapshotBlockItem)
 	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "RewardsClaimed", userRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "SnapshotTaken", totalDelegationRule, totalRewardsRule, nextSnapshotBlockRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2746,8 +2284,8 @@ func (_LaraContract *LaraContractFilterer) WatchRewardsClaimed(opts *bind.WatchO
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(LaraContractRewardsClaimed)
-				if err := _LaraContract.contract.UnpackLog(event, "RewardsClaimed", log); err != nil {
+				event := new(LaraContractSnapshotTaken)
+				if err := _LaraContract.contract.UnpackLog(event, "SnapshotTaken", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -2768,12 +2306,12 @@ func (_LaraContract *LaraContractFilterer) WatchRewardsClaimed(opts *bind.WatchO
 	}), nil
 }
 
-// ParseRewardsClaimed is a log parse operation binding the contract event 0xdacbdde355ba930696a362ea6738feb9f8bd52dfb3d81947558fd3217e23e325.
+// ParseSnapshotTaken is a log parse operation binding the contract event 0x7be9d0a76c3aa32b2063c1e71a2737740371887411d23841efd15985cce48f53.
 //
-// Solidity: event RewardsClaimed(address indexed user, uint256 amount, uint256 timestamp)
-func (_LaraContract *LaraContractFilterer) ParseRewardsClaimed(log types.Log) (*LaraContractRewardsClaimed, error) {
-	event := new(LaraContractRewardsClaimed)
-	if err := _LaraContract.contract.UnpackLog(event, "RewardsClaimed", log); err != nil {
+// Solidity: event SnapshotTaken(uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 indexed nextSnapshotBlock)
+func (_LaraContract *LaraContractFilterer) ParseSnapshotTaken(log types.Log) (*LaraContractSnapshotTaken, error) {
+	event := new(LaraContractSnapshotTaken)
+	if err := _LaraContract.contract.UnpackLog(event, "SnapshotTaken", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2856,15 +2394,19 @@ type LaraContractStakeRemoved struct {
 
 // FilterStakeRemoved is a free log retrieval operation binding the contract event 0xa018dcbc822f59fb0d0c3e7a86c8e4259b9676cdea9e5fc26279b9c4c5d86eef.
 //
-// Solidity: event StakeRemoved(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) FilterStakeRemoved(opts *bind.FilterOpts, user []common.Address) (*LaraContractStakeRemovedIterator, error) {
+// Solidity: event StakeRemoved(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) FilterStakeRemoved(opts *bind.FilterOpts, user []common.Address, amount []*big.Int) (*LaraContractStakeRemovedIterator, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "StakeRemoved", userRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "StakeRemoved", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2873,15 +2415,19 @@ func (_LaraContract *LaraContractFilterer) FilterStakeRemoved(opts *bind.FilterO
 
 // WatchStakeRemoved is a free log subscription operation binding the contract event 0xa018dcbc822f59fb0d0c3e7a86c8e4259b9676cdea9e5fc26279b9c4c5d86eef.
 //
-// Solidity: event StakeRemoved(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) WatchStakeRemoved(opts *bind.WatchOpts, sink chan<- *LaraContractStakeRemoved, user []common.Address) (event.Subscription, error) {
+// Solidity: event StakeRemoved(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) WatchStakeRemoved(opts *bind.WatchOpts, sink chan<- *LaraContractStakeRemoved, user []common.Address, amount []*big.Int) (event.Subscription, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "StakeRemoved", userRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "StakeRemoved", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2915,7 +2461,7 @@ func (_LaraContract *LaraContractFilterer) WatchStakeRemoved(opts *bind.WatchOpt
 
 // ParseStakeRemoved is a log parse operation binding the contract event 0xa018dcbc822f59fb0d0c3e7a86c8e4259b9676cdea9e5fc26279b9c4c5d86eef.
 //
-// Solidity: event StakeRemoved(address indexed user, uint256 amount)
+// Solidity: event StakeRemoved(address indexed user, uint256 indexed amount)
 func (_LaraContract *LaraContractFilterer) ParseStakeRemoved(log types.Log) (*LaraContractStakeRemoved, error) {
 	event := new(LaraContractStakeRemoved)
 	if err := _LaraContract.contract.UnpackLog(event, "StakeRemoved", log); err != nil {
@@ -3001,15 +2547,19 @@ type LaraContractStaked struct {
 
 // FilterStaked is a free log retrieval operation binding the contract event 0x9e71bc8eea02a63969f509818f2dafb9254532904319f9dbda79b67bd34a5f3d.
 //
-// Solidity: event Staked(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) FilterStaked(opts *bind.FilterOpts, user []common.Address) (*LaraContractStakedIterator, error) {
+// Solidity: event Staked(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) FilterStaked(opts *bind.FilterOpts, user []common.Address, amount []*big.Int) (*LaraContractStakedIterator, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "Staked", userRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "Staked", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3018,15 +2568,19 @@ func (_LaraContract *LaraContractFilterer) FilterStaked(opts *bind.FilterOpts, u
 
 // WatchStaked is a free log subscription operation binding the contract event 0x9e71bc8eea02a63969f509818f2dafb9254532904319f9dbda79b67bd34a5f3d.
 //
-// Solidity: event Staked(address indexed user, uint256 amount)
-func (_LaraContract *LaraContractFilterer) WatchStaked(opts *bind.WatchOpts, sink chan<- *LaraContractStaked, user []common.Address) (event.Subscription, error) {
+// Solidity: event Staked(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) WatchStaked(opts *bind.WatchOpts, sink chan<- *LaraContractStaked, user []common.Address, amount []*big.Int) (event.Subscription, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "Staked", userRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "Staked", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3060,7 +2614,7 @@ func (_LaraContract *LaraContractFilterer) WatchStaked(opts *bind.WatchOpts, sin
 
 // ParseStaked is a log parse operation binding the contract event 0x9e71bc8eea02a63969f509818f2dafb9254532904319f9dbda79b67bd34a5f3d.
 //
-// Solidity: event Staked(address indexed user, uint256 amount)
+// Solidity: event Staked(address indexed user, uint256 indexed amount)
 func (_LaraContract *LaraContractFilterer) ParseStaked(log types.Log) (*LaraContractStaked, error) {
 	event := new(LaraContractStaked)
 	if err := _LaraContract.contract.UnpackLog(event, "Staked", log); err != nil {
@@ -3139,40 +2693,47 @@ func (it *LaraContractTaraSentIterator) Close() error {
 
 // LaraContractTaraSent represents a TaraSent event raised by the LaraContract contract.
 type LaraContractTaraSent struct {
-	User        common.Address
-	Amount      *big.Int
-	BlockNumber *big.Int
-	Raw         types.Log // Blockchain specific contextual infos
+	User   common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
 }
 
-// FilterTaraSent is a free log retrieval operation binding the contract event 0xb47c5984477bc8ec64a806f6a426296660111ec77d665d05e7d0c582ca518168.
+// FilterTaraSent is a free log retrieval operation binding the contract event 0xcc5583b88329e9a0fa4480cb58b74a074292da12cb9926181098e98e4043acc8.
 //
-// Solidity: event TaraSent(address indexed user, uint256 amount, uint256 blockNumber)
-func (_LaraContract *LaraContractFilterer) FilterTaraSent(opts *bind.FilterOpts, user []common.Address) (*LaraContractTaraSentIterator, error) {
+// Solidity: event TaraSent(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) FilterTaraSent(opts *bind.FilterOpts, user []common.Address, amount []*big.Int) (*LaraContractTaraSentIterator, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "TaraSent", userRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "TaraSent", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
 	return &LaraContractTaraSentIterator{contract: _LaraContract.contract, event: "TaraSent", logs: logs, sub: sub}, nil
 }
 
-// WatchTaraSent is a free log subscription operation binding the contract event 0xb47c5984477bc8ec64a806f6a426296660111ec77d665d05e7d0c582ca518168.
+// WatchTaraSent is a free log subscription operation binding the contract event 0xcc5583b88329e9a0fa4480cb58b74a074292da12cb9926181098e98e4043acc8.
 //
-// Solidity: event TaraSent(address indexed user, uint256 amount, uint256 blockNumber)
-func (_LaraContract *LaraContractFilterer) WatchTaraSent(opts *bind.WatchOpts, sink chan<- *LaraContractTaraSent, user []common.Address) (event.Subscription, error) {
+// Solidity: event TaraSent(address indexed user, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) WatchTaraSent(opts *bind.WatchOpts, sink chan<- *LaraContractTaraSent, user []common.Address, amount []*big.Int) (event.Subscription, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "TaraSent", userRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "TaraSent", userRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3204,9 +2765,9 @@ func (_LaraContract *LaraContractFilterer) WatchTaraSent(opts *bind.WatchOpts, s
 	}), nil
 }
 
-// ParseTaraSent is a log parse operation binding the contract event 0xb47c5984477bc8ec64a806f6a426296660111ec77d665d05e7d0c582ca518168.
+// ParseTaraSent is a log parse operation binding the contract event 0xcc5583b88329e9a0fa4480cb58b74a074292da12cb9926181098e98e4043acc8.
 //
-// Solidity: event TaraSent(address indexed user, uint256 amount, uint256 blockNumber)
+// Solidity: event TaraSent(address indexed user, uint256 indexed amount)
 func (_LaraContract *LaraContractFilterer) ParseTaraSent(log types.Log) (*LaraContractTaraSent, error) {
 	event := new(LaraContractTaraSent)
 	if err := _LaraContract.contract.UnpackLog(event, "TaraSent", log); err != nil {
@@ -3437,8 +2998,8 @@ type LaraContractUndelegated struct {
 
 // FilterUndelegated is a free log retrieval operation binding the contract event 0x4d10bd049775c77bd7f255195afba5088028ecb3c7c277d393ccff7934f2f92c.
 //
-// Solidity: event Undelegated(address indexed user, address indexed validator, uint256 amount)
-func (_LaraContract *LaraContractFilterer) FilterUndelegated(opts *bind.FilterOpts, user []common.Address, validator []common.Address) (*LaraContractUndelegatedIterator, error) {
+// Solidity: event Undelegated(address indexed user, address indexed validator, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) FilterUndelegated(opts *bind.FilterOpts, user []common.Address, validator []common.Address, amount []*big.Int) (*LaraContractUndelegatedIterator, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -3448,8 +3009,12 @@ func (_LaraContract *LaraContractFilterer) FilterUndelegated(opts *bind.FilterOp
 	for _, validatorItem := range validator {
 		validatorRule = append(validatorRule, validatorItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "Undelegated", userRule, validatorRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "Undelegated", userRule, validatorRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3458,8 +3023,8 @@ func (_LaraContract *LaraContractFilterer) FilterUndelegated(opts *bind.FilterOp
 
 // WatchUndelegated is a free log subscription operation binding the contract event 0x4d10bd049775c77bd7f255195afba5088028ecb3c7c277d393ccff7934f2f92c.
 //
-// Solidity: event Undelegated(address indexed user, address indexed validator, uint256 amount)
-func (_LaraContract *LaraContractFilterer) WatchUndelegated(opts *bind.WatchOpts, sink chan<- *LaraContractUndelegated, user []common.Address, validator []common.Address) (event.Subscription, error) {
+// Solidity: event Undelegated(address indexed user, address indexed validator, uint256 indexed amount)
+func (_LaraContract *LaraContractFilterer) WatchUndelegated(opts *bind.WatchOpts, sink chan<- *LaraContractUndelegated, user []common.Address, validator []common.Address, amount []*big.Int) (event.Subscription, error) {
 
 	var userRule []interface{}
 	for _, userItem := range user {
@@ -3469,8 +3034,12 @@ func (_LaraContract *LaraContractFilterer) WatchUndelegated(opts *bind.WatchOpts
 	for _, validatorItem := range validator {
 		validatorRule = append(validatorRule, validatorItem)
 	}
+	var amountRule []interface{}
+	for _, amountItem := range amount {
+		amountRule = append(amountRule, amountItem)
+	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "Undelegated", userRule, validatorRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "Undelegated", userRule, validatorRule, amountRule)
 	if err != nil {
 		return nil, err
 	}
@@ -3504,7 +3073,7 @@ func (_LaraContract *LaraContractFilterer) WatchUndelegated(opts *bind.WatchOpts
 
 // ParseUndelegated is a log parse operation binding the contract event 0x4d10bd049775c77bd7f255195afba5088028ecb3c7c277d393ccff7934f2f92c.
 //
-// Solidity: event Undelegated(address indexed user, address indexed validator, uint256 amount)
+// Solidity: event Undelegated(address indexed user, address indexed validator, uint256 indexed amount)
 func (_LaraContract *LaraContractFilterer) ParseUndelegated(log types.Log) (*LaraContractUndelegated, error) {
 	event := new(LaraContractUndelegated)
 	if err := _LaraContract.contract.UnpackLog(event, "Undelegated", log); err != nil {
