@@ -52,9 +52,9 @@ func (b *Batch) UpdateWeekStats(w storage.WeekStats) {
 	}
 }
 
-func (b *Batch) SaveAccounts(a *storage.Balances) {
+func (b *Batch) SaveAccounts(a storage.Accounts) {
 	a.SortByBalanceDescending()
-	b.AddToBatchSingleKey(a.Accounts, "")
+	b.AddToBatchSingleKey(a, "")
 }
 
 func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {

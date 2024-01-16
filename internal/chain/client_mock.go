@@ -9,6 +9,7 @@ import (
 )
 
 type ClientMock struct {
+	Blocks            map[uint64]*Block
 	Traces            map[string][]TransactionTrace
 	Transactions      map[string]Transaction
 	BlockTransactions map[uint64][]string
@@ -23,15 +24,20 @@ func MakeMockClient() *ClientMock {
 	m.Transactions = make(map[string]Transaction)
 	m.BlockTransactions = make(map[uint64][]string)
 	m.EventLogs = make(map[string][]EventLog)
+	m.Blocks = make(map[uint64]*Block)
 	return m
+}
+
+func (c *ClientMock) RpcClient() *rpc.Client {
+	return nil
 }
 
 func (c *ClientMock) GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error) {
 	return "", ErrNotImplemented
 }
 
-func (c *ClientMock) GetBlockByNumber(number uint64) (blk Block, err error) {
-	return Block{}, ErrNotImplemented
+func (c *ClientMock) GetBlockByNumber(number uint64) (blk *Block, err error) {
+	return c.Blocks[number], nil
 }
 
 func (c *ClientMock) GetLatestPeriod() (p uint64, e error) {
@@ -50,8 +56,12 @@ func (c *ClientMock) GetTransactionByHash(hash string) (trx Transaction, err err
 	return c.Transactions[hash], nil
 }
 
-func (c *ClientMock) GetPeriodTransactions(p uint64) (trx []Transaction, err error) {
-	return nil, ErrNotImplemented
+func (c *ClientMock) GetPeriodTransactions(num uint64) (trxs []Transaction, err error) {
+	hashes := c.BlockTransactions[num]
+	for _, h := range hashes {
+		trxs = append(trxs, c.Transactions[h])
+	}
+	return trxs, nil
 }
 
 func (c *ClientMock) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags PbftBlockWithDags, err error) {
@@ -63,7 +73,10 @@ func (c *ClientMock) GetDagBlockByHash(hash string) (dag DagBlock, err error) {
 }
 
 func (c *ClientMock) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
-	return nil, ErrNotImplemented
+	return []DagBlock{}, nil
+}
+func (c *ClientMock) GetVersion() (version string, err error) {
+	return "", nil
 }
 
 func (c *ClientMock) GetGenesis() (genesis GenesisObject, err error) {
@@ -79,11 +92,11 @@ func (c *ClientMock) GetChainStats() (ns storage.FinalizationData, err error) {
 }
 
 func (c *ClientMock) GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error) {
-	return VotesResponse{}, ErrNotImplemented
+	return VotesResponse{}, nil
 }
 
 func (c *ClientMock) GetValidatorsAtBlock(uint64) (validators []Validator, err error) {
-	return nil, ErrNotImplemented
+	return []Validator{}, nil
 }
 
 func (c *ClientMock) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {
@@ -100,8 +113,8 @@ func (c *ClientMock) AddTransactionFromJson(trx_json string) {
 		fmt.Println("ClientMock.AddTransactionFromJson", err)
 	}
 
-	tm := trx.ToModelWithTimestamp(1)
-	c.BlockTransactions[tm.BlockNumber] = append(c.BlockTransactions[tm.BlockNumber], trx.Hash)
+	trx.SetTimestamp(1)
+	c.BlockTransactions[trx.GetModel().BlockNumber] = append(c.BlockTransactions[trx.GetModel().BlockNumber], trx.Hash)
 	c.Transactions[trx.Hash] = trx
 }
 
@@ -124,4 +137,8 @@ func (c *ClientMock) AddTracesFromJson(hash, traces_json string) {
 	}
 
 	c.Traces[hash] = traces
+}
+
+func (c *ClientMock) AddPbftBlock(period uint64, block *Block) {
+	c.Blocks[period] = block
 }

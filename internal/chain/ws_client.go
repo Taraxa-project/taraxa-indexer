@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -20,10 +19,15 @@ type WsClient struct {
 	ChainId *big.Int
 }
 
+func (client *WsClient) RpcClient() *rpc.Client {
+	return client.Rpc
+}
+
 // NewWsClient creates a new instance of the WsClient struct.
 func NewWsClient(url string) (*WsClient, error) {
 	ctx := context.Background()
-	ws, err := rpc.DialWebsocket(ctx, url, "")
+	ws, err := rpc.DialOptions(ctx, url, rpc.WithWebsocketMessageSizeLimit(0))
+
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +68,7 @@ func (client *WsClient) GetBalanceAtBlock(address string, blockNumber uint64) (b
 	return
 }
 
-func (client *WsClient) GetBlockByNumber(number uint64) (blk Block, err error) {
+func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
 	err = client.Rpc.Call(&blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
 	metrics.RpcCallsCounter.Inc()
 	return
@@ -77,7 +81,7 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return common.ParseUInt(blk.Number), err
+	return blk.Number, err
 }
 
 func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {

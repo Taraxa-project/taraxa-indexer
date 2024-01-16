@@ -19,9 +19,9 @@ import (
 
 type AddressCount map[string]int
 
-func makeTransactions(count int) (trxs []models.Transaction) {
+func makeTransactions(count int) (trxs []chain.Transaction) {
 	for i := 0; i < count; i++ {
-		trxs = append(trxs, models.Transaction{Hash: fmt.Sprintf("0x%x", i)})
+		trxs = append(trxs, chain.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}})
 	}
 	return
 }
@@ -52,6 +52,7 @@ func makeTestConfig() (config *common.Config) {
 	config = common.DefaultConfig()
 	config.Chain.BlocksPerYear = big.NewInt(1)
 	config.Chain.YieldPercentage = big.NewInt(100)
+	config.Chain.EligibilityBalanceThreshold = big.NewInt(1)
 
 	return
 }
@@ -123,10 +124,14 @@ func TestRewards(t *testing.T) {
 	}
 
 	st := pebble.NewStorage("")
-	eth := ethclient.Client{}
-	oracle := oracle.MakeMockOracle(&eth)
-	block := models.Pbft{Number: 1, Author: validator4_addr}
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, validators_list)
+	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
+
+	ethc, error := ethclient.Dial("wss://ws.testnet.taraxa.io/")
+	if error != nil {
+		t.Log(error)
+	}
+	oracle := oracle.MakeMockOracle(ethc)
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, validators_list)
 
 	trxs := makeTransactions(5)
 	dags := makeDags(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
@@ -153,9 +158,14 @@ func TestRewards(t *testing.T) {
 
 func TestRewardsWithNodeData(t *testing.T) {
 	config := common.DefaultConfig()
+	config.Chain.EligibilityBalanceThreshold = big.NewInt(5000000)
+
 	st := pebble.NewStorage("")
-	eth := ethclient.Client{}
-	oracle := oracle.MakeMockOracle(&eth)
+	ethc, error := ethclient.Dial("wss://ws.testnet.taraxa.io/")
+	if error != nil {
+		t.Log(error)
+	}
+	oracle := oracle.MakeMockOracle(ethc)
 
 	TaraPrecision := big.NewInt(1e+18)
 	DefaultMinimumDeposit := big.NewInt(0).Mul(big.NewInt(1000), TaraPrecision)
@@ -166,17 +176,17 @@ func TestRewardsWithNodeData(t *testing.T) {
 	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
 	validator5_addr := strings.ToLower(ce.HexToAddress("0x5").Hex())
 	validators_list := []chain.Validator{
-		{Address: validator1_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator2_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator3_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator4_addr, TotalStake: big.NewInt(5000000)},
-		{Address: validator5_addr, TotalStake: big.NewInt(5000000)},
+		{Address: validator1_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator2_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator3_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator4_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
+		{Address: validator5_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
 	}
 
 	// Simulated rewards statistics
-	block := models.Pbft{Number: 1, Author: validator3_addr}
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, validators_list)
-	total_stake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
+	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, validators_list)
+	totalStake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
 	{
 		rewardsStats := stats{}
 		rewardsStats.ValidatorStats = map[string]validatorStats{
@@ -189,9 +199,9 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 8
 
 		// Expected block reward
-		totalReward := rewardFromStake(config.Chain, total_stake)
+		totalReward := rewardFromStake(config.Chain, totalStake)
 		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 2 bonus votes, so block author should get half of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(2)), rewards.ValidatorRewards[r.blockAuthor])
 
@@ -216,9 +226,9 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 13
 
 		// Expected block reward
-		totalReward := rewardFromStake(config.Chain, total_stake)
+		totalReward := rewardFromStake(config.Chain, totalStake)
 		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(4)), rewards.ValidatorRewards[r.blockAuthor])
 		assert.Equal(t, big.NewInt(5073566717402), rewards.ValidatorRewards[r.blockAuthor])
@@ -244,7 +254,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.MaxVotesWeight = 24
 
 		// Expected block reward
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
@@ -272,7 +282,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 		// Expected block reward
 		r.blockAuthor = validator1_addr
-		rewards := r.rewardsFromStats(total_stake, &rewardsStats)
+		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
@@ -319,8 +329,6 @@ func TestYieldsCalculation(t *testing.T) {
 
 func TestTotalYieldSaving(t *testing.T) {
 	st := pebble.NewStorage("")
-	eth := ethclient.Client{}
-	oracle := oracle.MakeMockOracle(&eth)
 	config := makeTestConfig()
 	config.TotalYieldSavingInterval = 10
 	config.Chain.BlocksPerYear = big.NewInt(100)
@@ -333,8 +341,13 @@ func TestTotalYieldSaving(t *testing.T) {
 	}
 	batch.CommitBatch()
 
-	block := models.Pbft{Number: 10, Author: "0x4"}
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, nil)
+	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
+	ethc, error := ethclient.Dial("wss://ws.testnet.taraxa.io/")
+	if error != nil {
+		t.Log(error)
+	}
+	oracle := oracle.MakeMockOracle(ethc)
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -364,8 +377,6 @@ func TestTotalYieldSaving(t *testing.T) {
 
 func TestValidatorsYieldSaving(t *testing.T) {
 	st := pebble.NewStorage("")
-	eth := ethclient.Client{}
-	oracle := oracle.MakeMockOracle(&eth)
 	config := makeTestConfig()
 	config.TotalYieldSavingInterval = 10
 	config.Chain.BlocksPerYear = big.NewInt(100)
@@ -378,8 +389,13 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	}
 	batch.CommitBatch()
 
-	block := models.Pbft{Number: 10, Author: "0x4"}
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil, nil)
+	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
+	ethc, error := ethclient.Dial("wss://ws.testnet.taraxa.io/")
+	if error != nil {
+		t.Log(error)
+	}
+	oracle := oracle.MakeMockOracle(ethc)
+	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{

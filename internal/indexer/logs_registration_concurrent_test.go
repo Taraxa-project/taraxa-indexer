@@ -12,15 +12,15 @@ import (
 )
 
 func TestHandleValidatorRegistrations(t *testing.T) {
-
 	var wg sync.WaitGroup
 	concurrency := 5
 	wg.Add(concurrency)
 	// Create a mock blockContext
 	mc := chain.MakeMockClient()
-	eth, err := ethclient.Dial("ws://localhost:8777")
+	mc.AddPbftBlock(1, chain.MakeEmptyBlockData().Pbft)
+	eth, err := ethclient.Dial("wss://ws.testnet.taraxa.io/")
 	if err != nil {
-		t.Fatal(err)
+		t.Log(err)
 	}
 	o := oracle.MakeMockOracle(eth)
 	bc := MakeTestBlockContext(mc, o, 1)

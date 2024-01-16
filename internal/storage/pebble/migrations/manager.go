@@ -21,10 +21,7 @@ func NewManager(s *pebble.Storage, blockchain_ws string) *Manager {
 	m := Manager{
 		storage: s,
 	}
-	m.RegisterMigration(&RemoveSenderMigration{id: "0_dag_removeSender"})
-	m.RegisterMigration(&RemoveNonceTxIndexAddFeeMigration{id: "1_tx_remove_nonce_txIndex_gas"})
-	m.RegisterMigration(&RemovePbftHashMigration{id: "2_pbft_removePbftHash"})
-	m.RegisterMigration(&AddValidatorRegistrationBlock{id: "3_validator_addRegistrationBlock", blockchain_ws: blockchain_ws})
+	m.RegisterMigration(&FixDposBalance{id: "0_fix_dpos_balance", blockchain_ws: blockchain_ws})
 	m.RegisterMigration(&AddCommission{id: "4_add_commission_to_stats", blockchain_ws: blockchain_ws})
 	return &m
 }

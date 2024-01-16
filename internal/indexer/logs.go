@@ -20,7 +20,7 @@ func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error)
 		Data: logs,
 	}
 	bc.Batch.AddToBatchSingleKey(logsResponse, tx.Hash)
-	err = bc.balances.UpdateEvents(logs)
+	err = bc.accounts.UpdateEvents(logs)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (bc *blockContext) handleValidatorRegistrations(logs []models.EventLog) (er
 			return nil
 		}
 		commission := uint64(validatorInfo.Commission)
-		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidator(bc.block.Number, commission)
+		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidator(bc.Block.Pbft.Number, commission)
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func (bc *blockContext) handleValidatorCommissionChange(logs []models.EventLog) 
 			commission = 0
 			fmt.Println("Error parsing hexadecimal string:", err)
 		}
-		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidator(bc.block.Number, commission)
+		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidator(bc.Block.Pbft.Number, commission)
 	}
 	return nil
 }

@@ -37,6 +37,7 @@ var (
 	log_level                        *string
 	yield_saving_interval            *int
 	validators_yield_saving_interval *int
+	sync_queue_limit                 *int
 	signing_key                      *string
 	oracle_address                   *string
 	lara_address                     *string
@@ -45,15 +46,16 @@ var (
 func init() {
 	http_port = flag.Int("http_port", 8080, "port to listen")
 	metrics_port = flag.Int("metrics_port", 2112, "metrics http port")
-	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
+	blockchain_ws = flag.String("blockchain_ws", "ws://localhost:8777", "ws url to connect to blockchain")
 	chain_id = flag.Int("chain_id", 200, "chain id")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
 	yield_saving_interval = flag.Int("yield_saving_interval", 100, "interval for saving total yield")
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 100, "interval for saving validators yield")
+	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
 	signing_key = flag.String("signing_key", "", "signing key")
-	oracle_address = flag.String("oracle_address", "0x054708c7F560C30dD6bf6000100369E2B9d49465", "oracles address")
-	lara_address = flag.String("lara_address", "0xa7d833782a45f112c4890Bc7b1f0ce6c62Dd0Da3", "lara address")
+	oracle_address = flag.String("oracle_address", "0x6E7612baB78665cf336087ee3dE974321C91D953", "oracles address")
+	lara_address = flag.String("lara_address", "0x789B62C6f2f6Ee5908B38336D3d9a74e56850103", "lara address")
 
 	flag.Parse()
 
@@ -109,6 +111,7 @@ func main() {
 	c := common.DefaultConfig()
 	c.TotalYieldSavingInterval = uint64(*yield_saving_interval)
 	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
+	c.SyncQueueLimit = uint64(*sync_queue_limit)
 
 	fin := st.GetFinalizationData()
 	log.WithFields(log.Fields{"pbft_count": fin.PbftCount, "dag_count": fin.DagCount, "trx_count": fin.TrxCount}).Info("Loaded db with")
@@ -121,14 +124,13 @@ func main() {
 		log.WithFields(log.Fields{"signing_key": *signing_key, "oracle_address": *oracle_address, "lara_address": *lara_address}).Fatal("Oracle address, Lara address and signing key should be both set but both empty")
 	}
 
-	indexer := indexer.NewIndexer(*blockchain_ws, st, c)
+	indexer, wsClient := indexer.NewIndexer(*blockchain_ws, st, c)
 	log.Info("Indexer initialized")
-	rpc := ethclient.NewClient(indexer.Client.Rpc)
+	rpc := ethclient.NewClient(wsClient.RpcClient())
 	log.Info("RPC initialized")
 	lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
 	log.Info("Lara initialized")
 	o := oracle.MakeOracle(rpc, *signing_key, *oracle_address, *chain_id, *st)
-	log.Info("Oracle initialized")
 	oracle.RegisterCron(o, *yield_saving_interval)
 	go lara.Run()
 	go indexer.Run(*blockchain_ws, st, c, o)

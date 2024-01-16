@@ -18,7 +18,7 @@ type Genesis struct {
 	hash    string
 }
 
-func MakeGenesis(s storage.Storage, c *chain.WsClient, oracle *oracle.Oracle, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) *Genesis {
+func MakeGenesis(s storage.Storage, c chain.Client, oracle *oracle.Oracle, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = gen_obj
@@ -34,14 +34,14 @@ func (g *Genesis) makeInitBalanceTrx(addr, value string) (trx models.Transaction
 	trx.To = addr
 	trx.Value = value
 	trx.BlockNumber = 0
-	trx.Timestamp = common.ParseUInt(g.genesis.DagGenesisBlock.Timestamp)
+	trx.Timestamp = g.genesis.DagGenesisBlock.Timestamp
 	trx.Status = true
 	return
 }
 
 func (g *Genesis) process() {
 	genesisSupply := big.NewInt(0)
-	accounts := &storage.Balances{Accounts: g.storage.GetAccounts()}
+	accounts := g.storage.GetAccounts()
 	for addr, value := range g.genesis.InitialBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
 		g.bc.SaveTransaction(trx)

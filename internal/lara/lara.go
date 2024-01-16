@@ -105,12 +105,12 @@ func (l *Lara) SyncState() {
 
 	lastSnapshotBlock, err := l.contract.LastSnapshot(opts)
 	if err != nil {
-		log.Fatalf("Failed to get epoch start block: %v", err)
+		log.Fatalf("Failed to get last snapshot: %v", err)
 	}
 
 	lastRebalanceBlock, err := l.contract.LastRebalance(opts)
 	if err != nil {
-		log.Fatalf("Failed to get epoch running: %v", err)
+		log.Fatalf("Failed to get last rebalance block: %v", err)
 	}
 
 	lastEpochTotalDelegatedAmount, err := l.contract.TotalDelegated(opts)
