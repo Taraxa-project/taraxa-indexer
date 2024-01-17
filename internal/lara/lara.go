@@ -65,7 +65,7 @@ func (l *Lara) Run() {
 	if l.Eth == nil {
 		log.Fatalf("Eth client is nil")
 	}
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(1 * time.Minute)
 	for range ticker.C {
 		ctx := context.Background()
 		currentBlock, err := l.Eth.BlockNumber(ctx)
