@@ -32,18 +32,18 @@ func (i *Indexer) Run(url string, s storage.Storage, c *common.Config, o *oracle
 	}
 }
 
-func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer, client *chain.WsClient) {
+func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer) {
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
 	i.storage = s
 	i.config = c
 	// connect is retrying to connect every retry_time
-	client = i.connect(url)
+	i.connect(url)
 	log.Info("Indexer Instance initialized")
-	return i, client
+	return i
 }
 
-func (i *Indexer) connect(url string) *chain.WsClient {
+func (i *Indexer) connect(url string) {
 	var err error
 	var client *chain.WsClient
 	for {
@@ -66,7 +66,6 @@ func (i *Indexer) connect(url string) *chain.WsClient {
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
 	}
-	return client
 }
 
 func (i *Indexer) init() {

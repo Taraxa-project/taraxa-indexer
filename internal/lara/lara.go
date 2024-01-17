@@ -70,10 +70,7 @@ func (l *Lara) Run() {
 		ctx := context.Background()
 		currentBlock, err := l.Eth.BlockNumber(ctx)
 		if err != nil {
-			log.Fatalf("Failed to get current block: %v", err)
-		}
-		if err != nil {
-			log.Fatalf("Failed to get block by number: %v", err)
+			log.Fatalf("Lara: Failed to get current block: %v", err)
 		}
 		// if we pass the time to end epoch
 		expenctedSnapshotTime := l.state.lastSnapshot.Int64() + l.state.epochDuration.Int64()
@@ -172,7 +169,7 @@ func (l *Lara) SyncState() {
 	nextSnapshot := big.NewInt(0).Add(lastSnapshotBlock, epochDuration)
 	currentBlock, err := l.Eth.BlockNumber(context.Background())
 	if err != nil {
-		log.Fatalf("Failed to get current block: %v", err)
+		log.Fatalf("SyncState: Failed to get current block: %v", err)
 	}
 	log.WithFields(log.Fields{"currentBlock": currentBlock, "lastRebalance": l.state.lastRebalance, "lastSnapshotBlock": l.state.lastSnapshot, "nextSnapshotBlock": nextSnapshot, "nodesDelegatedTo": len(l.state.validators), "totalDelegated": l.state.lastEpochTotalDelegatedAmount}).Info("LARA STATE: ")
 }
@@ -205,12 +202,20 @@ func (l *Lara) Snapshot() {
 			log.Fatalf("Failed to make snapshot: %v", err)
 		}
 	}
+	// wait 4 secs ~ 1 block
+	time.Sleep(4 * time.Second)
+
 	if tx != nil {
 		receipt, err := l.Eth.TransactionReceipt(context.Background(), tx.Hash())
 		if err != nil {
-			log.Fatalf("Failed to get receipt: %v", err)
+			if strings.Contains(err.Error(), "not found") {
+				log.Warn("WARN: SNAPSHOT NOT FOUND")
+			} else {
+				log.Fatalf("Failed to get receipt: %v", err)
+			}
+		} else {
+			log.Warnf("Made snapshot at timestamp: %d, hash: %s", receipt.BlockNumber, tx.Hash().Hex())
 		}
-		log.Warnf("Made snapshot at timestamp: %d, hash: %s", receipt.BlockNumber, tx.Hash().Hex())
 		l.state.isMakingSnapshot = false
 	}
 	// wait 3 sec

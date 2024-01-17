@@ -15,6 +15,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
+	"github.com/Taraxa-project/taraxa-indexer/internal/lara"
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
@@ -52,8 +53,8 @@ func init() {
 	yield_saving_interval = flag.Int("yield_saving_interval", 100, "interval for saving total yield")
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 100, "interval for saving validators yield")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
-	oracle_address = flag.String("oracle_address", "0x7EF7dB397007EdfBCFdefEE50Ff6B257D659E358", "oracles address")
-	lara_address = flag.String("lara_address", "0xA188ECD2c5a4B0fC7Ce683bd69AeD1483f7e8fa0", "lara address")
+	oracle_address = flag.String("oracle_address", "0x485030084Fb82c11252E35EE8f2f88cDc8a0588a", "oracles address")
+	lara_address = flag.String("lara_address", "0x6E7612baB78665cf336087ee3dE974321C91D953", "lara address")
 	signing_key = flag.String("signing_key", "", "signing key")
 	flag.Parse()
 
@@ -122,15 +123,17 @@ func main() {
 		log.WithFields(log.Fields{"signing_key": *signing_key, "oracle_address": *oracle_address, "lara_address": *lara_address}).Fatal("Oracle address, Lara address and signing key should be both set but both empty")
 	}
 
-	indexer, wsClient := indexer.NewIndexer(*blockchain_ws, st, c)
+	indexer := indexer.NewIndexer(*blockchain_ws, st, c)
 	log.Info("Indexer initialized")
-	rpc := ethclient.NewClient(wsClient.RpcClient())
+	rpc, err := ethclient.Dial(*blockchain_ws)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to connect to blockchain")
+	}
 	log.Info("RPC initialized")
-	// lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
+	lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
 	log.Info("Lara initialized")
 	o := oracle.MakeOracle(rpc, *signing_key, *oracle_address, *chain_id, *st)
-	// go oracle.RegisterCron(o, *yield_saving_interval)
-	// go lara.Run()
+	go lara.Run()
 	go indexer.Run(*blockchain_ws, st, c, o)
 	// start a http server for prometheus on a separate go routine
 	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))

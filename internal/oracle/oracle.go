@@ -23,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/go-co-op/gocron"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -106,9 +105,12 @@ func (o *Oracle) pushDataToContract() {
 	}
 
 	validatorDatas := make([]NodeData, 0)
-
+	currentBlock, err := o.Eth.BlockNumber(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get current block: %v", err)
+	}
 	for _, validator := range o.LatestValidators {
-		data := validator.ToNodeData(o.Eth)
+		data := validator.ToNodeData(currentBlock)
 		validatorDatas = append(validatorDatas, data)
 	}
 
@@ -118,7 +120,7 @@ func (o *Oracle) pushDataToContract() {
 	})
 
 	for {
-		_, err := o.contract.BatchUpdateNodeData(o.signer, validatorDatas)
+		tx, err := o.contract.BatchUpdateNodeData(o.signer, validatorDatas)
 		if err != nil {
 			if strings.Contains(err.Error(), "Transaction already in transactions pool") || strings.Contains(err.Error(), "nonce too low") || strings.Contains(err.Error(), "out of gas") {
 				time.Sleep(1 * time.Second)
@@ -127,7 +129,7 @@ func (o *Oracle) pushDataToContract() {
 			log.Fatalf("Failed to batch update node data: %v", err)
 		}
 
-		log.Infof("Pushed %d validators to contract", len(validatorDatas))
+		log.WithFields(log.Fields{"txHash": tx.Hash().Hex()}).Infof("Pushed %d validators to contract", len(validatorDatas))
 		// wait 1 second
 		time.Sleep(1 * time.Second)
 		nodeCount, err := o.contract.NodeCount(nil)
@@ -140,22 +142,6 @@ func (o *Oracle) pushDataToContract() {
 			break
 		}
 	}
-}
-
-func RegisterCron(o *Oracle, yield_saving_interval int) {
-	s := gocron.NewScheduler(time.UTC)
-	var err error
-	_, err = s.Every(yield_saving_interval).Seconds().Do(func() {
-		log.Info("Oracle cron started")
-		o.pushDataToContract()
-	})
-	if err != nil {
-		log.Fatalf("Failed to schedule cron: %v", err)
-	}
-	// check if job was successfully ran
-	_, t := s.NextRun()
-	log.Info("Oracle cron scheduled at ", t)
-	s.StartAsync()
 }
 
 // FetchValidatorInfo fetches the ValidatorBasicInfo for a given validator address.
