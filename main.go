@@ -53,9 +53,8 @@ func init() {
 	yield_saving_interval = flag.Int("yield_saving_interval", 100, "interval for saving total yield")
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 100, "interval for saving validators yield")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
-	signing_key = flag.String("signing_key", "", "signing key")
-	oracle_address = flag.String("oracle_address", "0x6E7612baB78665cf336087ee3dE974321C91D953", "oracles address")
-	lara_address = flag.String("lara_address", "0x789B62C6f2f6Ee5908B38336D3d9a74e56850103", "lara address")
+	oracle_address = flag.String("oracle_address", "0x7EF7dB397007EdfBCFdefEE50Ff6B257D659E358", "oracles address")
+	lara_address = flag.String("lara_address", "0xA188ECD2c5a4B0fC7Ce683bd69AeD1483f7e8fa0", "lara address")
 
 	flag.Parse()
 
@@ -131,7 +130,7 @@ func main() {
 	lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
 	log.Info("Lara initialized")
 	o := oracle.MakeOracle(rpc, *signing_key, *oracle_address, *chain_id, *st)
-	oracle.RegisterCron(o, *yield_saving_interval)
+	go oracle.RegisterCron(o, *yield_saving_interval)
 	go lara.Run()
 	go indexer.Run(*blockchain_ws, st, c, o)
 	// start a http server for prometheus on a separate go routine
