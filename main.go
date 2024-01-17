@@ -15,7 +15,6 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/api"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
-	"github.com/Taraxa-project/taraxa-indexer/internal/lara"
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/oracle"
@@ -55,7 +54,7 @@ func init() {
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
 	oracle_address = flag.String("oracle_address", "0x7EF7dB397007EdfBCFdefEE50Ff6B257D659E358", "oracles address")
 	lara_address = flag.String("lara_address", "0xA188ECD2c5a4B0fC7Ce683bd69AeD1483f7e8fa0", "lara address")
-
+	signing_key = flag.String("signing_key", "", "signing key")
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
@@ -127,11 +126,11 @@ func main() {
 	log.Info("Indexer initialized")
 	rpc := ethclient.NewClient(wsClient.RpcClient())
 	log.Info("RPC initialized")
-	lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
+	// lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
 	log.Info("Lara initialized")
 	o := oracle.MakeOracle(rpc, *signing_key, *oracle_address, *chain_id, *st)
-	go oracle.RegisterCron(o, *yield_saving_interval)
-	go lara.Run()
+	// go oracle.RegisterCron(o, *yield_saving_interval)
+	// go lara.Run()
 	go indexer.Run(*blockchain_ws, st, c, o)
 	// start a http server for prometheus on a separate go routine
 	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))

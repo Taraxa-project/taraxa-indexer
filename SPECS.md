@@ -99,7 +99,7 @@ And we also increment the number of total transactions for both the first and th
 
 This way we can iterate over the transactions easier when we want to display them:
 
-```
+```bash
 tx:0x00000000000000000000000000000000000000fe:1234:50
 tx:0x00000000000000000000000000000000000000fe:1235:1
 tx:0x00000000000000000000000000000000000000fe:1235:80

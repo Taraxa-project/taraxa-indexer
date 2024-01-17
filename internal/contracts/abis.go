@@ -1,6 +1,8 @@
 package contracts
 
-import "github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
+import (
+	dpos_contract "github.com/Taraxa-project/taraxa-indexer/abi/dpos"
+)
 
 const ClaimNative = `[{"inputs":[{"internalType":"address","name":"_trustedAccountAddress","type":"address"}],"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_address","type":"address"},{"indexed":true,"internalType":"uint256","name":"_nonce","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"_value","type":"uint256"}],"name":"Claimed","type":"event"},{"stateMutability":"payable","type":"receive"},{"inputs":[{"internalType":"address","name":"_address","type":"address"},{"internalType":"uint256","name":"_value","type":"uint256"},{"internalType":"uint256","name":"_nonce","type":"uint256"}],"name":"getClaimedAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address payable","name":"_address","type":"address"},{"internalType":"uint256","name":"_value","type":"uint256"},{"internalType":"uint256","name":"_nonce","type":"uint256"},{"internalType":"bytes","name":"_sig","type":"bytes"}],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"}]`
 
@@ -12,5 +14,5 @@ var ContractABIs = map[string]string{
 	"0xfce7a3121b42664aad145712e1c2bf2e38f60aa1": Multicall,
 	"0x1578f035581f664efa85a6da822464bd9edd8850": MultisendNative,
 	"0xf3b803a8f4c4fc3fbe454b6438dc0ed22735f01b": ClaimNative,
-	"0x00000000000000000000000000000000000000fe": dpos_interface.DposInterfaceABI,
+	"0x00000000000000000000000000000000000000fe": dpos_contract.DposContractABI,
 }

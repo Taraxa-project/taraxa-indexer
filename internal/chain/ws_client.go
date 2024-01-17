@@ -35,7 +35,7 @@ func NewWsClient(url string) (*WsClient, error) {
 	client.GetChainId()
 
 	if err != nil {
-		log.WithError(err).Fatal("Can't create dpos client")
+		log.WithError(err).Fatal("Can't create websocket client")
 	}
 
 	return client, nil
