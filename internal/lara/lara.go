@@ -83,9 +83,32 @@ func (l *Lara) Run() {
 			l.Rebalance()
 			// wait 3 sec
 			time.Sleep(4 * time.Second)
+			l.Compound()
 		}
 	}
 
+}
+
+func (l *Lara) Compound() {
+	opts := &bind.TransactOpts{
+		From:     l.signer.From,
+		Signer:   l.signer.Signer,
+		GasLimit: 0,
+		Context:  nil,
+	}
+	laraEthBalance, err := l.Eth.BalanceAt(context.Background(), common.HexToAddress(l.deploymentAddress), nil)
+	if err != nil {
+		log.Fatalf("Failed to get lara eth balance: %v", err)
+	}
+	_, err = l.contract.DelegateToValidators(opts, laraEthBalance)
+	if err != nil {
+		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
+			log.Warn("Compound tx already in pool")
+		} else {
+			log.Fatalf("Failed to compound: %v", err)
+		}
+	}
+	log.WithFields(log.Fields{"laraEthBalance": laraEthBalance}).Info("LARA COMPOUNDED: ")
 }
 
 func (l *Lara) SyncState() {
