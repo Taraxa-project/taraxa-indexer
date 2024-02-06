@@ -8,7 +8,6 @@ require (
 	github.com/deepmap/oapi-codegen/v2 v2.0.0
 	github.com/ethereum/go-ethereum v1.13.10
 	github.com/getkin/kin-openapi v0.118.0
-	github.com/go-co-op/gocron v1.36.0
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/nleeper/goment v1.4.4
@@ -36,9 +35,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
