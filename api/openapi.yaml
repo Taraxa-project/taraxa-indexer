@@ -270,6 +270,41 @@ paths:
         default:
           description: |
             Unexpected error
+  /address/{address}/yieldForInterval:
+    get:
+      tags:
+        - Address
+      summary: "Returns yield for the address"
+      description: |
+        Returns yield for the address at specified block
+      operationId: "getAddressYieldForInterval"
+      parameters:
+        - $ref: "#/components/parameters/addressParam"
+        - in: query
+          name: fromBlock
+          description: |
+            From block number
+          schema:
+            $ref: "#/components/schemas/Counter"
+        - in: query
+          name: toBlock
+          required: true
+          description: |
+            To block number
+          schema:
+            $ref: "#/components/schemas/Counter"
+      responses:
+        "200":
+          description: |
+            Current total yield as string as value could be pretty big
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/YieldResponse"
+        default:
+          description: |
+            Unexpected error
   /transaction/{hash}:
     get:
       tags:

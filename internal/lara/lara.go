@@ -74,6 +74,7 @@ func (l *Lara) Run() {
 		}
 		// if we pass the time to end epoch
 		expenctedSnapshotTime := l.state.lastSnapshot.Int64() + l.state.epochDuration.Int64()
+		l.Compound()
 		l.SyncState()
 		if int64(currentBlock) > expenctedSnapshotTime {
 			// if the epoch is running
