@@ -223,6 +223,15 @@ type GetAddressYieldParams struct {
 	BlockNumber *BlockNumParam `form:"blockNumber,omitempty" json:"blockNumber,omitempty"`
 }
 
+// GetAddressYieldForIntervalParams defines parameters for GetAddressYieldForInterval.
+type GetAddressYieldForIntervalParams struct {
+	// FromBlock From block number
+	FromBlock *Counter `form:"fromBlock,omitempty" json:"fromBlock,omitempty"`
+
+	// ToBlock To block number
+	ToBlock Counter `form:"toBlock" json:"toBlock"`
+}
+
 // GetHoldersParams defines parameters for GetHolders.
 type GetHoldersParams struct {
 	// Pagination Pagination

@@ -3,14 +3,17 @@
 package api
 
 import (
+	"bytes"
+
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/labstack/echo/v4"
 	"github.com/nleeper/goment"
 	log "github.com/sirupsen/logrus"
@@ -47,7 +50,7 @@ func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
 
 	response := struct {
 		PaginatedResponse
-		Data []models.Account `json:"data"`
+		Data []Account `json:"data"`
 	}{
 		PaginatedResponse: *pagination,
 		Data:              ret,
@@ -202,7 +205,7 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash HashParam) error 
 	return ctx.JSON(http.StatusOK, a.storage.GetTransactionLogs(hash))
 }
 
-func (a *ApiHandler) getAddressYield(address AddressParam, block *uint64) (resp *models.YieldResponse, err error) {
+func (a *ApiHandler) getAddressYield(address AddressParam, block *uint64) (resp *YieldResponse, err error) {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
 	block_num := common.GetYieldIntervalEnd(pbft_count, block, a.config.ValidatorsYieldSavingInterval)
 	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
@@ -210,7 +213,7 @@ func (a *ApiHandler) getAddressYield(address AddressParam, block *uint64) (resp 
 		err = fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
 		return
 	}
-	return &models.YieldResponse{
+	return &YieldResponse{
 		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
 		ToBlock:   block_num,
 		Yield:     a.storage.GetValidatorYield(address, block_num).Yield,
@@ -224,6 +227,47 @@ func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, par
 	}
 	return ctx.JSON(http.StatusOK, resp)
 }
+func (a *ApiHandler) GetAddressYieldForInterval(ctx echo.Context, address AddressParam, params GetAddressYieldForIntervalParams) error {
+	pbft_count := a.storage.GetFinalizationData().PbftCount
+	block_num := common.GetYieldIntervalEnd(pbft_count, params.FromBlock, a.config.ValidatorsYieldSavingInterval)
+
+	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
+	to_block := common.GetYieldIntervalEnd(pbft_count, &params.ToBlock, a.config.ValidatorsYieldSavingInterval)
+
+	prefix := []byte(pebble.GetPrefixKey(pebble.GetPrefix(storage.Yield{}), address))
+	yield := float64(0)
+	count := int64(0)
+	a.storage.ForEachFromKey(prefix, []byte(storage.FormatIntToKey(from_block)), func(key, res []byte) (stop bool) {
+		if bytes.Equal(key, bytes.Join([][]byte{prefix, []byte(storage.FormatIntToKey(to_block))}, []byte(""))) {
+			return true
+		}
+		y := storage.Yield{}
+		err := rlp.DecodeBytes(res, &y)
+		if err != nil {
+			log.WithError(err).Fatal("Error decoding data from db")
+			return false
+		}
+
+		fmt.Println("Key: ", string(key))
+		fmt.Printf("Yield: %f, adding: %f\n", yield, common.ParseFloat(y.Yield))
+
+		yield += common.ParseFloat(y.Yield)
+		count++
+
+		return false
+	})
+	if count == 0 {
+		return fmt.Errorf("No yield data found for the %s at interval [%d, %d]", address, from_block, to_block)
+	}
+	yield /= float64(count)
+
+	resp := YieldResponse{
+		FromBlock: from_block,
+		ToBlock:   to_block,
+		Yield:     common.FormatFloat(yield),
+	}
+	return ctx.JSON(http.StatusOK, resp)
+}
 
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams) error {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
@@ -232,7 +276,7 @@ func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams)
 	if pbft_count < block_num {
 		return fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
 	}
-	resp := models.YieldResponse{
+	resp := YieldResponse{
 		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
 		ToBlock:   block_num,
 		Yield:     a.storage.GetTotalYield(block_num).Yield,
