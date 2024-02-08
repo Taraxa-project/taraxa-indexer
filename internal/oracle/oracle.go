@@ -13,6 +13,7 @@ import (
 
 	// Import other necessary packages
 	"github.com/Taraxa-project/taraxa-go-client/taraxa_client/dpos_contract_client/dpos_interface"
+	dpos_contract "github.com/Taraxa-project/taraxa-indexer/abi/dpos"
 	apy_oracle "github.com/Taraxa-project/taraxa-indexer/abi/oracle"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
@@ -73,13 +74,16 @@ func (o *Oracle) PushValidators(validators []RawValidator) {
 			log.Fatalf("Failed to fetch validator info: %v", err)
 		}
 		commission := uint64(validatorData.Commission)
+		addr := o.storage.GetAddressStats(validator.Address.Hex())
+		registrationBlock, err := o.FetchValidatorRegistrationBlock(validator.Address)
+
 		yieldedValidator := YieldedValidator{
 			Account:           validator.Address,
 			Yield:             validator.Yield,
 			Commisson:         &commission,
 			Rank:              0,
-			RegistrationBlock: 0,
-			PbftCount:         0,
+			RegistrationBlock: registrationBlock,
+			PbftCount:         addr.PbftCount,
 			Rating:            0,
 		}
 		yieldedValidators = append(yieldedValidators, yieldedValidator)
@@ -212,6 +216,29 @@ func FetchValidatorInfo(client chain.EthereumClient, validatorAddress string) (*
 		}
 	}
 	return &validatorInfo, nil
+}
+
+func (o *Oracle) FetchValidatorRegistrationBlock(validatorAddress common.Address) (uint64, error) {
+
+	contractAddress := common.HexToAddress("0xYourContractAddress")
+	instance, err := dpos_contract.NewDposContract(contractAddress, o.Eth)
+	if err != nil {
+		log.Fatalf("Failed to instantiate contract: %v", err)
+	}
+
+	opts := &bind.FilterOpts{
+		Start:   0,
+		End:     nil, // nil means up to latest block
+		Context: nil, // nil means no timeout
+	}
+	iter, err := instance.FilterValidatorRegistered(opts, []common.Address{validatorAddress})
+	if err != nil {
+		log.Fatalf("Failed to execute a filter query command: %v", err)
+	}
+	for iter.Next() {
+		return iter.Event.Raw.BlockNumber, nil
+	}
+	return 0, errors.New("Validator does not exist")
 }
 
 // go run main.go --blockchain_ws=ws://localhost:8777 --log_level=debug --chain_id=842 --signing_key=472a3f59fe3d81cda76dbb2a64825e46c4b067ae559cd4dfc784869da80bd05e --oracle_address=0x4076f9669fd33e55545823c4cB9f1abA7cfa480B

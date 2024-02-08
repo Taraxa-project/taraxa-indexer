@@ -244,7 +244,6 @@ func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 		batch.AddToBatch(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
 		yields = append(yields, oracle.RawValidator{Yield: common.FormatFloat(yield), Address: ethcommon.HexToAddress(val)})
 	}
-
 	r.oracle.PushValidators(yields)
 }
 

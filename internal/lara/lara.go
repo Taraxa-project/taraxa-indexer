@@ -74,17 +74,20 @@ func (l *Lara) Run() {
 		}
 		// if we pass the time to end epoch
 		expenctedSnapshotTime := l.state.lastSnapshot.Int64() + l.state.epochDuration.Int64()
-		l.Compound()
+		expectedRebalanceTime := l.state.lastRebalance.Int64() + l.state.epochDuration.Int64()
+		log.WithFields(log.Fields{"expectedSnapshotTime": expenctedSnapshotTime, "expectedRebalanceTime": expectedRebalanceTime, "currentBlock": currentBlock}).Info("LARA: ")
 		l.SyncState()
 		if int64(currentBlock) > expenctedSnapshotTime {
 			// if the epoch is running
 			// end the epoch
 			l.Snapshot()
-			time.Sleep(4 * time.Second)
-			l.Rebalance()
 			// wait 3 sec
 			time.Sleep(4 * time.Second)
 			l.Compound()
+		}
+		if int64(currentBlock) > expectedRebalanceTime {
+			log.Warnf("Triggering rebalance at block: %d, expected rebalance time: %d", currentBlock, expectedRebalanceTime)
+			l.Rebalance()
 		}
 	}
 
@@ -106,7 +109,11 @@ func (l *Lara) Compound() {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("Compound tx already in pool")
 		} else {
-			log.Fatalf("Failed to compound: %v", err)
+			if strings.Contains(err.Error(), "No nodes available for delegation") {
+				log.Warn("No nodes available for delegation")
+			} else {
+				log.Fatalf("Failed to compound: %v", err)
+			}
 		}
 	}
 	log.WithFields(log.Fields{"laraEthBalance": laraEthBalance}).Info("LARA COMPOUNDED: ")
@@ -273,16 +280,15 @@ func (l *Lara) Rebalance() {
 	}
 	l.state.isRebalancing = true
 	tx, err := l.contract.Rebalance(opts)
-	log.Printf("rebalance tx: %s", tx.Hash().Hex())
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("Rebalance tx already in pool")
 		} else {
-			log.Fatalf("Failed to rebalance: %v", err)
+			log.Warnf("Failed to rebalance: %v", err)
 		}
 	}
 	if tx != nil {
 		l.state.isRebalancing = false
-		log.Warnf("Rebalanced at timestamp: %d", tx.Time().Unix())
+		log.WithFields(log.Fields{"Timestamp": tx.Time().Unix(), "hash": tx.Hash().Hex()}).Warn("Rebalanced")
 	}
 }

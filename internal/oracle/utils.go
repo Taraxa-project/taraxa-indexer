@@ -1,7 +1,9 @@
 package oracle
 
 import (
+	"encoding/csv"
 	"math/big"
+	"os"
 	"strconv"
 
 	apy_oracle "github.com/Taraxa-project/taraxa-indexer/abi/oracle"
@@ -58,8 +60,6 @@ func (v *YieldedValidator) ToNodeData(currentBlock uint64) NodeData {
 }
 
 func (validator *YieldedValidator) calculateRating(currentBlock uint64) (int64, uint64, uint64) {
-
-	blocksSinceRegistration := currentBlock - validator.RegistrationBlock
 	commission_float := float64(*validator.Commisson)
 	yield_float, err := strconv.ParseFloat(validator.Yield, 64)
 	if err != nil {
@@ -67,9 +67,32 @@ func (validator *YieldedValidator) calculateRating(currentBlock uint64) (int64, 
 	}
 	commission_percentage := commission_float / float64(100000)
 	adjusted_apy := (1 - commission_percentage) * yield_float * 100
-	continuity := float64(blocksSinceRegistration) / float64(currentBlock-validator.RegistrationBlock)
+	continuity := float64(validator.PbftCount) / float64(currentBlock-validator.RegistrationBlock)
 
 	//w1 * (APY) - (Commission * w2) + w3 * Continuity + w4 * stake
 	score := float64(0.4)*adjusted_apy - float64(0.1)*commission_float + float64(0.5)*continuity
+	log.WithFields(log.Fields{"validator": validator.Account.String(), "currentBlock": currentBlock, "score": score, "continuity": continuity, "apy": adjusted_apy, "commission": commission_float}).Info("Validator score")
+	file, err := os.OpenFile("validator_scores.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open csv file: %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	record := []string{
+		validator.Account.String(),
+		strconv.FormatFloat(score, 'f', 6, 64),
+		strconv.FormatFloat(adjusted_apy, 'f', 6, 64),
+		strconv.FormatFloat(commission_float, 'f', 6, 64),
+		strconv.FormatFloat(continuity, 'f', 6, 64),
+		strconv.FormatUint(currentBlock, 10),
+	}
+	err = writer.Write(record)
+	if err != nil {
+		log.Fatalf("Failed to write to csv file: %v", err)
+	}
+
 	return int64(score * 1000), validator.RegistrationBlock, currentBlock
 }
