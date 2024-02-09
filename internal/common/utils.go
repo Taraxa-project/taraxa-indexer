@@ -63,6 +63,18 @@ func ParseStringToBigInt(v string) *big.Int {
 	return a
 }
 
+func ParseFloat(s string) (v float64) {
+	if len(s) == 0 {
+		return
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		debug.PrintStack()
+		log.Fatal(s, "ParseFloat ", err)
+	}
+	return v
+}
+
 func FormatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', 4, 64)
 }
