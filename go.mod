@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.6
-	github.com/cockroachdb/pebble v1.0.0
+	github.com/cockroachdb/pebble v1.1.0
 	github.com/deepmap/oapi-codegen/v2 v2.0.0
 	github.com/ethereum/go-ethereum v1.13.7
 	github.com/getkin/kin-openapi v0.118.0
@@ -24,6 +24,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
