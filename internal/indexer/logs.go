@@ -31,11 +31,12 @@ func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error)
 func (bc *blockContext) handleValidatorRegistrations(logs []models.EventLog) (err error) {
 	const registerValidatorTopic = "0xd09501348473474a20c772c79c653e1fd7e8b437e418fe235d277d2c88853251"
 	for _, log := range logs {
-		if strings.Compare(log.Topics[0], registerValidatorTopic) != 0 && strings.Compare(log.Address, "0x00000000000000000000000000000000000000fe") != 0 {
-			continue
+		if strings.Compare(log.Address, "0x00000000000000000000000000000000000000fe") == 0 {
+			if strings.Compare(log.Topics[0], registerValidatorTopic) == 0 {
+				address := common.HexToAddress(log.Topics[1])
+				bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidatorBlock(bc.Block.Pbft.Number)
+			}
 		}
-		address := common.HexToAddress(log.Topics[1])
-		bc.addressStats.GetAddress(bc.Storage, address.Hex()).RegisterValidatorBlock(bc.Block.Pbft.Number)
 	}
 	return nil
 }
