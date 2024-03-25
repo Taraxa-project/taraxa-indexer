@@ -19,7 +19,7 @@ type AddressCount map[string]int
 
 func makeTransactions(count int) (trxs []chain.Transaction) {
 	for i := 0; i < count; i++ {
-		trxs = append(trxs, chain.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}})
+		trxs = append(trxs, chain.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}, GasPrice: 1, GasUsed: 21000})
 	}
 	return
 }
