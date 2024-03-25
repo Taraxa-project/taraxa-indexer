@@ -48,7 +48,7 @@ func getPeriodTransactionsFees(trxs []chain.Transaction) map[string]*big.Int {
 	return period_transactions
 }
 
-func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Transaction, committee_size int64) (s *stats) {
+func makeStats(is_aspen_dag_rewards bool, dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Transaction, committee_size int64) (s *stats) {
 	s = new(stats)
 	s.ValidatorStats = make(map[string]validatorStats)
 	s.MaxVotesWeight = Min(votes.PeriodTotalVotesCount, committee_size)
@@ -62,20 +62,34 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Tr
 		s.ValidatorStats[voter] = entry
 	}
 
-	transaction_fee := getPeriodTransactionsFees(trxs)
+	if is_aspen_dag_rewards {
+		s.processDagsAspen(dags, trxs)
+	} else {
+		s.processDags(dags, trxs)
+	}
+	return
+}
+
+func dagFeeReward(fees map[string]*big.Int, d chain.DagBlock) *big.Int {
+	feeReward := big.NewInt(0)
+	for _, th := range d.Transactions {
+		// if we don't have fee for this transaction, it means that it was processed before
+		if fees[th] != nil {
+			feeReward.Add(feeReward, fees[th])
+			delete(fees, th)
+		}
+	}
+
+	return feeReward
+}
+
+func (s *stats) processDags(dags []chain.DagBlock, trxs []chain.Transaction) {
+	transaction_fees := getPeriodTransactionsFees(trxs)
 	total_dag_count := int64(0)
 	for _, d := range dags {
 		total_dag_count += 1
-		feeReward := big.NewInt(0)
-		has_unique_trx := false
-		for _, th := range d.Transactions {
-			// if we don't have fee for this transaction, it means that it was processed before
-			if transaction_fee[th] != nil {
-				feeReward.Add(feeReward, transaction_fee[th])
-				has_unique_trx = true
-				delete(transaction_fee, th)
-			}
-		}
+		feeReward := dagFeeReward(transaction_fees, d)
+		has_unique_trx := feeReward.Cmp(big.NewInt(0)) > 0
 		if has_unique_trx {
 			sender := strings.ToLower(d.Sender)
 			entry := s.ValidatorStats[sender]
@@ -88,7 +102,30 @@ func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Tr
 			s.TotalDagCount += 1
 		}
 	}
-	return
+}
+
+func (s *stats) processDagsAspen(dags []chain.DagBlock, trxs []chain.Transaction) {
+	transaction_fees := getPeriodTransactionsFees(trxs)
+	min_difficulty := ^uint16(0)
+	for _, d := range dags {
+		if d.Vdf.Difficulty < min_difficulty {
+			min_difficulty = d.Vdf.Difficulty
+		}
+	}
+
+	for _, d := range dags {
+		author := d.Sender
+		entry := s.ValidatorStats[author]
+		if d.Vdf.Difficulty == min_difficulty {
+			entry.DagBlocksCount += 1
+			s.TotalDagCount += 1
+		}
+		if entry.FeeReward == nil {
+			entry.FeeReward = big.NewInt(0)
+		}
+		entry.FeeReward.Add(entry.FeeReward, dagFeeReward(transaction_fees, d))
+		s.ValidatorStats[author] = entry
+	}
 }
 
 func calculatePeriodRewardsParts(config *common.ChainConfig, totalRewards *big.Int, noVotes bool) (tr totalPeriodRewards) {

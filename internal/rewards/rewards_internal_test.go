@@ -70,7 +70,8 @@ func TestMakeStats(t *testing.T) {
 	assert.Equal(t, 3, len(votes.Votes))
 	assert.Equal(t, int64(6), votes.PeriodTotalVotesCount)
 
-	s := makeStats(dags, votes, trxs, 100)
+	is_aspen_dag_rewards := false
+	s := makeStats(is_aspen_dag_rewards, dags, votes, trxs, 100)
 	assert.Equal(t, 3, len(s.ValidatorStats))
 	assert.Equal(t, 6, int(s.TotalDagCount))
 	assert.Equal(t, 6, int(s.TotalVotesWeight))
