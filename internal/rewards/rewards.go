@@ -76,7 +76,8 @@ func (r *Rewards) addTotalMinted(amount *big.Int) {
 func (r *Rewards) calculateValidatorsRewards(
 	dags []chain.DagBlock, votes chain.VotesResponse,
 	trxs []chain.Transaction, totalStake *big.Int) PeriodRewards {
-	stats := makeStats(dags, votes, trxs, r.config.Chain.CommitteeSize.Int64())
+	is_aspen_dag_rewards := r.config.Chain.Hardforks.AspenHf.BlockNumPartOne <= r.blockNum
+	stats := makeStats(is_aspen_dag_rewards, dags, votes, trxs, r.config.Chain.CommitteeSize.Int64())
 	return r.rewardsFromStats(totalStake, stats)
 }
 

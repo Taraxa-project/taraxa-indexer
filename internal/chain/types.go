@@ -47,6 +47,9 @@ type DagBlock struct {
 	models.Dag
 	Sender       string   `json:"sender"`
 	Transactions []string `json:"transactions"`
+	Vdf          struct {
+		Difficulty uint16 `json:"difficulty"`
+	} `json:"vdf"`
 }
 
 func (b *DagBlock) UnmarshalJSON(data []byte) error {
@@ -57,6 +60,10 @@ func (b *DagBlock) UnmarshalJSON(data []byte) error {
 
 		Sender       string   `json:"sender"`
 		Transactions []string `json:"transactions"`
+
+		Vdf struct {
+			Difficulty string `json:"difficulty"`
+		} `json:"vdf"`
 	}
 	if err := json.Unmarshal(data, &rawStruct); err != nil {
 		panic(err)
@@ -68,6 +75,7 @@ func (b *DagBlock) UnmarshalJSON(data []byte) error {
 	b.Dag.Level = common.ParseUInt(rawStruct.Level)
 	b.Dag.Timestamp = common.ParseUInt(rawStruct.Timestamp)
 	b.Dag.TransactionCount = uint64(len(b.Transactions))
+	b.Vdf.Difficulty = uint16(common.ParseUInt(rawStruct.Vdf.Difficulty))
 
 	return nil
 }
