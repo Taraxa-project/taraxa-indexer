@@ -2,6 +2,7 @@ package chain
 
 import (
 	"errors"
+	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 )
@@ -9,12 +10,13 @@ import (
 var ErrFutureBlock = errors.New("Block is in the future")
 
 type BlockData struct {
-	Pbft         *Block
-	Dags         []DagBlock
-	Transactions []Transaction
-	Traces       []TransactionTrace
-	Votes        VotesResponse
-	Validators   []Validator
+	Pbft                 *Block
+	Dags                 []DagBlock
+	Transactions         []Transaction
+	Traces               []TransactionTrace
+	Votes                VotesResponse
+	Validators           []Validator
+	TotalAmountDelegated *big.Int
 }
 
 func MakeEmptyBlockData() *BlockData {
@@ -37,7 +39,10 @@ func GetBlockData(c Client, period uint64) (bd *BlockData, err error) {
 	tp.Go(common.MakeTaskWithResult(c.TraceBlockTransactions, period, &bd.Traces, &err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetPreviousBlockCertVotes, period, &bd.Votes, &err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetValidatorsAtBlock, period, &bd.Validators, &err).Run)
+	tp.Go(common.MakeTaskWithResult(c.GetTotalAmountDelegated, period, &bd.TotalAmountDelegated, &err).Run)
+
 	tp.Wait()
+
 	if bd.Pbft == nil {
 		return nil, ErrFutureBlock
 	}
@@ -57,6 +62,8 @@ func GetBlockDataFromPbft(c Client, pbft *Block) (bd *BlockData, err error) {
 	tp.Go(common.MakeTaskWithResult(c.TraceBlockTransactions, pbft.Number, &bd.Traces, &err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetPreviousBlockCertVotes, pbft.Number, &bd.Votes, &err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetValidatorsAtBlock, pbft.Number, &bd.Validators, &err).Run)
+	tp.Go(common.MakeTaskWithResult(c.GetTotalAmountDelegated, pbft.Number, &bd.TotalAmountDelegated, &err).Run)
+
 	tp.Wait()
 	if err != nil {
 		return nil, err

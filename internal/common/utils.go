@@ -12,6 +12,7 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/spiretechnology/go-pool"
+	"golang.org/x/exp/constraints"
 )
 
 const DposContractAddress = "0x00000000000000000000000000000000000000fe"
@@ -132,4 +133,22 @@ func ParseToString(item any) (result any, err error) {
 		}
 	}
 	return
+}
+
+type Number interface {
+	constraints.Integer | constraints.Float
+}
+
+func Max[T Number](a, b T) T {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func Min[T Number](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
 }

@@ -95,7 +95,7 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	t.Hash = rawStruct.Hash
 	t.BlockNumber = common.ParseUInt(rawStruct.BlockNumber)
 	t.From = rawStruct.From
-	t.GasCost = t.GasPrice * t.GasUsed
+	t.GasCost = t.GetFee().Uint64()
 	t.Input = rawStruct.Input
 	t.Status = common.ParseBool(rawStruct.Status)
 	t.Timestamp = common.ParseUInt(rawStruct.Timestamp)

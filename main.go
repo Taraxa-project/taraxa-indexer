@@ -17,7 +17,6 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
 	"github.com/Taraxa-project/taraxa-indexer/internal/logging"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
 	"github.com/labstack/echo/v4"
@@ -55,10 +54,10 @@ func init() {
 		"blockchain_ws": *blockchain_ws,
 		"data_dir":      *data_dir,
 		"log_level":     *log_level}).
-		Info("Application started")
+		Info("Application initialized")
 }
 
-func setupCloseHandler(st storage.Storage, fn func()) {
+func setupCloseHandler(fn func()) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
 	go func() {
@@ -69,9 +68,34 @@ func setupCloseHandler(st storage.Storage, fn func()) {
 }
 
 func main() {
+	log.Info("Starting Taraxa Indexer")
 	st := pebble.NewStorage(filepath.Join(*data_dir, "db"))
-	setupCloseHandler(st, func() { st.Close() })
-
+	setupCloseHandler(func() { st.Close() })
+	fin := st.GetFinalizationData()
+	// fromKey := storage.FormatIntToKey(fin.PbftCount - uint64(distributionFrequency))
+	// stats_map := make(map[uint64]*storage.RewardsStats)
+	// st.ForEachFromKey([]byte(pebble.GetPrefix(storage.RewardsStats{})), []byte{}, func(key, res []byte) (stop bool) {
+	// 	rs := new(storage.RewardsStats)
+	// 	err := rlp.DecodeBytes(res, rs)
+	// 	if err != nil {
+	// 		log.WithError(err).Fatal("Error decoding data from db")
+	// 	}
+	// 	stats_map[common.ParseUInt(strings.TrimLeft(string(key)[3:], "0"))] = rs
+	// 	// pr := r.rewardsFromStats(totalStake, rs)
+	// 	// for validator, reward := range pr.ValidatorRewards {
+	// 	// 	if intervalRewards.ValidatorRewards[validator] == nil {
+	// 	// 		intervalRewards.ValidatorRewards[validator] = big.NewInt(0)
+	// 	// 	}
+	// 	// 	intervalRewards.ValidatorRewards[validator].Add(intervalRewards.ValidatorRewards[validator], reward)
+	// 	// }
+	// 	// intervalRewards.TotalReward.Add(intervalRewards.TotalReward, pr.TotalReward)
+	// 	// intervalRewards.BlockFee.Add(intervalRewards.BlockFee, pr.BlockFee)
+	// 	// r.batch.Remove(key)
+	// 	return false
+	// })
+	// smj, _ := json.Marshal(stats_map)
+	// fmt.Println(string(smj))
+	// return
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		log.WithError(err).Fatal("Error loading swagger spec")
@@ -98,7 +122,6 @@ func main() {
 	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
 	c.SyncQueueLimit = uint64(*sync_queue_limit)
 
-	fin := st.GetFinalizationData()
 	log.WithFields(log.Fields{"pbft_count": fin.PbftCount, "dag_count": fin.DagCount, "trx_count": fin.TrxCount}).Info("Loaded db with")
 
 	apiHandler := api.NewApiHandler(st, c)

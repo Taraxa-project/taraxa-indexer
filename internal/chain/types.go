@@ -120,7 +120,7 @@ type TransactionTrace struct {
 }
 
 type VotesResponse struct {
-	PeriodTotalVotesCount int64  `json:"total_votes_count,omitempty"`
+	PeriodTotalVotesCount uint64 `json:"total_votes_count,omitempty"`
 	Votes                 []Vote `json:"votes,omitempty"`
 }
 
