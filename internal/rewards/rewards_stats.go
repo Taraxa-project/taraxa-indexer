@@ -6,37 +6,55 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 )
 
-type validatorStats struct {
-	// count of rewardable(with 1 or more unique transactions) DAG blocks produced by this validator
-	DagBlocksCount int64
-
-	// Validator cert voted block weight
-	VoteWeight int64
-
-	// Validator fee reward amount
-	FeeReward *big.Int
+type RewardsStats struct {
+	storage.RewardsStats
+	ValidatorsStats map[string]storage.ValidatorStats
 }
 
-type totalPeriodRewards struct {
-	dags  *big.Int
-	votes *big.Int
-	bonus *big.Int
+func (s *RewardsStats) ToStorage() *storage.RewardsStats {
+	rs := storage.RewardsStats{TotalRewardsStats: s.TotalRewardsStats}
+	rs.ValidatorsStats = make([]storage.ValidatorStatsWithAddress, 0, len(s.ValidatorsStats))
+	for addr, stats := range s.ValidatorsStats {
+		rs.ValidatorsStats = append(rs.ValidatorsStats, storage.ValidatorStatsWithAddress{ValidatorStats: stats, Address: addr})
+	}
+	return &rs
 }
 
-func ZeroTotalRewards() (tr totalPeriodRewards) {
-	tr.dags = big.NewInt(0)
-	tr.votes = big.NewInt(0)
-	tr.bonus = big.NewInt(0)
-	return
+func (s *RewardsStats) processDags(dags []chain.DagBlock, trxs []chain.Transaction) {
+	transaction_fees := getPeriodTransactionsFees(trxs)
+	total_dag_count := int64(0)
+	for _, d := range dags {
+		total_dag_count += 1
+		feeReward := dagFeeReward(transaction_fees, d)
+		has_unique_trx := feeReward.Cmp(big.NewInt(0)) > 0
+		if has_unique_trx {
+			sender := strings.ToLower(d.Sender)
+			entry := s.ValidatorsStats[sender]
+			entry.DagBlocksCount += 1
+			if entry.FeeReward == nil {
+				entry.FeeReward = big.NewInt(0)
+			}
+			entry.FeeReward.Add(entry.FeeReward, feeReward)
+			s.ValidatorsStats[sender] = entry
+			s.TotalDagCount += 1
+		}
+	}
 }
 
-type stats struct {
-	TotalVotesWeight int64
-	MaxVotesWeight   int64
-	TotalDagCount    int64
-	ValidatorStats   map[string]validatorStats
+func dagFeeReward(fees map[string]*big.Int, d chain.DagBlock) *big.Int {
+	feeReward := big.NewInt(0)
+	for _, th := range d.Transactions {
+		// if we don't have fee for this transaction, it means that it was processed before
+		if fees[th] != nil {
+			feeReward.Add(feeReward, fees[th])
+			delete(fees, th)
+		}
+	}
+
+	return feeReward
 }
 
 func getPeriodTransactionsFees(trxs []chain.Transaction) map[string]*big.Int {
@@ -48,46 +66,67 @@ func getPeriodTransactionsFees(trxs []chain.Transaction) map[string]*big.Int {
 	return period_transactions
 }
 
-func makeStats(dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Transaction, committee_size int64) (s *stats) {
-	s = new(stats)
-	s.ValidatorStats = make(map[string]validatorStats)
-	s.MaxVotesWeight = Min(votes.PeriodTotalVotesCount, committee_size)
+func (s *RewardsStats) processDagsAspen(dags []chain.DagBlock, trxs []chain.Transaction) {
+	transaction_fees := getPeriodTransactionsFees(trxs)
+	min_difficulty := ^uint16(0)
+	for _, d := range dags {
+		if d.Vdf.Difficulty < min_difficulty {
+			min_difficulty = d.Vdf.Difficulty
+		}
+	}
+
+	for _, d := range dags {
+		author := d.Sender
+		entry := s.ValidatorsStats[author]
+		if d.Vdf.Difficulty == min_difficulty {
+			entry.DagBlocksCount += 1
+			s.TotalDagCount += 1
+		}
+		if entry.FeeReward == nil {
+			entry.FeeReward = big.NewInt(0)
+		}
+		entry.FeeReward.Add(entry.FeeReward, dagFeeReward(transaction_fees, d))
+		s.ValidatorsStats[author] = entry
+	}
+}
+
+func makeRewardsStats(is_aspen_dag_rewards bool, dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Transaction, committee_size uint64, blockAuthor string) (s *RewardsStats) {
+	s = new(RewardsStats)
+	s.ValidatorsStats = make(map[string]storage.ValidatorStats)
+	s.MaxVotesWeight = common.Min(votes.PeriodTotalVotesCount, committee_size)
+	s.BlockAuthor = blockAuthor
 
 	for _, v := range votes.Votes {
 		voter := strings.ToLower(v.Voter)
-		entry := s.ValidatorStats[voter]
-		entry.VoteWeight = int64(common.ParseInt(v.Weight))
+		entry := s.ValidatorsStats[voter]
+		entry.VoteWeight = common.ParseUInt(v.Weight)
 		s.TotalVotesWeight += entry.VoteWeight
 
-		s.ValidatorStats[voter] = entry
+		s.ValidatorsStats[voter] = entry
 	}
 
-	transaction_fee := getPeriodTransactionsFees(trxs)
-	total_dag_count := int64(0)
-	for _, d := range dags {
-		total_dag_count += 1
-		feeReward := big.NewInt(0)
-		has_unique_trx := false
-		for _, th := range d.Transactions {
-			// if we don't have fee for this transaction, it means that it was processed before
-			if transaction_fee[th] != nil {
-				feeReward.Add(feeReward, transaction_fee[th])
-				has_unique_trx = true
-				delete(transaction_fee, th)
-			}
-		}
-		if has_unique_trx {
-			sender := strings.ToLower(d.Sender)
-			entry := s.ValidatorStats[sender]
-			entry.DagBlocksCount += 1
-			if entry.FeeReward == nil {
-				entry.FeeReward = big.NewInt(0)
-			}
-			entry.FeeReward.Add(entry.FeeReward, feeReward)
-			s.ValidatorStats[sender] = entry
-			s.TotalDagCount += 1
-		}
+	if is_aspen_dag_rewards {
+		s.processDagsAspen(dags, trxs)
+	} else {
+		s.processDags(dags, trxs)
 	}
+	return
+}
+
+type totalPeriodRewards struct {
+	dags  *big.Int
+	votes *big.Int
+	bonus *big.Int
+}
+
+func (tr totalPeriodRewards) MarshalJSON() ([]byte, error) {
+	return []byte(`{"dags":` + tr.dags.String() + `,"votes":` + tr.votes.String() + `,"bonus":` + tr.bonus.String() + `}`), nil
+}
+
+func ZeroTotalRewards() (tr totalPeriodRewards) {
+	tr.dags = big.NewInt(0)
+	tr.votes = big.NewInt(0)
+	tr.bonus = big.NewInt(0)
 	return
 }
 
@@ -111,18 +150,4 @@ func calculatePeriodRewardsParts(config *common.ChainConfig, totalRewards *big.I
 	tr.votes.Sub(tr.votes, tr.bonus)
 
 	return
-}
-
-func Max(x, y int64) int64 {
-	if x < y {
-		return y
-	}
-	return x
-}
-
-func Min(x, y int64) int64 {
-	if x < y {
-		return x
-	}
-	return y
 }
