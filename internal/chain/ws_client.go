@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -163,6 +164,22 @@ func (client *WsClient) GetLogs(fromBlock, toBlock uint64, addresses []string, t
 
 func (client *WsClient) GetValidatorsAtBlock(period uint64) (validators []Validator, err error) {
 	err = client.rpc.Call(&validators, "debug_dposValidatorTotalStakes", fmt.Sprintf("0x%x", period))
+	return
+}
+
+func (client *WsClient) GetTotalAmountDelegated(block_num uint64) (totalAmountDelegated *big.Int, err error) {
+	delegatedStr := ""
+	err = client.rpc.Call(&delegatedStr, "debug_dposTotalAmountDelegated", fmt.Sprintf("0x%x", block_num))
+	totalAmountDelegated = common.ParseStringToBigInt(delegatedStr)
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
+func (client *WsClient) GetTotalSupply(block_num uint64) (totalSupply *big.Int, err error) {
+	supplyStr := ""
+	err = client.rpc.Call(&supplyStr, "taraxa_totalSupply", fmt.Sprintf("0x%x", block_num))
+	totalSupply = common.ParseStringToBigInt(supplyStr)
+	metrics.RpcCallsCounter.Inc()
 	return
 }
 

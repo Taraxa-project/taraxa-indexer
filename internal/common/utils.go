@@ -12,6 +12,7 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/spiretechnology/go-pool"
+	"golang.org/x/exp/constraints"
 )
 
 const DposContractAddress = "0x00000000000000000000000000000000000000fe"
@@ -61,6 +62,18 @@ func ParseStringToBigInt(v string) *big.Int {
 	a := big.NewInt(0)
 	a.SetString(v, 0)
 	return a
+}
+
+func ParseFloat(s string) (v float64) {
+	if len(s) == 0 {
+		return
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		debug.PrintStack()
+		log.Fatal(s, "ParseFloat ", err)
+	}
+	return v
 }
 
 func FormatFloat(f float64) string {
@@ -120,4 +133,22 @@ func ParseToString(item any) (result any, err error) {
 		}
 	}
 	return
+}
+
+type Number interface {
+	constraints.Integer | constraints.Float
+}
+
+func Max[T Number](a, b T) T {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func Min[T Number](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
 }
