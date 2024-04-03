@@ -10,17 +10,18 @@ import (
 )
 
 type Rewards struct {
-	storage    storage.Storage
-	batch      storage.Batch
-	config     *common.Config
-	validators *Validators
-	totalStake *big.Int
+	storage     storage.Storage
+	batch       storage.Batch
+	config      *common.Config
+	validators  *Validators
+	totalStake  *big.Int
+	totalSupply *big.Int
 
 	blockNum uint64
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block_number uint64, validators []chain.Validator, totalStake *big.Int) *Rewards {
-	r := Rewards{storage, batch, config, MakeValidators(config, validators), totalStake, block_number}
+func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.BlockData) *Rewards {
+	r := Rewards{storage, batch, config, MakeValidators(config, block.Validators), block.TotalAmountDelegated, block.TotalSupply, block.Pbft.Number}
 	return &r
 }
 
@@ -35,7 +36,6 @@ func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []c
 	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
 		log.WithFields(log.Fields{"total_stake": r.totalStake}).Info("totalStake")
 	}
-
 	rewardsStats := r.makeRewardsStats(dags, votes, trxs, block_author)
 	totalReward, currentBlockFee := r.ProcessStats(rewardsStats, total_minted, r.totalStake)
 
@@ -58,12 +58,11 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, total_minted *
 	}
 
 	periodRewards := makeIntervalRewards()
-	fullPeriodReward := r.calculateFullBlockReward(totalStake)
 	if distributionFrequency > 1 {
 		// distribute rewards for whole interval
-		periodRewards = r.GetIntervalRewards(fullPeriodReward, periodStats, distributionFrequency)
+		periodRewards = r.GetIntervalRewards(periodStats, distributionFrequency)
 	} else {
-		periodRewards = r.rewardsFromStats(fullPeriodReward, periodStats)
+		periodRewards = r.rewardsFromStats(periodStats)
 	}
 
 	validators_yield := GetValidatorsYield(periodRewards.ValidatorRewards, r.validators)
@@ -74,33 +73,32 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, total_minted *
 
 func (r *Rewards) makeRewardsStats(
 	dags []chain.DagBlock, votes chain.VotesResponse,
-	trxs []chain.Transaction, blockAuthor string) *storage.RewardsStats {
-	is_aspen_dag_rewards := r.config.Chain.Hardforks.AspenHf.BlockNumPartOne <= r.blockNum
-	return makeRewardsStats(is_aspen_dag_rewards, dags, votes, trxs, r.config.Chain.CommitteeSize.Uint64(), blockAuthor).ToStorage()
+	trxs []chain.Transaction, block_author string) *storage.RewardsStats {
+	return makeRewardsStats(r.config.Chain.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.Chain.CommitteeSize.Uint64(), block_author).ToStorage()
 }
 
-func (r *Rewards) calculateBlockReward(totalStake, current_total_tara_supply *big.Int) (block_reward *big.Int, yield *big.Int) {
+func (r *Rewards) calculateBlockReward(total_stake, current_total_tara_supply *big.Int) (block_reward *big.Int, yield *big.Int) {
 	yield = r.calculateCurrentYield(current_total_tara_supply)
-	block_reward = big.NewInt(0).Mul(totalStake, yield)
+	block_reward = big.NewInt(0).Mul(total_stake, yield)
 	block_reward.Div(block_reward, big.NewInt(0).Mul(YieldFractionDecimalPrecision, r.config.Chain.BlocksPerYear))
 	return
 }
 
-func (r *Rewards) calculateFullBlockReward(totalStake *big.Int) *big.Int {
-	if r.config.Chain.Hardforks.AspenHf.BlockNumPartTwo <= r.blockNum {
-		current_supply := r.storage.GetTotalSupply()
-		fullReward, _ := r.calculateBlockReward(totalStake, current_supply)
+func (r *Rewards) calculateFullBlockReward() *big.Int {
+	if r.config.Chain.Hardforks.IsAspenHfTwo(r.blockNum) {
+		fullReward, _ := r.calculateBlockReward(r.totalStake, r.totalSupply)
 		return fullReward
 	} else {
-		fullReward := big.NewInt(0).Mul(totalStake, r.config.Chain.YieldPercentage)
+		fullReward := big.NewInt(0).Mul(r.totalStake, r.config.Chain.YieldPercentage)
 		fullReward.Div(fullReward, big.NewInt(0).Mul(big.NewInt(100), r.config.Chain.BlocksPerYear))
 
 		return fullReward
 	}
 }
 
-func (r *Rewards) rewardsFromStats(fullBlockReward *big.Int, stats *storage.RewardsStats) (rewards IntervalRewards) {
-	totalRewardsParts := calculatePeriodRewardsParts(r.config.Chain, fullBlockReward, stats.TotalVotesWeight == 0)
+func (r *Rewards) rewardsFromStats(stats *storage.RewardsStats) (rewards IntervalRewards) {
+	full_block_reward := r.calculateFullBlockReward()
+	totalRewardsParts := calculatePeriodRewardsParts(r.config.Chain, full_block_reward, stats.TotalVotesWeight == 0)
 
 	rewards = makeIntervalRewards()
 	for _, s := range stats.ValidatorsStats {

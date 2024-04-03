@@ -44,6 +44,28 @@ func (s *RewardsStats) processDags(dags []chain.DagBlock, trxs []chain.Transacti
 	}
 }
 
+func dagFeeReward(fees map[string]*big.Int, d chain.DagBlock) *big.Int {
+	feeReward := big.NewInt(0)
+	for _, th := range d.Transactions {
+		// if we don't have fee for this transaction, it means that it was processed before
+		if fees[th] != nil {
+			feeReward.Add(feeReward, fees[th])
+			delete(fees, th)
+		}
+	}
+
+	return feeReward
+}
+
+func getPeriodTransactionsFees(trxs []chain.Transaction) map[string]*big.Int {
+	period_transactions := make(map[string]*big.Int, 0)
+	for _, t := range trxs {
+		period_transactions[t.Hash] = t.GetFee()
+	}
+
+	return period_transactions
+}
+
 func (s *RewardsStats) processDagsAspen(dags []chain.DagBlock, trxs []chain.Transaction) {
 	transaction_fees := getPeriodTransactionsFees(trxs)
 	min_difficulty := ^uint16(0)
@@ -66,28 +88,6 @@ func (s *RewardsStats) processDagsAspen(dags []chain.DagBlock, trxs []chain.Tran
 		entry.FeeReward.Add(entry.FeeReward, dagFeeReward(transaction_fees, d))
 		s.ValidatorsStats[author] = entry
 	}
-}
-
-func dagFeeReward(fees map[string]*big.Int, d chain.DagBlock) *big.Int {
-	feeReward := big.NewInt(0)
-	for _, th := range d.Transactions {
-		// if we don't have fee for this transaction, it means that it was processed before
-		if fees[th] != nil {
-			feeReward.Add(feeReward, fees[th])
-			delete(fees, th)
-		}
-	}
-
-	return feeReward
-}
-
-func getPeriodTransactionsFees(trxs []chain.Transaction) map[string]*big.Int {
-	period_transactions := make(map[string]*big.Int, 0)
-	for _, t := range trxs {
-		period_transactions[t.Hash] = t.GetFee()
-	}
-
-	return period_transactions
 }
 
 func makeRewardsStats(is_aspen_dag_rewards bool, dags []chain.DagBlock, votes chain.VotesResponse, trxs []chain.Transaction, committee_size uint64, blockAuthor string) (s *RewardsStats) {

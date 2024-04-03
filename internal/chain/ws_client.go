@@ -173,7 +173,14 @@ func (client *WsClient) GetTotalAmountDelegated(block_num uint64) (totalAmountDe
 	totalAmountDelegated = common.ParseStringToBigInt(delegatedStr)
 	metrics.RpcCallsCounter.Inc()
 	return
+}
 
+func (client *WsClient) GetTotalSupply(block_num uint64) (totalSupply *big.Int, err error) {
+	supplyStr := ""
+	err = client.rpc.Call(&supplyStr, "taraxa_totalSupply", fmt.Sprintf("0x%x", block_num))
+	totalSupply = common.ParseStringToBigInt(supplyStr)
+	metrics.RpcCallsCounter.Inc()
+	return
 }
 
 func (client *WsClient) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {

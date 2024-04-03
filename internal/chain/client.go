@@ -19,6 +19,7 @@ type Client interface {
 	GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error)
 	GetValidatorsAtBlock(block_num uint64) (validators []Validator, err error)
 	GetTotalAmountDelegated(block_num uint64) (totalAmountDelegated *big.Int, err error)
+	GetTotalSupply(block_num uint64) (totalAmountDelegated *big.Int, err error)
 	GetVersion() (version string, err error)
 	GetGenesis() (genesis GenesisObject, err error)
 	GetChainStats() (ns storage.FinalizationData, err error)

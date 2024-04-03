@@ -100,6 +100,10 @@ func (c *ClientMock) GetTotalAmountDelegated(uint64) (totalAmountDelegated *big.
 	return big.NewInt(0), nil
 }
 
+func (c *ClientMock) GetTotalSupply(uint64) (totalSupply *big.Int, err error) {
+	return big.NewInt(0), nil
+}
+
 func (c *ClientMock) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {
 	return nil, nil, nil
 }

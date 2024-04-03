@@ -22,10 +22,23 @@ func makeIntervalRewards() (r IntervalRewards) {
 	return
 }
 
-func (r *Rewards) GetIntervalRewards(fullBlockReward *big.Int, periodStats *storage.RewardsStats, distributionFrequency uint32) IntervalRewards {
-	// Calculate rewards for the last interval
+func (r *Rewards) accumulateRewards(stats *storage.RewardsStats, intervalRewards *IntervalRewards) {
+	pr := r.rewardsFromStats(stats)
+	if r.config.Chain.Hardforks.IsAspenHfTwo(r.blockNum) {
+		r.totalSupply.Add(r.totalSupply, pr.TotalReward)
+	}
+	for validator, reward := range pr.ValidatorRewards {
+		if intervalRewards.ValidatorRewards[validator] == nil {
+			intervalRewards.ValidatorRewards[validator] = big.NewInt(0)
+		}
+		intervalRewards.ValidatorRewards[validator].Add(intervalRewards.ValidatorRewards[validator], reward)
+	}
+	intervalRewards.TotalReward.Add(intervalRewards.TotalReward, pr.TotalReward)
+	intervalRewards.BlockFee.Add(intervalRewards.BlockFee, pr.BlockFee)
+}
 
-	intervalRewards := r.rewardsFromStats(fullBlockReward, periodStats)
+func (r *Rewards) GetIntervalRewards(periodStats *storage.RewardsStats, distributionFrequency uint32) (intervalRewards IntervalRewards) {
+	intervalRewards = makeIntervalRewards()
 	// Get stats for the previous intervals and accumulate rewards
 	fromKey := storage.FormatIntToKey(r.blockNum - uint64(distributionFrequency))
 	r.storage.ForEachFromKey([]byte(pebble.GetPrefix(storage.RewardsStats{})), []byte(fromKey), func(key, res []byte) (stop bool) {
@@ -34,18 +47,12 @@ func (r *Rewards) GetIntervalRewards(fullBlockReward *big.Int, periodStats *stor
 		if err != nil {
 			log.WithError(err).Fatal("Error decoding data from db")
 		}
-		pr := r.rewardsFromStats(fullBlockReward, rs)
-		for validator, reward := range pr.ValidatorRewards {
-			if intervalRewards.ValidatorRewards[validator] == nil {
-				intervalRewards.ValidatorRewards[validator] = big.NewInt(0)
-			}
-			intervalRewards.ValidatorRewards[validator].Add(intervalRewards.ValidatorRewards[validator], reward)
-		}
-		intervalRewards.TotalReward.Add(intervalRewards.TotalReward, pr.TotalReward)
-		intervalRewards.BlockFee.Add(intervalRewards.BlockFee, pr.BlockFee)
+		r.accumulateRewards(rs, &intervalRewards)
 		r.batch.Remove(key)
 		return false
 	})
+	// accumulate rewards for the last interval
+	r.accumulateRewards(periodStats, &intervalRewards)
 
 	return intervalRewards
 }
