@@ -25,6 +25,9 @@ type Address = string
 // AddressFilter defines model for AddressFilter.
 type AddressFilter = Address
 
+// BigInt defines model for BigInt.
+type BigInt = string
+
 // CallData defines model for CallData.
 type CallData struct {
 	Name   string `json:"name"`
@@ -33,18 +36,15 @@ type CallData struct {
 
 // CountResponse defines model for CountResponse.
 type CountResponse struct {
-	Total Counter `json:"total"`
+	Total Uint64 `json:"total"`
 }
-
-// Counter defines model for Counter.
-type Counter = uint64
 
 // Dag defines model for Dag.
 type Dag struct {
-	Hash             Hash      `json:"hash"`
-	Level            Counter   `json:"level"`
-	Timestamp        Timestamp `json:"timestamp"`
-	TransactionCount Counter   `json:"transactionCount"`
+	Hash             Hash   `json:"hash"`
+	Level            Uint64 `json:"level"`
+	Timestamp        Uint64 `json:"timestamp"`
+	TransactionCount Uint64 `json:"transactionCount"`
 }
 
 // DagsPaginatedResponse defines model for DagsPaginatedResponse.
@@ -54,13 +54,13 @@ type DagsPaginatedResponse = PaginatedResponse
 type EventLog struct {
 	Address          Address  `json:"address"`
 	Data             string   `json:"data"`
-	LogIndex         Counter  `json:"logIndex"`
+	LogIndex         Uint64   `json:"logIndex"`
 	Name             string   `json:"name"`
 	Params           any      `json:"params"`
 	Removed          bool     `json:"removed"`
 	Topics           []string `json:"topics"`
 	TransactionHash  Hash     `json:"transactionHash"`
-	TransactionIndex Counter  `json:"transactionIndex"`
+	TransactionIndex Uint64   `json:"transactionIndex"`
 }
 
 // Hash defines model for Hash.
@@ -74,15 +74,15 @@ type InternalTransactionsResponse struct {
 	Data []Transaction `json:"data"`
 }
 
-// NilableUint64 defines model for NilableUint64.
-type NilableUint64 = uint64
+// OptionalUint64 defines model for OptionalUint64.
+type OptionalUint64 = uint64
 
 // PaginatedResponse defines model for PaginatedResponse.
 type PaginatedResponse struct {
-	End     Counter `json:"end"`
-	HasNext bool    `json:"hasNext"`
-	Start   Counter `json:"start"`
-	Total   Counter `json:"total"`
+	End     Uint64 `json:"end"`
+	HasNext bool   `json:"hasNext"`
+	Start   Uint64 `json:"start"`
+	Total   Uint64 `json:"total"`
 }
 
 // PaginationFilter defines model for PaginationFilter.
@@ -93,11 +93,11 @@ type PaginationFilter struct {
 
 // Pbft defines model for Pbft.
 type Pbft struct {
-	Author           Address   `json:"author"`
-	Hash             Hash      `json:"hash"`
-	Number           Counter   `json:"number"`
-	Timestamp        Timestamp `json:"timestamp"`
-	TransactionCount Counter   `json:"transactionCount"`
+	Author           Address `json:"author"`
+	Hash             Hash    `json:"hash"`
+	Number           Uint64  `json:"number"`
+	Timestamp        Uint64  `json:"timestamp"`
+	TransactionCount Uint64  `json:"transactionCount"`
 }
 
 // PbftsPaginatedResponse defines model for PbftsPaginatedResponse.
@@ -105,38 +105,35 @@ type PbftsPaginatedResponse = PaginatedResponse
 
 // Period defines model for Period.
 type Period struct {
-	EndDate   Timestamp `json:"endDate"`
-	HasNext   bool      `json:"hasNext"`
-	StartDate Timestamp `json:"startDate"`
+	EndDate   Uint64 `json:"endDate"`
+	HasNext   bool   `json:"hasNext"`
+	StartDate Uint64 `json:"startDate"`
 }
 
 // StatsResponse defines model for StatsResponse.
 type StatsResponse struct {
-	DagsCount                Counter        `json:"dagsCount"`
-	LastDagTimestamp         *NilableUint64 `json:"lastDagTimestamp" rlp:"nil"`
-	LastPbftTimestamp        *NilableUint64 `json:"lastPbftTimestamp" rlp:"nil"`
-	LastTransactionTimestamp *NilableUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
-	PbftCount                Counter        `json:"pbftCount"`
-	TransactionsCount        Counter        `json:"transactionsCount"`
-	ValidatorRegisteredBlock *NilableUint64 `json:"validatorRegisteredBlock" rlp:"nil"`
+	DagsCount                Uint64          `json:"dagsCount"`
+	LastDagTimestamp         *OptionalUint64 `json:"lastDagTimestamp" rlp:"nil"`
+	LastPbftTimestamp        *OptionalUint64 `json:"lastPbftTimestamp" rlp:"nil"`
+	LastTransactionTimestamp *OptionalUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
+	PbftCount                Uint64          `json:"pbftCount"`
+	TransactionsCount        Uint64          `json:"transactionsCount"`
+	ValidatorRegisteredBlock *OptionalUint64 `json:"validatorRegisteredBlock" rlp:"nil"`
 }
-
-// Timestamp defines model for Timestamp.
-type Timestamp = uint64
 
 // Transaction defines model for Transaction.
 type Transaction struct {
-	BlockNumber Counter         `json:"blockNumber"`
+	BlockNumber Uint64          `json:"blockNumber"`
 	Calldata    *CallData       `json:"calldata,omitempty" rlp:"nil"`
 	From        Address         `json:"from"`
-	GasCost     Counter         `json:"gasCost"`
+	GasCost     BigInt          `json:"gasCost"`
 	Hash        Hash            `json:"hash"`
 	Input       string          `json:"input"`
 	Status      bool            `json:"status"`
-	Timestamp   Timestamp       `json:"timestamp"`
+	Timestamp   Uint64          `json:"timestamp"`
 	To          Address         `json:"to"`
 	Type        TransactionType `json:"type"`
-	Value       string          `json:"value"`
+	Value       BigInt          `json:"value"`
 }
 
 // TransactionType defines model for Transaction.Type.
@@ -150,13 +147,16 @@ type TransactionLogsResponse struct {
 // TransactionsPaginatedResponse defines model for TransactionsPaginatedResponse.
 type TransactionsPaginatedResponse = PaginatedResponse
 
+// Uint64 defines model for Uint64.
+type Uint64 = uint64
+
 // Validator defines model for Validator.
 type Validator struct {
-	Address           Address `json:"address"`
-	PbftCount         Counter `json:"pbftCount"`
-	Rank              uint64  `json:"rank" rlp:"-"`
-	RegistrationBlock *uint64 `json:"registrationBlock,omitempty" rlp:"-"`
-	Yield             string  `json:"yield,omitempty" rlp:"-"`
+	Address           Address         `json:"address"`
+	PbftCount         Uint64          `json:"pbftCount"`
+	Rank              Uint64          `json:"rank"`
+	RegistrationBlock *OptionalUint64 `json:"registrationBlock" rlp:"nil"`
+	Yield             string          `json:"yield,omitempty" rlp:"-"`
 }
 
 // ValidatorsPaginatedResponse defines model for ValidatorsPaginatedResponse.
@@ -170,25 +170,25 @@ type Week struct {
 
 // WeekResponse defines model for WeekResponse.
 type WeekResponse struct {
-	EndDate   Timestamp `json:"endDate"`
-	HasNext   bool      `json:"hasNext"`
-	StartDate Timestamp `json:"startDate"`
-	Week      *int32    `json:"week"`
-	Year      *int32    `json:"year"`
+	EndDate   Uint64 `json:"endDate"`
+	HasNext   bool   `json:"hasNext"`
+	StartDate Uint64 `json:"startDate"`
+	Week      *int32 `json:"week"`
+	Year      *int32 `json:"year"`
 }
 
 // YieldResponse defines model for YieldResponse.
 type YieldResponse struct {
-	FromBlock Counter `json:"fromBlock"`
-	ToBlock   Counter `json:"toBlock"`
-	Yield     string  `json:"yield"`
+	FromBlock Uint64 `json:"fromBlock"`
+	ToBlock   Uint64 `json:"toBlock"`
+	Yield     string `json:"yield"`
 }
 
 // AddressParam defines model for addressParam.
 type AddressParam = AddressFilter
 
 // BlockNumParam defines model for blockNumParam.
-type BlockNumParam = Counter
+type BlockNumParam = Uint64
 
 // HashParam defines model for hashParam.
 type HashParam = Hash
@@ -226,10 +226,10 @@ type GetAddressYieldParams struct {
 // GetAddressYieldForIntervalParams defines parameters for GetAddressYieldForInterval.
 type GetAddressYieldForIntervalParams struct {
 	// FromBlock From block number
-	FromBlock *Counter `form:"fromBlock,omitempty" json:"fromBlock,omitempty"`
+	FromBlock *Uint64 `form:"fromBlock,omitempty" json:"fromBlock,omitempty"`
 
 	// ToBlock To block number
-	ToBlock Counter `form:"toBlock" json:"toBlock"`
+	ToBlock Uint64 `form:"toBlock" json:"toBlock"`
 }
 
 // GetHoldersParams defines parameters for GetHolders.

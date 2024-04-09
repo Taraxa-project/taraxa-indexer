@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
@@ -48,13 +49,13 @@ type EventLog struct {
 }
 
 type Transaction struct {
-	models.Transaction
-	Logs             []EventLog     `json:"logs"`
-	Nonce            models.Counter `json:"nonce"`
-	GasPrice         models.Counter `json:"gasPrice"`
-	GasUsed          models.Counter `json:"gasUsed"`
-	TransactionIndex models.Counter `json:"transactionIndex"`
-	ContractAddress  string         `json:"contractAddress"`
+	storage.Transaction
+	Logs             []EventLog    `json:"logs"`
+	Nonce            models.Uint64 `json:"nonce"`
+	GasPrice         models.Uint64 `json:"gasPrice"`
+	GasUsed          models.Uint64 `json:"gasUsed"`
+	TransactionIndex models.Uint64 `json:"transactionIndex"`
+	ContractAddress  string        `json:"contractAddress"`
 }
 
 func (t *Transaction) SetTimestamp(timestamp uint64) {
@@ -95,12 +96,12 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	t.Hash = rawStruct.Hash
 	t.BlockNumber = common.ParseUInt(rawStruct.BlockNumber)
 	t.From = rawStruct.From
-	t.GasCost = t.GetFee().Uint64()
+	t.GasCost = t.GetFee()
 	t.Input = rawStruct.Input
 	t.Status = common.ParseBool(rawStruct.Status)
 	t.Timestamp = common.ParseUInt(rawStruct.Timestamp)
 	t.To = rawStruct.To
-	t.Value = rawStruct.Value
+	t.Value = common.ParseStringToBigInt(rawStruct.Value)
 
 	t.Type = GetTransactionType(t.Transaction.To, t.Input, "", false)
 	if t.Type == models.ContractCreation {
@@ -110,12 +111,16 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (b *Transaction) GetModel() (trx *models.Transaction) {
-	return &b.Transaction
+func (b *Transaction) GetStorage() (trx storage.Transaction) {
+	return b.Transaction
 }
 
 func (t *Transaction) GetFee() *big.Int {
-	return big.NewInt(0).Mul(big.NewInt(0).SetUint64(t.GasUsed), big.NewInt(0).SetUint64(t.GasPrice))
+	return GetTransactionFee(t.GasUsed, t.GasPrice)
+}
+
+func GetTransactionFee(gasUsed, gasPrice uint64) *big.Int {
+	return big.NewInt(0).Mul(big.NewInt(0).SetUint64(gasUsed), big.NewInt(0).SetUint64(gasPrice))
 }
 
 func (t *Transaction) ExtractLogs() (logs []models.EventLog) {
