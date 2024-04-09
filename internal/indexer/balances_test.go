@@ -6,7 +6,6 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,11 +21,11 @@ func TestUpdateBalancesInternal(t *testing.T) {
 			Balance: big.NewInt(50),
 		},
 	})
-	trx := models.Transaction{
+	trx := storage.Transaction{
 		From:    "0x1111111111111111111111111111111111111111",
 		To:      "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-		GasCost: uint64(1),
-		Value:   "20",
+		GasCost: big.NewInt(1),
+		Value:   big.NewInt(20),
 	}
 
 	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
@@ -79,8 +78,8 @@ func TestUpdateBalances(t *testing.T) {
 				TransactionIndex: "105",
 			},
 		},
-		Transaction: models.Transaction{
-			Value: "30",
+		Transaction: storage.Transaction{
+			Value: big.NewInt(30),
 			From:  "0x1111111111111111111111111111111111111111",
 			To:    "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
 		},

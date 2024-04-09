@@ -1,11 +1,13 @@
-package common
+package transaction
 
 import (
 	"encoding/hex"
 	"fmt"
 	"strings"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	log "github.com/sirupsen/logrus"
@@ -23,7 +25,7 @@ func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
 	return data[:4], data[4:], nil
 }
 
-func DecodeTransaction(tx models.Transaction) (functionSig string, params any, err error) {
+func decodeTransaction(tx storage.Transaction) (functionSig string, params any, err error) {
 	if tx.Input == "" {
 		return
 	}
@@ -66,7 +68,7 @@ func DecodeTransaction(tx models.Transaction) (functionSig string, params any, e
 		return
 	}
 
-	params, err = ParseToString(unpacked)
+	params, err = common.ParseToString(unpacked)
 
 	if err != nil {
 		return
@@ -87,8 +89,8 @@ func unpackParams(contractABI abi.ABI, method *abi.Method, data []byte) ([]inter
 	return unpacked, err
 }
 
-func ProcessTransaction(trx *models.Transaction) (err error) {
-	sig, params, err := DecodeTransaction(*trx)
+func DecodeTransaction(trx *storage.Transaction) (err error) {
+	sig, params, err := decodeTransaction(*trx)
 
 	if sig == "" && params != nil {
 		return

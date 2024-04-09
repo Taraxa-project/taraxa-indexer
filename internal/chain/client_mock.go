@@ -119,7 +119,8 @@ func (c *ClientMock) AddTransactionFromJson(trx_json string) {
 	}
 
 	trx.SetTimestamp(1)
-	c.BlockTransactions[trx.GetModel().BlockNumber] = append(c.BlockTransactions[trx.GetModel().BlockNumber], trx.Hash)
+	bn := trx.GetStorage().BlockNumber
+	c.BlockTransactions[bn] = append(c.BlockTransactions[bn], trx.Hash)
 	c.Transactions[trx.Hash] = trx
 }
 

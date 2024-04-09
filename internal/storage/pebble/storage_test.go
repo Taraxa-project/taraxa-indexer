@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/transaction"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/nleeper/goment"
 	"github.com/stretchr/testify/assert"
@@ -197,10 +197,10 @@ func TestTxByHash(t *testing.T) {
 	st := NewStorage("")
 	defer st.Close()
 
-	tx := models.Transaction{
+	tx := storage.Transaction{
 		Hash:  "0x111111",
 		From:  "0x222222",
-		Value: "100",
+		Value: big.NewInt(100),
 		To:    "0x00000000000000000000000000000000000000fe",
 		Input: "0x5c19a95c000000000000000000000000ed4d5f4f3641cbc056e466d15dbe2403e38056f8",
 	}
@@ -210,7 +210,7 @@ func TestTxByHash(t *testing.T) {
 	batch.CommitBatch()
 
 	ret := st.GetTransactionByHash(tx.Hash)
-	err := common.ProcessTransaction(&ret)
+	err := transaction.DecodeTransaction(&ret)
 
 	assert.NoError(t, err)
 	assert.Equal(t, tx.Hash, ret.Hash)

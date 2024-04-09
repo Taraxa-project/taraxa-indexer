@@ -14,7 +14,7 @@ import (
 type TotalSupply = big.Int
 
 type Paginated interface {
-	models.Transaction | models.Dag | models.Pbft
+	Transaction | models.Dag | models.Pbft
 }
 
 type Yields interface {
@@ -22,8 +22,8 @@ type Yields interface {
 }
 
 func GetTypeName[T any]() string {
-	var t T
-	tt := reflect.TypeOf(t)
+	var o T
+	tt := reflect.TypeOf(o)
 	// Don't include package name in this returned value
 	return strings.Split(tt.String(), ".")[1]
 }
@@ -41,7 +41,7 @@ func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) {
 	a.ValidatorRegisteredBlock = &blockHeight
 }
 
-func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
+func (a *AddressStats) AddTransaction(timestamp models.Uint64) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.TransactionsCount++
@@ -49,7 +49,7 @@ func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
 	return a.TransactionsCount
 }
 
-func (a *AddressStats) AddPbft(timestamp models.Timestamp) uint64 {
+func (a *AddressStats) AddPbft(timestamp models.Uint64) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.PbftCount++
@@ -57,7 +57,7 @@ func (a *AddressStats) AddPbft(timestamp models.Timestamp) uint64 {
 	return a.PbftCount
 }
 
-func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
+func (a *AddressStats) AddDag(timestamp models.Uint64) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.DagsCount++
@@ -182,3 +182,45 @@ type RewardsStats struct {
 func FormatIntToKey(i uint64) string {
 	return fmt.Sprintf("%020d", i)
 }
+
+type Transaction struct {
+	BlockNumber models.Uint64          `json:"blockNumber"`
+	Calldata    *models.CallData       `json:"calldata,omitempty" rlp:"nil"`
+	From        models.Address         `json:"from"`
+	GasCost     *big.Int               `json:"gas_cost"`
+	Hash        models.Hash            `json:"hash"`
+	Input       string                 `json:"input"`
+	Status      bool                   `json:"status"`
+	Timestamp   models.Uint64          `json:"timestamp"`
+	To          models.Address         `json:"to"`
+	Type        models.TransactionType `json:"type"`
+	Value       *big.Int               `json:"value"`
+}
+
+// func (t *Transaction) ToModel() models.Transaction {
+// 	return models.Transaction{
+// 		BlockNumber: t.BlockNumber,
+// 		Calldata:    t.Calldata,
+// 		From:        t.From,
+// 		GasCost:     t.GasCost.String(),
+// 		Hash:        t.Hash,
+// 		Input:       t.Input,
+// 		Status:      t.Status,
+// 		Timestamp:   t.Timestamp,
+// 		To:          t.To,
+// 		Type:        t.Type,
+// 		Value:       t.Value.String(),
+// 	}
+// }
+
+type InternalTransactionsResponse struct {
+	Data []Transaction `json:"data"`
+}
+
+// func (i *InternalTransactionsResponse) ToModel() models.InternalTransactionsResponse {
+// 	ret := make([]models.Transaction, 0, len(i.Data))
+// 	for _, it := range i.Data {
+// 		ret = append(ret, it.ToModel())
+// 	}
+// 	return models.InternalTransactionsResponse{Data: ret}
+// }
