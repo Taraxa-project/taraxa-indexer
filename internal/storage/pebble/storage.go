@@ -103,7 +103,7 @@ func GetPrefix(o interface{}) (ret string) {
 		ret = accountPrefix
 	case *models.TransactionLogsResponse, models.TransactionLogsResponse:
 		ret = logsPrefix
-	case *models.Transaction, models.Transaction:
+	case *storage.Transaction, storage.Transaction:
 		ret = transactionPrefix
 	case *models.Pbft, models.Pbft:
 		ret = pbftPrefix
@@ -119,7 +119,7 @@ func GetPrefix(o interface{}) (ret string) {
 		ret = weekStatsPrefix
 	case *storage.TotalSupply, storage.TotalSupply:
 		ret = totalSupplyPrefix
-	case *models.InternalTransactionsResponse, models.InternalTransactionsResponse:
+	case *storage.InternalTransactionsResponse, storage.InternalTransactionsResponse:
 		ret = internalTransactionsPrefix
 	case *storage.Yield, storage.Yield:
 		ret = yieldPrefix
@@ -298,8 +298,8 @@ func (s *Storage) GetGenesisHash() storage.GenesisHash {
 	return *ptr
 }
 
-func (s *Storage) GetInternalTransactions(hash string) models.InternalTransactionsResponse {
-	ptr := new(models.InternalTransactionsResponse)
+func (s *Storage) GetInternalTransactions(hash string) storage.InternalTransactionsResponse {
+	ptr := new(storage.InternalTransactionsResponse)
 	err := s.GetFromDB(ptr, GetPrefixKey(GetPrefix(ptr), hash))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetInternalTransactions failed")
@@ -338,7 +338,7 @@ func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
 	return s.GetValidatorYield("", block)
 }
 
-func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
+func (s *Storage) GetTransactionByHash(hash string) (res storage.Transaction) {
 	err := s.GetFromDB(&res, GetPrefixKey(GetPrefix(&res), strings.ToLower(hash)))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetTransactionByHash failed")

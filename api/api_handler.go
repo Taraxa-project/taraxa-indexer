@@ -12,6 +12,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
+	"github.com/Taraxa-project/taraxa-indexer/internal/transaction"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/labstack/echo/v4"
@@ -67,7 +68,7 @@ func (a *ApiHandler) GetTransaction(ctx echo.Context, hash string) error {
 		return ctx.JSON(http.StatusNotFound, "Transaction not found")
 	}
 
-	err := common.ProcessTransaction(&tx)
+	err := transaction.DecodeTransaction(&tx)
 	if err != nil {
 		log.WithError(err).WithField("hash", hash).Error("Error processing transaction")
 	}
@@ -87,7 +88,7 @@ func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, pa
 
 // GetAddressTransactions returns all transactions from and to the selected address
 func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFilter, params GetAddressTransactionsParams) error {
-	return ctx.JSON(http.StatusOK, GetAddressDataPage[Transaction](a, address, &params.Pagination))
+	return ctx.JSON(http.StatusOK, GetAddressDataPage[storage.Transaction](a, address, &params.Pagination))
 }
 
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
