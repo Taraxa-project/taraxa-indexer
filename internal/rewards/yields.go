@@ -64,7 +64,7 @@ func (r *Rewards) processIntervalYield(batch storage.Batch) {
 
 	yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.TotalYieldSavingInterval))
 	log.WithFields(log.Fields{"total_yield": yield}).Info("processIntervalYield")
-	batch.AddToBatchSingleKey(&storage.Yield{Yield: common.FormatFloat(yield)}, storage.FormatIntToKey(r.blockNum))
+	batch.AddSingleKey(&storage.Yield{Yield: common.FormatFloat(yield)}, storage.FormatIntToKey(r.blockNum))
 }
 
 func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
@@ -91,6 +91,6 @@ func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 	for val, sum := range sum_by_validator {
 		yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.ValidatorsYieldSavingInterval))
 		log.WithFields(log.Fields{"validator": val, "yield": yield}).Info("processValidatorsIntervalYield")
-		batch.AddToBatch(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
+		batch.Add(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
 	}
 }

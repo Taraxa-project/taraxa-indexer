@@ -344,7 +344,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	// 10% yield per block
 	multiplied_yield := GetMultipliedYield(big.NewInt(10), big.NewInt(1000))
 	for i := 1; i <= 10; i++ {
-		batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
+		batch.AddSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
 	}
 	batch.CommitBatch()
 
@@ -390,7 +390,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	// 10% yield per block
 	multiplied_yield := GetMultipliedYield(big.NewInt(10), big.NewInt(1000))
 	for i := 1; i <= 10; i++ {
-		batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
+		batch.AddSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
 	}
 	batch.CommitBatch()
 	totalStake := big.NewInt(0)

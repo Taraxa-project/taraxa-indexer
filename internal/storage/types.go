@@ -89,7 +89,7 @@ type AddressStatsMap struct {
 
 func (a *AddressStatsMap) AddToBatch(b Batch) {
 	for _, stats := range a.addressStats {
-		b.AddToBatch(stats, stats.Address, 0)
+		b.Add(stats, stats.Address, 0)
 	}
 }
 
