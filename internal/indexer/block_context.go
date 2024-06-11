@@ -89,7 +89,7 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 	bc.Batch.SaveAccounts(bc.accounts)
 
 	dags_count = uint64(len(bc.Block.Dags))
-	trx_count = bc.Block.Pbft.TransactionCount
+	trx_count = uint64(len(bc.Block.Transactions))
 	bc.finalized.TrxCount += trx_count
 	bc.finalized.DagCount += dags_count
 	bc.finalized.PbftCount++
