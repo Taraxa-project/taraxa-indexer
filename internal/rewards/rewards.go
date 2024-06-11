@@ -40,7 +40,7 @@ func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []c
 	totalReward, currentBlockFee := r.ProcessStats(rewardsStats, total_minted, r.totalStake)
 
 	if totalReward.Cmp(total_minted) != 0 {
-		log.WithFields(log.Fields{"period": r.blockNum, "total_reward_check": totalReward, "total_minted": total_minted}).Fatal("Total reward check failed")
+		log.WithFields(log.Fields{"period": r.blockNum, "total_reward_check": totalReward, "total_minted": total_minted}).Error("Total reward check failed")
 	}
 	r.addTotalMinted(totalReward)
 
@@ -86,6 +86,9 @@ func (r *Rewards) calculateBlockReward(total_stake, current_total_tara_supply *b
 
 func (r *Rewards) calculateFullBlockReward() *big.Int {
 	if r.config.Chain.Hardforks.IsAspenHfTwo(r.blockNum) {
+		if r.totalSupply.Cmp(big.NewInt(0)) == 0 {
+			return big.NewInt(0)
+		}
 		fullReward, _ := r.calculateBlockReward(r.totalStake, r.totalSupply)
 		return fullReward
 	} else {
