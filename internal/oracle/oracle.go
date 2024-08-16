@@ -224,7 +224,7 @@ func FetchValidatorInfo(client chain.EthereumClient, validatorAddress string) (*
 
 func (o *Oracle) FetchValidatorRegistrationBlock(validatorAddress common.Address) (uint64, error) {
 
-	contractAddress := common.HexToAddress("0xYourContractAddress")
+	contractAddress := common.HexToAddress("0x00000000000000000000000000000000000000fe")
 	instance, err := dpos_contract.NewDposContract(contractAddress, o.Eth)
 	if err != nil {
 		log.Fatalf("Failed to instantiate contract: %v", err)
@@ -242,7 +242,7 @@ func (o *Oracle) FetchValidatorRegistrationBlock(validatorAddress common.Address
 	for iter.Next() {
 		return iter.Event.Raw.BlockNumber, nil
 	}
-	return 0, errors.New("Validator does not exist")
+	return 0, nil
 }
 
 // go run main.go --blockchain_ws=ws://localhost:8777 --log_level=debug --chain_id=842 --signing_key=472a3f59fe3d81cda76dbb2a64825e46c4b067ae559cd4dfc784869da80bd05e --oracle_address=0x4076f9669fd33e55545823c4cB9f1abA7cfa480B

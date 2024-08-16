@@ -52,8 +52,8 @@ func init() {
 	yield_saving_interval = flag.Int("yield_saving_interval", 999, "interval for saving total yield")
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 999, "interval for saving validators yield")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
-	oracle_address = flag.String("oracle_address", "0x3187C7486F6Aa40C520892766B9d8dcD3C23D9F1", "oracles address")
-	lara_address = flag.String("lara_address", "0x352AF15174C6415A3e33970636F2019337a60C45", "lara address")
+	oracle_address = flag.String("oracle_address", "0x4bFCdc5a4166405D9503437523832Bbd2DC759Ef", "oracles address")
+	lara_address = flag.String("lara_address", "0x52a7C8Db4a32016e4b8b6b4b44590C52079f32A9", "lara address")
 	signing_key = flag.String("signing_key", "", "signing key")
 	flag.Parse()
 
