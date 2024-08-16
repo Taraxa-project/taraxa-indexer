@@ -14,6 +14,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spiretechnology/go-pool"
+	"golang.org/x/exp/constraints"
 )
 
 const DposContractAddress = "0x00000000000000000000000000000000000000fe"
@@ -162,4 +163,22 @@ func DecodePaddedAddress(hexStr string) (common.Address, error) {
 	// convert to uint64
 	address := common.BigToAddress(bigInt)
 	return address, nil
+}
+
+type Number interface {
+	constraints.Integer | constraints.Float
+}
+
+func Max[T Number](a, b T) T {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func Min[T Number](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
 }

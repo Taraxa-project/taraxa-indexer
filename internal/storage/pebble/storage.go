@@ -34,7 +34,7 @@ const internalTransactionsPrefix = "i"
 const yieldPrefix = "y"
 const validatorsYieldPrefix = "vy"
 const multipliedYieldPrefix = "my"
-const PeriodRewardsPrefix = "pr"
+const RewardsStatsPrefix = "rs"
 
 type Storage struct {
 	db   *pebble.DB
@@ -127,8 +127,8 @@ func GetPrefix(o interface{}) (ret string) {
 		ret = validatorsYieldPrefix
 	case *storage.MultipliedYield, storage.MultipliedYield:
 		ret = multipliedYieldPrefix
-	case *storage.PeriodRewards, storage.PeriodRewards:
-		ret = PeriodRewardsPrefix
+	case *storage.RewardsStats, storage.RewardsStats:
+		ret = RewardsStatsPrefix
 	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
 	case *interface{}:
 		ret = GetPrefix(*o.(*interface{}))
@@ -198,21 +198,26 @@ func (s *Storage) ForEachFromKey(prefix, start_key []byte, fn func(key, res []by
 	s.forEach(prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Next() })
 }
 
-func (s *Storage) forEachPrefix(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
-	prefix := GetPrefixKey(GetPrefix(&o), key_prefix)
+func (s *Storage) ForEachFromKeyBackwards(prefix, start_key []byte, fn func(key, res []byte) (stop bool)) {
+	start_key = bytes.Join([][]byte{prefix, start_key}, []byte(""))
+	s.forEach(prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Prev() })
+}
+
+func (s *Storage) forEachPrefix(o interface{}, address string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
+	prefix := GetPrefixKey(GetPrefix(&o), address)
 	start_key := prefix
 	if start != nil {
-		start_key = getKey(GetPrefix(&o), key_prefix, *start)
+		start_key = getKey(GetPrefix(&o), address, *start)
 	}
 	s.forEach(prefix, start_key, fn, navigate)
 }
 
-func (s *Storage) ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool)) {
-	s.forEachPrefix(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Next() })
+func (s *Storage) ForEach(o interface{}, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
+	s.forEachPrefix(o, address, start, fn, func(iter *pebble.Iterator) { iter.Next() })
 }
 
-func (s *Storage) ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool)) {
-	s.forEachPrefix(o, key_prefix, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
+func (s *Storage) ForEachBackwards(o interface{}, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
+	s.forEachPrefix(o, address, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
 }
 
 func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {

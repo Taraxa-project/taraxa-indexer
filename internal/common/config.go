@@ -74,6 +74,14 @@ func (c *HardforksConfig) GetDistributionFrequency(period uint64) uint32 {
 	return c.RewardsDistributionFrequency[lastBigger]
 }
 
+func (c *HardforksConfig) IsAspenHfOne(blockNum uint64) bool {
+	return blockNum >= c.AspenHf.BlockNumPartOne
+}
+
+func (c *HardforksConfig) IsAspenHfTwo(blockNum uint64) bool {
+	return blockNum >= c.AspenHf.BlockNumPartTwo
+}
+
 type ChainConfig struct {
 	CommitteeSize               *big.Int
 	BlocksPerYear               *big.Int

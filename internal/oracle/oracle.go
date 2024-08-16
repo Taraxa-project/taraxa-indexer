@@ -77,6 +77,10 @@ func (o *Oracle) PushValidators(validators []RawValidator) {
 		addr := o.storage.GetAddressStats(validator.Address.Hex())
 		registrationBlock, err := o.FetchValidatorRegistrationBlock(validator.Address)
 
+		if err != nil {
+			log.Fatalf("Failed to fetch validator registration block: %v", err)
+		}
+
 		yieldedValidator := YieldedValidator{
 			Account:           validator.Address,
 			Yield:             validator.Yield,

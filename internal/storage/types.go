@@ -159,16 +159,31 @@ type Yield struct {
 	Yield string `json:"yield"`
 }
 
-type ValidatorReward struct {
-	Validator string   `json:"validator"`
-	Reward    *big.Int `json:"reward"`
+type ValidatorStats struct {
+	// count of rewardable(with 1 or more unique transactions) DAG blocks produced by this validator
+	DagBlocksCount uint64
+	// Validator cert voted block weight
+	VoteWeight uint64
+	// Validator fee reward amount
+	FeeReward *big.Int
+}
+
+type ValidatorStatsWithAddress struct {
+	ValidatorStats
+	Address string
+}
+
+type TotalRewardsStats struct {
+	BlockAuthor      string
+	TotalVotesWeight uint64
+	MaxVotesWeight   uint64
+	TotalDagCount    uint64
 }
 
 // map can't be serialized to rlp, so we need to use slice of structs
-type PeriodRewards struct {
-	ValidatorRewards []ValidatorReward
-	TotalReward      *big.Int
-	BlockFee         *big.Int
+type RewardsStats struct {
+	TotalRewardsStats
+	ValidatorsStats []ValidatorStatsWithAddress
 }
 
 func FormatIntToKey(i uint64) string {

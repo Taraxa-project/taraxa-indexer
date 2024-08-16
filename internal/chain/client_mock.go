@@ -3,6 +3,7 @@ package chain
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -97,6 +98,14 @@ func (c *ClientMock) GetPreviousBlockCertVotes(period uint64) (vr VotesResponse,
 
 func (c *ClientMock) GetValidatorsAtBlock(uint64) (validators []Validator, err error) {
 	return []Validator{}, nil
+}
+
+func (c *ClientMock) GetTotalAmountDelegated(uint64) (totalAmountDelegated *big.Int, err error) {
+	return big.NewInt(0), nil
+}
+
+func (c *ClientMock) GetTotalSupply(uint64) (totalSupply *big.Int, err error) {
+	return big.NewInt(0), nil
 }
 
 func (c *ClientMock) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {

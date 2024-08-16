@@ -73,8 +73,8 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 
 	totalReward := common.ParseStringToBigInt(bd.Pbft.TotalReward)
 
-	r := rewards.MakeRewards(bc.Oracle, bc.Storage, bc.Batch, bc.Config, bc.Block.Pbft, bc.Block.Validators)
-	blockFee := r.Process(totalReward, bc.Block.Dags, bc.Block.Transactions, bc.Block.Votes)
+	r := rewards.MakeRewards(bc.Oracle, bc.Storage, bc.Batch, bc.Config, bc.Block)
+	blockFee := r.Process(totalReward, bc.Block.Dags, bc.Block.Transactions, bc.Block.Votes, bc.Block.Pbft.Author)
 
 	// add total fee to the dpos contract balance after the magnolia hardfork(it is added to block producers commission pools)
 	if bc.Config.Chain != nil && (bc.Block.Pbft.Number >= bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {

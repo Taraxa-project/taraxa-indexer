@@ -14,6 +14,7 @@ type Storage interface {
 	ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
 	ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
 	ForEachFromKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
+	ForEachFromKeyBackwards(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
 	GetAccounts() Accounts

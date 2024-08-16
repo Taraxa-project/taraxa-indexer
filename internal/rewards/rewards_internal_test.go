@@ -21,7 +21,7 @@ type AddressCount map[string]int
 
 func makeTransactions(count int) (trxs []chain.Transaction) {
 	for i := 0; i < count; i++ {
-		trxs = append(trxs, chain.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}})
+		trxs = append(trxs, chain.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}, GasPrice: 1, GasUsed: 21000})
 	}
 	return
 }
@@ -39,10 +39,10 @@ func makeDags(ac AddressCount) (dags []chain.DagBlock) {
 
 func makeVotes(ac AddressCount) (votes chain.VotesResponse) {
 	votes.Votes = make([]chain.Vote, 0)
-	total_weight := int64(0)
+	total_weight := uint64(0)
 	for addr, weight := range ac {
 		votes.Votes = append(votes.Votes, chain.Vote{Voter: addr, Weight: fmt.Sprintf("0x%x", weight)})
-		total_weight += int64(weight)
+		total_weight += uint64(weight)
 	}
 	votes.PeriodTotalVotesCount = total_weight
 	return
@@ -53,6 +53,8 @@ func makeTestConfig() (config *common.Config) {
 	config.Chain.BlocksPerYear = big.NewInt(1)
 	config.Chain.YieldPercentage = big.NewInt(100)
 	config.Chain.EligibilityBalanceThreshold = big.NewInt(1)
+	config.Chain.Hardforks.AspenHf.BlockNumPartTwo = 100
+	config.Chain.Hardforks.MagnoliaHf.BlockNum = 100
 
 	return
 }
@@ -67,13 +69,15 @@ func TestMakeStats(t *testing.T) {
 	trxs := makeTransactions(6)
 	dags := makeDags(AddressCount{"0x1": 1, "0x2": 2, "0x3": 3})
 	votes := makeVotes(AddressCount{"0x1": 1, "0x2": 2, "0x3": 3})
+	block_author := "0x4"
 	assert.Equal(t, 6, len(trxs))
 	assert.Equal(t, 6, len(dags))
 	assert.Equal(t, 3, len(votes.Votes))
-	assert.Equal(t, int64(6), votes.PeriodTotalVotesCount)
+	assert.Equal(t, uint64(6), votes.PeriodTotalVotesCount)
 
-	s := makeStats(dags, votes, trxs, 100)
-	assert.Equal(t, 3, len(s.ValidatorStats))
+	is_aspen_dag_rewards := false
+	s := makeRewardsStats(is_aspen_dag_rewards, dags, votes, trxs, 100, block_author)
+	assert.Equal(t, 3, len(s.ValidatorsStats))
 	assert.Equal(t, 6, int(s.TotalDagCount))
 	assert.Equal(t, 6, int(s.TotalVotesWeight))
 }
@@ -131,7 +135,8 @@ func TestRewards(t *testing.T) {
 		t.Log(error)
 	}
 	oracle := oracle.MakeMockOracle(ethc)
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, validators_list)
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(5000000 * 4), Validators: validators_list}
+	r := MakeRewards(oracle, st, st.NewBatch(), config, bd)
 
 	trxs := makeTransactions(5)
 	dags := makeDags(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
@@ -139,17 +144,18 @@ func TestRewards(t *testing.T) {
 	assert.Equal(t, 5, len(dags))
 	assert.Equal(t, 3, len(votes.Votes))
 	assert.Equal(t, 5, len(trxs))
-	totalStake := big.NewInt(1000000000000)
-	rewards := r.calculateValidatorsRewards(dags, votes, trxs, totalStake)
+	r.totalStake = big.NewInt(1000000000000)
+	stats := r.makeRewardsStats(dags, votes, trxs, block.Author)
+	rewards := r.rewardsFromStats(stats)
 	assert.Equal(t, 4, len(rewards.ValidatorRewards))
 	// Calculate total reward for the block
-	total_reward := totalStake.Int64() * config.Chain.YieldPercentage.Int64() / 100 / config.Chain.BlocksPerYear.Int64()
+	total_reward := r.totalStake.Uint64() * config.Chain.YieldPercentage.Uint64() / 100 / config.Chain.BlocksPerYear.Uint64()
 	// Calculate reward for DAG proposer
-	reward1_dag_part := (total_reward * config.Chain.DagProposersReward.Int64() / 100) / int64(len(dags))
+	reward1_dag_part := (total_reward * config.Chain.DagProposersReward.Uint64() / 100) / uint64(len(dags))
 	// Calculate reward for voter
-	reward1_vote_part := (total_reward * (100 - config.Chain.DagProposersReward.Int64() - config.Chain.MaxBlockAuthorReward.Int64()) / 100) / votes.PeriodTotalVotesCount
+	reward1_vote_part := (total_reward * (100 - config.Chain.DagProposersReward.Uint64() - config.Chain.MaxBlockAuthorReward.Uint64()) / 100) / votes.PeriodTotalVotesCount
 	// Calculate total reward for validator
-	reward1 := big.NewInt(reward1_dag_part + reward1_vote_part)
+	reward1 := big.NewInt(0).SetUint64(reward1_dag_part + reward1_vote_part)
 	assert.Equal(t, reward1, rewards.ValidatorRewards[validator1_addr])
 	// validator 2 and 3 should have the same reward that is two times bigger than reward1, because they have two times more dags and votes
 	assert.Equal(t, big.NewInt(0).Mul(reward1, big.NewInt(2)), rewards.ValidatorRewards[validator2_addr])
@@ -159,6 +165,8 @@ func TestRewards(t *testing.T) {
 func TestRewardsWithNodeData(t *testing.T) {
 	config := common.DefaultConfig()
 	config.Chain.EligibilityBalanceThreshold = big.NewInt(5000000)
+	config.Chain.Hardforks.AspenHf.BlockNumPartTwo = 100
+	config.Chain.Hardforks.MagnoliaHf.BlockNum = 100
 
 	st := pebble.NewStorage("")
 	ethc, error := ethclient.Dial("wss://ws.testnet.taraxa.io/")
@@ -185,25 +193,27 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 	// Simulated rewards statistics
 	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, validators_list)
-	totalStake := big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8))
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8)), Validators: validators_list}
+	r := MakeRewards(oracle, st, st.NewBatch(), config, bd)
 	{
-		rewardsStats := stats{}
-		rewardsStats.ValidatorStats = map[string]validatorStats{
-			validator1_addr: {DagBlocksCount: 8, VoteWeight: 1},
-			validator2_addr: {DagBlocksCount: 32, VoteWeight: 5},
-			validator4_addr: {VoteWeight: 1},
+		rewardsStats := storage.RewardsStats{}
+		rewardsStats.ValidatorsStats = []storage.ValidatorStatsWithAddress{
+			{Address: validator1_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 8, VoteWeight: 1}},
+			{Address: validator2_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 32, VoteWeight: 5}},
+			{Address: validator4_addr, ValidatorStats: storage.ValidatorStats{VoteWeight: 1}},
 		}
 		rewardsStats.TotalDagCount = 40
 		rewardsStats.TotalVotesWeight = 7
 		rewardsStats.MaxVotesWeight = 8
+		rewardsStats.BlockAuthor = block.Author
 
 		// Expected block reward
-		totalReward := rewardFromStake(config.Chain, totalStake)
+		totalReward := rewardFromStake(config.Chain, r.totalStake)
+		assert.Equal(t, totalReward, big.NewInt(202942668696093))
 		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
-		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
+		rewards := r.rewardsFromStats(&rewardsStats)
 		// We have 1 out of 2 bonus votes, so block author should get half of the bonus reward
-		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(2)), rewards.ValidatorRewards[r.blockAuthor])
+		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(2)), rewards.ValidatorRewards[block.Author])
 
 		// data from node test
 		expected_validator1_commission_reward := int64(31890990795100)
@@ -215,23 +225,24 @@ func TestRewardsWithNodeData(t *testing.T) {
 	}
 
 	{
-		rewardsStats := stats{}
-		rewardsStats.ValidatorStats = map[string]validatorStats{
-			validator1_addr: {DagBlocksCount: 15, VoteWeight: 3},
-			validator2_addr: {DagBlocksCount: 35, VoteWeight: 5},
-			validator4_addr: {VoteWeight: 2},
+		rewardsStats := storage.RewardsStats{}
+		rewardsStats.ValidatorsStats = []storage.ValidatorStatsWithAddress{
+			{Address: validator1_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 15, VoteWeight: 3}},
+			{Address: validator2_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 35, VoteWeight: 5}},
+			{Address: validator4_addr, ValidatorStats: storage.ValidatorStats{VoteWeight: 2}},
 		}
 		rewardsStats.TotalDagCount = 50
 		rewardsStats.TotalVotesWeight = 10
 		rewardsStats.MaxVotesWeight = 13
+		rewardsStats.BlockAuthor = block.Author
 
 		// Expected block reward
-		totalReward := rewardFromStake(config.Chain, totalStake)
+		totalReward := rewardFromStake(config.Chain, r.totalStake)
 		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
-		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
+		rewards := r.rewardsFromStats(&rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
-		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(4)), rewards.ValidatorRewards[r.blockAuthor])
-		assert.Equal(t, big.NewInt(5073566717402), rewards.ValidatorRewards[r.blockAuthor])
+		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(4)), rewards.ValidatorRewards[block.Author])
+		assert.Equal(t, big.NewInt(5073566717402), rewards.ValidatorRewards[block.Author])
 		// data from node test
 		expected_validator1_commission_reward := int64(54794520547944)
 		expected_validator2_commission_reward := int64(111618467782851)
@@ -242,24 +253,25 @@ func TestRewardsWithNodeData(t *testing.T) {
 	}
 
 	{
-		rewardsStats := stats{}
-		rewardsStats.ValidatorStats = map[string]validatorStats{
-			validator1_addr: {DagBlocksCount: 10, VoteWeight: 5},
-			validator2_addr: {DagBlocksCount: 10, VoteWeight: 5},
-			validator4_addr: {DagBlocksCount: 10, VoteWeight: 5},
-			validator5_addr: {DagBlocksCount: 10, VoteWeight: 5},
+		rewardsStats := storage.RewardsStats{}
+		rewardsStats.ValidatorsStats = []storage.ValidatorStatsWithAddress{
+			{Address: validator1_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
+			{Address: validator2_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
+			{Address: validator4_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
+			{Address: validator5_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
 		}
 		rewardsStats.TotalDagCount = 40
 		rewardsStats.TotalVotesWeight = 20
 		rewardsStats.MaxVotesWeight = 24
+		rewardsStats.BlockAuthor = block.Author
 
 		// Expected block reward
-		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
+		rewards := r.rewardsFromStats(&rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
 		expected_validator_reward := int64(45662100456620)
-		assert.Equal(t, expected_block_author_reward, rewards.ValidatorRewards[r.blockAuthor].Int64())
+		assert.Equal(t, expected_block_author_reward, rewards.ValidatorRewards[block.Author].Int64())
 		assert.Equal(t, expected_validator_reward, rewards.ValidatorRewards[validator1_addr].Int64())
 		assert.Equal(t, expected_validator_reward, rewards.ValidatorRewards[validator2_addr].Int64())
 		assert.Equal(t, expected_validator_reward, rewards.ValidatorRewards[validator4_addr].Int64())
@@ -268,21 +280,21 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 	// Block author is validator 1
 	{
-		r.blockAuthor = "0x1"
-		rewardsStats := stats{}
-		rewardsStats.ValidatorStats = map[string]validatorStats{
-			validator1_addr: {DagBlocksCount: 10, VoteWeight: 5},
-			validator2_addr: {DagBlocksCount: 10, VoteWeight: 5},
-			validator4_addr: {DagBlocksCount: 10, VoteWeight: 5},
-			validator5_addr: {DagBlocksCount: 10, VoteWeight: 5},
+		block.Author = validator1_addr
+		rewardsStats := storage.RewardsStats{}
+		rewardsStats.ValidatorsStats = []storage.ValidatorStatsWithAddress{
+			{Address: validator1_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
+			{Address: validator2_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
+			{Address: validator4_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
+			{Address: validator5_addr, ValidatorStats: storage.ValidatorStats{DagBlocksCount: 10, VoteWeight: 5}},
 		}
 		rewardsStats.TotalDagCount = 40
 		rewardsStats.TotalVotesWeight = 20
 		rewardsStats.MaxVotesWeight = 24
+		rewardsStats.BlockAuthor = block.Author
 
 		// Expected block reward
-		r.blockAuthor = validator1_addr
-		rewards := r.rewardsFromStats(totalStake, &rewardsStats)
+		rewards := r.rewardsFromStats(&rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		// data from node test
 		expected_block_author_reward := int64(8697542944118)
@@ -294,8 +306,16 @@ func TestRewardsWithNodeData(t *testing.T) {
 	}
 }
 
+func CalculateTotalStake(validators *Validators) *big.Int {
+	totalStake := big.NewInt(0)
+	for _, v := range validators.validators {
+		totalStake.Add(totalStake, v.TotalStake)
+	}
+	return totalStake
+}
+
 func TestYieldsCalculation(t *testing.T) {
-	config := common.DefaultConfig()
+	config := makeTestConfig()
 	config.Chain.BlocksPerYear = big.NewInt(10)
 
 	total_minted := int64(15000000)
@@ -341,13 +361,16 @@ func TestTotalYieldSaving(t *testing.T) {
 	}
 	batch.CommitBatch()
 
+	totalStake := big.NewInt(0)
+
 	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	ethc, error := ethclient.Dial("wss://ws.testnet.taraxa.io/")
 	if error != nil {
 		t.Log(error)
 	}
 	oracle := oracle.MakeMockOracle(ethc)
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil)
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake}
+	r := MakeRewards(oracle, st, st.NewBatch(), config, bd)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -388,6 +411,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 		batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
 	}
 	batch.CommitBatch()
+	totalStake := big.NewInt(0)
 
 	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	ethc, error := ethclient.Dial("wss://ws.testnet.taraxa.io/")
@@ -395,7 +419,8 @@ func TestValidatorsYieldSaving(t *testing.T) {
 		t.Log(error)
 	}
 	oracle := oracle.MakeMockOracle(ethc)
-	r := MakeRewards(oracle, st, st.NewBatch(), config, &block, nil)
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake}
+	r := MakeRewards(oracle, st, st.NewBatch(), config, bd)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
