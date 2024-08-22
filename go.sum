@@ -3,8 +3,8 @@ github.com/DataDog/zstd v1.5.5/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwS
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/RaveNoX/go-jsoncommentstrip v1.0.0/go.mod h1:78ihd09MekBnJnxpICcwzCMzGrKSKYe4AqU6PDYYpjk=
-github.com/Taraxa-project/taraxa-go-client v0.0.6 h1:ZDSFOh3wPvyaM+AeKwMx/f2P0SHtuWfHczCY8YXtazw=
-github.com/Taraxa-project/taraxa-go-client v0.0.6/go.mod h1:Djw1CDw/q7KSj2Y3mESDb65ku930VJS33kwpyv8tjt0=
+github.com/Taraxa-project/taraxa-go-client v0.0.7 h1:1rZHcXA3rsB3JvUkNhGozOgLEg3T/JockVqtFIiv4oo=
+github.com/Taraxa-project/taraxa-go-client v0.0.7/go.mod h1:Djw1CDw/q7KSj2Y3mESDb65ku930VJS33kwpyv8tjt0=
 github.com/VictoriaMetrics/fastcache v1.12.1 h1:i0mICQuojGDL3KblA7wUNlY5lOK6a4bwt3uRKnkZU40=
 github.com/VictoriaMetrics/fastcache v1.12.1/go.mod h1:tX04vaqcNoQeGLD+ra5pU5sWkuxnzWhEzLwhP9w653o=
 github.com/apapsch/go-jsonmerge/v2 v2.0.0 h1:axGnT1gRIfimI7gJifB699GoE/oq+F2MU7Dml6nw9rQ=
