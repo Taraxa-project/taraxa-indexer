@@ -3,7 +3,7 @@ module github.com/Taraxa-project/taraxa-indexer
 go 1.21
 
 require (
-	github.com/Taraxa-project/taraxa-go-client v0.0.6
+	github.com/Taraxa-project/taraxa-go-client v0.0.7-cornus-beta
 	github.com/cockroachdb/pebble v1.0.0
 	github.com/deepmap/oapi-codegen/v2 v2.0.0
 	github.com/ethereum/go-ethereum v1.13.14
