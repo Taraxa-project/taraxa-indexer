@@ -104,7 +104,7 @@ func (l *Lara) Compound() {
 	if err != nil {
 		log.Fatalf("Failed to get lara eth balance: %v", err)
 	}
-	_, err = l.contract.DelegateToValidators(opts, laraEthBalance)
+	_, err = l.contract.Compound(opts, laraEthBalance)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("Compound tx already in pool")
@@ -141,7 +141,7 @@ func (l *Lara) SyncState() {
 		log.Fatalf("Failed to get last rebalance block: %v", err)
 	}
 
-	lastEpochTotalDelegatedAmount, err := l.contract.TotalDelegated(opts)
+	lastEpochTotalDelegatedAmount, err := l.dpos.GetTotalDelegation(opts, common.HexToAddress(l.deploymentAddress))
 	if err != nil {
 		log.Fatalf("Failed to get last epoch total delegated amount: %v", err)
 	}
