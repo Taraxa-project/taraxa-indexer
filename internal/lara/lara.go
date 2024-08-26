@@ -104,7 +104,7 @@ func (l *Lara) Compound() {
 	if err != nil {
 		log.Fatalf("Failed to get lara eth balance: %v", err)
 	}
-	_, err = l.contract.Compound(opts, laraEthBalance)
+	tx, err := l.contract.Compound(opts, laraEthBalance)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Warn("Compound tx already in pool")
@@ -116,7 +116,7 @@ func (l *Lara) Compound() {
 			}
 		}
 	}
-	log.WithFields(log.Fields{"laraEthBalance": laraEthBalance}).Info("LARA COMPOUNDED: ")
+	log.WithFields(log.Fields{"compoundedTaraAmount": laraEthBalance, "txhash": tx.Hash().Hex()}).Info("LARA COMPOUNDED: ")
 }
 
 func (l *Lara) SyncState() {
@@ -229,8 +229,11 @@ func (l *Lara) Snapshot() {
 	timer := time.NewTimer(5 * time.Second)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in transactions pool") {
+			log.Warn("Snapshot tx already in pool")
+		} else if strings.Contains(err.Error(), "EpochDurationNotMet") {
+			log.Warn("Epoch duration not met")
 		} else {
-			log.Fatalf("Failed to make snapshot: %v", err)
+			log.Warnf("Failed to make snapshot: %v", err)
 		}
 	}
 	// wait 4 secs ~ 1 block
