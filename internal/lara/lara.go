@@ -2,6 +2,7 @@ package lara
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"strings"
 	"time"
@@ -19,7 +20,9 @@ import (
 
 type State struct {
 	epochDuration                 *big.Int
-	lastSnapshot                  *big.Int
+	lastSnapshotBlock             *big.Int
+	lastSnapshotID                *big.Int
+	lastSnapshotIdDistributed     *big.Int
 	lastRebalance                 *big.Int
 	lastEpochTotalDelegatedAmount *big.Int
 	validatorStakes               map[common.Address]*big.Int
@@ -36,9 +39,10 @@ type Lara struct {
 	oracle            *apy_oracle.ApyOracle
 	dpos              *dpos_contract.DposContract
 	state             State
+	graphQLEndpoint   string
 }
 
-func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_address string, chainID int) *Lara {
+func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_address, graphQLEndpoint string, chainID int) *Lara {
 	l := new(Lara)
 	l.Eth = rpc
 	l.signer = transact.MakeSigner(signing_key, chainID)
@@ -57,6 +61,7 @@ func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_add
 		log.Fatalf("Failed to create dpos: %v", err)
 	}
 	l.contract = contract
+	l.graphQLEndpoint = graphQLEndpoint
 	l.SyncState()
 	return l
 }
@@ -65,7 +70,7 @@ func (l *Lara) Run() {
 	if l.Eth == nil {
 		log.Fatalf("Eth client is nil")
 	}
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(10 * time.Second)
 	for range ticker.C {
 		ctx := context.Background()
 		currentBlock, err := l.Eth.BlockNumber(ctx)
@@ -73,16 +78,19 @@ func (l *Lara) Run() {
 			log.Fatalf("Lara: Failed to get current block: %v", err)
 		}
 		// if we pass the time to end epoch
-		expenctedSnapshotTime := l.state.lastSnapshot.Int64() + l.state.epochDuration.Int64()
+		expenctedSnapshotTime := l.state.lastSnapshotBlock.Int64() + l.state.epochDuration.Int64()
 		expectedRebalanceTime := l.state.lastRebalance.Int64() + l.state.epochDuration.Int64()
 		log.WithFields(log.Fields{"expectedSnapshotTime": expenctedSnapshotTime, "expectedRebalanceTime": expectedRebalanceTime, "currentBlock": currentBlock}).Info("LARA: ")
 		l.SyncState()
+
 		if int64(currentBlock) > expenctedSnapshotTime {
 			// if the epoch is running
 			// end the epoch
-			l.Snapshot()
+			newSnapshot := l.Snapshot()
+			l.DisburseRewardsBetweenHolders(newSnapshot)
 			// wait 3 sec
 			time.Sleep(4 * time.Second)
+
 			l.Compound()
 		}
 		if int64(currentBlock) > expectedRebalanceTime {
@@ -90,7 +98,82 @@ func (l *Lara) Run() {
 			l.Rebalance()
 		}
 	}
+}
 
+func (l *Lara) IsSnapshotDistributedToUser(snapshotId *big.Int, userAddress common.Address) bool {
+	opts := &bind.CallOpts{
+		Pending:     false,
+		From:        l.signer.From,
+		BlockNumber: nil,
+		Context:     nil,
+	}
+	laraDistributedAlready, err := l.contract.StakerSnapshotClaimed(opts, userAddress, snapshotId)
+	if err != nil {
+		log.Fatalf("Failed to get staker snapshot claimed: %v", err)
+	}
+	return laraDistributedAlready
+}
+
+func (l *Lara) GetRewardsPerSnapshot(snapshotId *big.Int) *big.Int {
+	opts := &bind.CallOpts{
+		Pending:     false,
+		From:        l.signer.From,
+		BlockNumber: nil,
+		Context:     nil,
+	}
+	rewards, err := l.contract.RewardsPerSnapshot(opts, snapshotId)
+	if err != nil {
+		log.Fatalf("Failed to get rewards per snapshot: %v", err)
+	}
+	return rewards
+}
+
+func (l *Lara) DisburseRewardsBetweenHolders(snapshotId *big.Int) {
+	rewards := l.GetRewardsPerSnapshot(snapshotId)
+	if rewards.Cmp(big.NewInt(0)) == 0 {
+		l.state.lastSnapshotIdDistributed = snapshotId
+		log.WithFields(log.Fields{"snapshotID": snapshotId}).Info("LARA: No rewards to distribute")
+		return
+	}
+	blockNumber, err := l.GetLastSnapshotIDUpdateTime(snapshotId)
+	if err != nil {
+		log.Fatalf("Failed to get block number: %v", err)
+	}
+	log.WithFields(log.Fields{"blockNumber": blockNumber, "snapshotID": snapshotId}).Info("LARA: Getting staked tara holders")
+	holders := GetStakedTaraHolders(l, blockNumber)
+
+	log.WithFields(log.Fields{"# of holders": len(holders), "snapshotID": snapshotId}).Info("LARA: Disbursing rewards to holders for snapshot")
+
+	opts := &bind.TransactOpts{
+		From:     l.signer.From,
+		Signer:   l.signer.Signer,
+		GasLimit: 0,
+		Context:  nil,
+	}
+
+	for _, holder := range holders {
+		holderAddress := common.HexToAddress(holder)
+
+		isDistributed := l.IsSnapshotDistributedToUser(snapshotId, holderAddress)
+		if isDistributed {
+			log.WithFields(log.Fields{"holder": holder, "snapshotID": snapshotId}).Info("LARA: Snapshot already distributed to holder")
+			continue
+		}
+
+		tx, err := l.contract.DistrbuteRewardsForSnapshot(opts, holderAddress, snapshotId)
+		if err != nil {
+			if strings.Contains(err.Error(), "Transaction already in transactions pool") {
+				log.Warn("Disburse tx already in pool")
+			} else {
+				log.Fatalf("Failed to disburse rewards for snapshot: %v with address: %s and snapshotID: %s", err, holderAddress.Hex(), snapshotId.String())
+			}
+		}
+		_, err = l.oracle.LogRewardDistribution(opts, holderAddress, snapshotId, rewards)
+		if err != nil {
+			log.Fatalf("Failed to log reward distribution: %v with address: %s and snapshotID: %s", err, holderAddress.Hex(), snapshotId.String())
+		}
+		log.WithFields(log.Fields{"txhash": tx.Hash().Hex(), "holder": holder, "snapshotID": snapshotId}).Info("LARA: Disbursed rewards to holder")
+	}
 }
 
 func (l *Lara) Compound() {
@@ -115,8 +198,9 @@ func (l *Lara) Compound() {
 				log.Fatalf("Failed to compound: %v", err)
 			}
 		}
+	} else {
+		log.WithFields(log.Fields{"compoundedTaraAmount": laraEthBalance, "txhash": tx.Hash().Hex()}).Info("LARA COMPOUNDED: ")
 	}
-	log.WithFields(log.Fields{"compoundedTaraAmount": laraEthBalance, "txhash": tx.Hash().Hex()}).Info("LARA COMPOUNDED: ")
 }
 
 func (l *Lara) SyncState() {
@@ -131,9 +215,14 @@ func (l *Lara) SyncState() {
 		log.Fatalf("Failed to get epoch duration: %v", err)
 	}
 
-	lastSnapshotBlock, err := l.contract.LastSnapshot(opts)
+	lastSnapshotBlock, err := l.contract.LastSnapshotBlock(opts)
 	if err != nil {
 		log.Fatalf("Failed to get last snapshot: %v", err)
+	}
+
+	lastSnapshotID, err := l.contract.LastSnapshotId(opts)
+	if err != nil {
+		log.Fatalf("Failed to get last snapshot ID: %v", err)
 	}
 
 	lastRebalanceBlock, err := l.contract.LastRebalance(opts)
@@ -151,7 +240,7 @@ func (l *Lara) SyncState() {
 	validatorStakes := make(map[common.Address]*big.Int)
 	validators := make([]oracle.NodeData, 0)
 	for {
-		validator, err := l.contract.Validators(opts, pos)
+		validatorsFromDpos, err := l.dpos.GetDelegations(opts, common.HexToAddress(l.deploymentAddress), uint32(pos.Uint64()))
 		if err != nil {
 			if strings.Contains(err.Error(), "reverted") {
 				break
@@ -160,28 +249,35 @@ func (l *Lara) SyncState() {
 				break
 			}
 		}
-		totalStakeAtValidator, err := l.contract.ProtocolTotalStakeAtValidator(opts, validator)
-		if err != nil {
-			log.Fatalf("Failed to get total stake at validator: %v", err)
-		}
-		validatorStakes[validator] = totalStakeAtValidator
+		for _, delegation := range validatorsFromDpos.Delegations {
+			validator := delegation.Account
+			totalStakeAtValidator, err := l.contract.ProtocolTotalStakeAtValidator(opts, validator)
+			if err != nil {
+				log.Fatalf("Failed to get total stake at validator: %v", err)
+			}
+			validatorStakes[validator] = totalStakeAtValidator
 
-		// fetch node data from oracle
-		nodeData, err := l.oracle.Nodes(opts, validator)
-		if err != nil {
-			log.Fatalf("Failed to get node data: %v", err)
+			// fetch node data from oracle
+			nodeData, err := l.oracle.Nodes(opts, validator)
+			if err != nil {
+				log.Fatalf("Failed to get node data: %v", err)
+			}
+			validators = append(validators, nodeData)
 		}
-		validators = append(validators, nodeData)
-		pos.Add(pos, big.NewInt(1))
+		if !validatorsFromDpos.End {
+			pos.Add(pos, big.NewInt(1))
+		} else {
+			break
+		}
 	}
 
-	//set commission to 10%
+	//set commission to 8%
 	commission, err := l.contract.Commission(opts)
 	if err != nil {
 		log.Fatalf("Failed to get commission: %v", err)
 	}
-	if commission.Cmp(big.NewInt(2)) != 0 {
-		_, err = l.contract.SetCommission(l.signer, big.NewInt(2))
+	if commission.Cmp(big.NewInt(8)) != 0 {
+		_, err = l.contract.SetCommission(l.signer, big.NewInt(8))
 
 		if err != nil && !strings.Contains(err.Error(), "Transaction already in transactions pool") {
 			log.Fatalf("Failed to set commission: %v", err)
@@ -191,21 +287,23 @@ func (l *Lara) SyncState() {
 	}
 	l.state = State{
 		epochDuration:                 epochDuration,
-		lastSnapshot:                  lastSnapshotBlock,
+		lastSnapshotBlock:             lastSnapshotBlock,
+		lastSnapshotID:                lastSnapshotID,
 		lastRebalance:                 lastRebalanceBlock,
 		lastEpochTotalDelegatedAmount: lastEpochTotalDelegatedAmount,
 		validatorStakes:               validatorStakes,
 		validators:                    validators,
+		lastSnapshotIdDistributed:     big.NewInt(1),
 	}
 	nextSnapshot := big.NewInt(0).Add(lastSnapshotBlock, epochDuration)
 	currentBlock, err := l.Eth.BlockNumber(context.Background())
 	if err != nil {
 		log.Fatalf("SyncState: Failed to get current block: %v", err)
 	}
-	log.WithFields(log.Fields{"currentBlock": currentBlock, "lastRebalance": l.state.lastRebalance, "lastSnapshotBlock": l.state.lastSnapshot, "nextSnapshotBlock": nextSnapshot, "nodesDelegatedTo": len(l.state.validators), "totalDelegated": l.state.lastEpochTotalDelegatedAmount}).Info("LARA STATE: ")
+	log.WithFields(log.Fields{"currentBlock": currentBlock, "lastRebalance": l.state.lastRebalance, "lastSnapshotBlock": l.state.lastSnapshotBlock, "nextSnapshotBlock": nextSnapshot, "nodesDelegatedTo": len(l.state.validators), "totalDelegated": l.state.lastEpochTotalDelegatedAmount}).Info("LARA STATE: ")
 }
 
-func (l *Lara) Snapshot() {
+func (l *Lara) Snapshot() (snapshotID *big.Int) {
 	if l.state.isMakingSnapshot {
 		log.Warn("WARN: PENDING SNPAHSOT")
 		return
@@ -241,15 +339,18 @@ func (l *Lara) Snapshot() {
 
 	if tx != nil {
 		receipt, err := l.Eth.TransactionReceipt(context.Background(), tx.Hash())
+
 		if err != nil {
 			if strings.Contains(err.Error(), "not found") {
 				log.Warn("WARN: SNAPSHOT NOT FOUND")
 			} else {
 				log.Fatalf("Failed to get receipt: %v", err)
 			}
-		} else {
-			log.Warnf("Made snapshot at timestamp: %d, hash: %s", receipt.BlockNumber, tx.Hash().Hex())
 		}
+		if receipt != nil {
+			log.Warnf("Made snapshot at block: %d, hash: %s", receipt.BlockNumber, tx.Hash().Hex())
+		}
+
 		l.state.isMakingSnapshot = false
 	}
 	// wait 3 sec
@@ -260,6 +361,7 @@ func (l *Lara) Snapshot() {
 		log.Warnf("Snapshot not made after : %d", timer.C)
 		timer.Stop()
 	}
+	return l.state.lastSnapshotBlock
 }
 
 func (l *Lara) GetState() State {
@@ -294,4 +396,18 @@ func (l *Lara) Rebalance() {
 		l.state.isRebalancing = false
 		log.WithFields(log.Fields{"Timestamp": tx.Time().Unix(), "hash": tx.Hash().Hex()}).Warn("Rebalanced")
 	}
+}
+
+func (l *Lara) GetLastSnapshotIDUpdateTime(snapshotID *big.Int) (uint64, error) {
+	iter, err := l.contract.FilterSnapshotTaken(&bind.FilterOpts{}, []*big.Int{snapshotID}, nil, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer iter.Close()
+
+	if iter.Next() {
+		return iter.Event.Raw.BlockNumber, nil
+	}
+
+	return 0, fmt.Errorf("no SnapshotTaken event found for snapshotID %s", snapshotID.String())
 }

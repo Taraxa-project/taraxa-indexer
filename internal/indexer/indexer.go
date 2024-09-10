@@ -198,8 +198,11 @@ func (i *Indexer) run() error {
 			if i.consistency_check_available {
 				i.consistencyCheck(bc.finalized)
 			}
-
-			log.WithFields(log.Fields{"period": blk.Number, "dags": dc, "trxs": tc}).Info("Block processed")
+			if blk.Number%100 == 0 {
+				log.WithFields(log.Fields{"period": blk.Number, "dags": dc, "trxs": tc}).Info("Block processed")
+			} else {
+				log.WithFields(log.Fields{"period": blk.Number, "dags": dc, "trxs": tc}).Debug("Block processed")
+			}
 		}
 	}
 }

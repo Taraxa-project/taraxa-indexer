@@ -40,6 +40,7 @@ var (
 	signing_key                      *string
 	oracle_address                   *string
 	lara_address                     *string
+	graphQLEndpoint                  *string
 )
 
 func init() {
@@ -52,22 +53,24 @@ func init() {
 	yield_saving_interval = flag.Int("yield_saving_interval", 999, "interval for saving total yield")
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 999, "interval for saving validators yield")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
-	oracle_address = flag.String("oracle_address", "0x4bFCdc5a4166405D9503437523832Bbd2DC759Ef", "oracles address")
-	lara_address = flag.String("lara_address", "0x52a7C8Db4a32016e4b8b6b4b44590C52079f32A9", "lara address")
+	oracle_address = flag.String("oracle_address", "0xd170c33a27A9C3cb599d9B41970DAD2AaCeE96e2", "oracles address")
+	lara_address = flag.String("lara_address", "0x397F45dCaC0DC00cb927d8eCE7d449F726A517cF", "lara address")
 	signing_key = flag.String("signing_key", "", "signing key")
+	graphQLEndpoint = flag.String("graphQLEndpoint", "https://indexer.prnet.taraxa.io/subgraphs/name/Liquid-staking/lara-subgraph", "graphql endpoint")
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
 	log.Print("\n\n\n")
 	log.WithFields(log.Fields{
-		"http_port":      *http_port,
-		"blockchain_ws":  *blockchain_ws,
-		"chain_id":       *chain_id,
-		"signing_key":    *signing_key,
-		"oracle_address": *oracle_address,
-		"lara_address":   *lara_address,
-		"data_dir":       *data_dir,
-		"log_level":      *log_level}).
+		"http_port":       *http_port,
+		"blockchain_ws":   *blockchain_ws,
+		"chain_id":        *chain_id,
+		"signing_key":     *signing_key,
+		"oracle_address":  *oracle_address,
+		"lara_address":    *lara_address,
+		"data_dir":        *data_dir,
+		"log_level":       *log_level,
+		"graphQLEndpoint": *graphQLEndpoint}).
 		Info("Application started")
 }
 
@@ -153,7 +156,7 @@ func main() {
 		log.WithError(err).Fatal("Failed to connect to blockchain")
 	}
 	log.Info("RPC initialized")
-	lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *chain_id)
+	lara := lara.MakeLara(rpc, *signing_key, *lara_address, *oracle_address, *graphQLEndpoint, *chain_id)
 	log.Info("Lara initialized")
 	o := oracle.MakeOracle(rpc, *signing_key, *oracle_address, *chain_id, *st)
 	go lara.Run()

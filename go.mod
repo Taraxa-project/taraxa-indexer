@@ -10,6 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.11.4
+	github.com/machinebox/graphql v0.2.2
 	github.com/nleeper/goment v1.4.4
 	github.com/oapi-codegen/echo-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.1.0
@@ -31,6 +32,7 @@ require (
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/holiman/uint256 v1.2.4 // indirect
+	github.com/matryer/is v1.4.1 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect

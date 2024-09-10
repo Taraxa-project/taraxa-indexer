@@ -39,7 +39,7 @@ type DposInterfaceUndelegationData struct {
 
 // LaraContractMetaData contains all meta data concerning the LaraContract contract.
 var LaraContractMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"fallback\",\"stateMutability\":\"payable\"},{\"type\":\"receive\",\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"UPGRADE_INTERFACE_VERSION\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"apyOracle\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIApyOracle\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"cancelUndelegate\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"commission\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"compound\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"confirmUndelegate\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"delegators\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"dposContract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractDposInterface\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"epochDuration\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_sttaraToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_dposContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_apyOracle\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_treasuryAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isValidatorRegistered\",\"inputs\":[{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastRebalance\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastSnapshot\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"maxValidatorStakeCapacity\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"minStakeAmount\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"protocolStartTimestamp\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"protocolTotalStakeAtValidator\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"protocolValidatorRatingAtDelegation\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"proxiableUUID\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"rebalance\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"requestUndelegate\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"undelegation_ids\",\"type\":\"uint64[]\",\"internalType\":\"uint64[]\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setCommission\",\"inputs\":[{\"name\":\"_commission\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setEpochDuration\",\"inputs\":[{\"name\":\"_epochDuration\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setMaxValidatorStakeCapacity\",\"inputs\":[{\"name\":\"_maxValidatorStakeCapacity\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setMinStakeAmount\",\"inputs\":[{\"name\":\"_minStakeAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTreasuryAddress\",\"inputs\":[{\"name\":\"_treasuryAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"snapshot\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"stTaraToken\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIstTara\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"stake\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"totalDelegated\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"treasuryAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"undelegated\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"undelegations\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"undelegation_data\",\"type\":\"tuple\",\"internalType\":\"structDposInterface.UndelegationData\",\"components\":[{\"name\":\"stake\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"block\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"validator_exists\",\"type\":\"bool\",\"internalType\":\"bool\"}]},{\"name\":\"undelegation_id\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"upgradeToAndCall\",\"inputs\":[{\"name\":\"newImplementation\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"validators\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AllRewardsClaimed\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CommissionChanged\",\"inputs\":[{\"name\":\"newCommission\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CommissionWithdrawn\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RedelegationRewardsClaimed\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"validator\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SnapshotTaken\",\"inputs\":[{\"name\":\"totalDelegation\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"totalRewards\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"nextSnapshotBlock\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Staked\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaraSent\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TreasuryChanged\",\"inputs\":[{\"name\":\"newTreasury\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Undelegated\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"validator\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"UndelegationCancelled\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"UndelegationConfirmed\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Upgraded\",\"inputs\":[{\"name\":\"implementation\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AddressEmptyCode\",\"inputs\":[{\"name\":\"target\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"CancelUndelegationFailed\",\"inputs\":[{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"ConfirmUndelegationFailed\",\"inputs\":[{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"DelegationFailed\",\"inputs\":[{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"ERC1967InvalidImplementation\",\"inputs\":[{\"name\":\"implementation\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"ERC1967NonPayable\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"EpochDurationNotMet\",\"inputs\":[{\"name\":\"lastEpochStart\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"currentBlockNumber\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"epochDuration\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"FailedInnerCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"RedelegationFailed\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RewardClaimFailed\",\"inputs\":[{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"StakeAmountTooLow\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"StakeValueTooLow\",\"inputs\":[{\"name\":\"sentAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"targetAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"UUPSUnauthorizedCallContext\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"UUPSUnsupportedProxiableUUID\",\"inputs\":[{\"name\":\"slot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"UndelegationFailed\",\"inputs\":[{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"UndelegationNotFound\",\"inputs\":[{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"id\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"UndelegationsNotMatching\",\"inputs\":[{\"name\":\"undelegations\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"fallback\",\"stateMutability\":\"payable\"},{\"type\":\"receive\",\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"UPGRADE_INTERFACE_VERSION\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"apyOracle\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIApyOracle\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"cancelUndelegate\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"commission\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"commissionDiscounts\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"compound\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"confirmUndelegate\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"distrbuteRewardsForSnapshot\",\"inputs\":[{\"name\":\"staker\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"snapshotId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"dposContract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractDposInterface\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"epochDuration\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"initialize\",\"inputs\":[{\"name\":\"_sttaraToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_dposContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_apyOracle\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_treasuryAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"isValidatorRegistered\",\"inputs\":[{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastRebalance\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastSnapshotBlock\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastSnapshotId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"maxValidatorStakeCapacity\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"minStakeAmount\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"protocolStartTimestamp\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"protocolTotalStakeAtValidator\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"protocolValidatorRatingAtDelegation\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"proxiableUUID\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"rebalance\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"requestUndelegate\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"undelegation_ids\",\"type\":\"uint64[]\",\"internalType\":\"uint64[]\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"rewardsPerSnapshot\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"setCommission\",\"inputs\":[{\"name\":\"_commission\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setCommissionDiscounts\",\"inputs\":[{\"name\":\"staker\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"discount\",\"type\":\"uint32\",\"internalType\":\"uint32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setEpochDuration\",\"inputs\":[{\"name\":\"_epochDuration\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setMaxValidatorStakeCapacity\",\"inputs\":[{\"name\":\"_maxValidatorStakeCapacity\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setMinStakeAmount\",\"inputs\":[{\"name\":\"_minStakeAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setTreasuryAddress\",\"inputs\":[{\"name\":\"_treasuryAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"snapshot\",\"inputs\":[],\"outputs\":[{\"name\":\"id\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"stTaraToken\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIstTara\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"stake\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"stakerSnapshotClaimed\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"treasuryAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"undelegated\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"undelegations\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"undelegation_data\",\"type\":\"tuple\",\"internalType\":\"structDposInterface.UndelegationData\",\"components\":[{\"name\":\"stake\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"block\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"validator_exists\",\"type\":\"bool\",\"internalType\":\"bool\"}]},{\"name\":\"undelegation_id\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"upgradeToAndCall\",\"inputs\":[{\"name\":\"newImplementation\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"event\",\"name\":\"AllRewardsClaimed\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CommissionChanged\",\"inputs\":[{\"name\":\"newCommission\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"CommissionWithdrawn\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Initialized\",\"inputs\":[{\"name\":\"version\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RedelegationRewardsClaimed\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"validator\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SnapshotTaken\",\"inputs\":[{\"name\":\"snapshotId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"totalDelegation\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"totalRewards\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"nextSnapshotBlock\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Staked\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TaraSent\",\"inputs\":[{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TreasuryChanged\",\"inputs\":[{\"name\":\"newTreasury\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Undelegated\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"validator\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"UndelegationCancelled\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"UndelegationConfirmed\",\"inputs\":[{\"name\":\"id\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Upgraded\",\"inputs\":[{\"name\":\"implementation\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"AddressEmptyCode\",\"inputs\":[{\"name\":\"target\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"CancelUndelegationFailed\",\"inputs\":[{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"ConfirmUndelegationFailed\",\"inputs\":[{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"DelegationFailed\",\"inputs\":[{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"ERC1967InvalidImplementation\",\"inputs\":[{\"name\":\"implementation\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"ERC1967NonPayable\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"EpochDurationNotMet\",\"inputs\":[{\"name\":\"lastEpochStart\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"currentBlockNumber\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"epochDuration\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"FailedInnerCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidInitialization\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NoDelegation\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotInitializing\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"RedelegationFailed\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"ReentrancyGuardReentrantCall\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"RewardClaimFailed\",\"inputs\":[{\"name\":\"reason\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"type\":\"error\",\"name\":\"SnapshotAlreadyClaimed\",\"inputs\":[{\"name\":\"snapshotId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"staker\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"SnapshotNotFound\",\"inputs\":[{\"name\":\"snapshotId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"StakeAmountTooLow\",\"inputs\":[{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"minAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"StakeValueTooLow\",\"inputs\":[{\"name\":\"sentAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"targetAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"TransferFailed\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"UUPSUnauthorizedCallContext\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"UUPSUnsupportedProxiableUUID\",\"inputs\":[{\"name\":\"slot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"UndelegationFailed\",\"inputs\":[{\"name\":\"validator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"UndelegationNotFound\",\"inputs\":[{\"name\":\"delegator\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"id\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"UndelegationsNotMatching\",\"inputs\":[{\"name\":\"undelegations\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"ZeroAddress\",\"inputs\":[]}]",
 }
 
 // LaraContractABI is the input ABI used to generate the binding from.
@@ -281,35 +281,35 @@ func (_LaraContract *LaraContractCallerSession) Commission() (*big.Int, error) {
 	return _LaraContract.Contract.Commission(&_LaraContract.CallOpts)
 }
 
-// Delegators is a free data retrieval call binding the contract method 0x5be612c7.
+// CommissionDiscounts is a free data retrieval call binding the contract method 0x184ddf85.
 //
-// Solidity: function delegators(uint256 ) view returns(address)
-func (_LaraContract *LaraContractCaller) Delegators(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
+// Solidity: function commissionDiscounts(address ) view returns(uint32)
+func (_LaraContract *LaraContractCaller) CommissionDiscounts(opts *bind.CallOpts, arg0 common.Address) (uint32, error) {
 	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "delegators", arg0)
+	err := _LaraContract.contract.Call(opts, &out, "commissionDiscounts", arg0)
 
 	if err != nil {
-		return *new(common.Address), err
+		return *new(uint32), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
 
 	return out0, err
 
 }
 
-// Delegators is a free data retrieval call binding the contract method 0x5be612c7.
+// CommissionDiscounts is a free data retrieval call binding the contract method 0x184ddf85.
 //
-// Solidity: function delegators(uint256 ) view returns(address)
-func (_LaraContract *LaraContractSession) Delegators(arg0 *big.Int) (common.Address, error) {
-	return _LaraContract.Contract.Delegators(&_LaraContract.CallOpts, arg0)
+// Solidity: function commissionDiscounts(address ) view returns(uint32)
+func (_LaraContract *LaraContractSession) CommissionDiscounts(arg0 common.Address) (uint32, error) {
+	return _LaraContract.Contract.CommissionDiscounts(&_LaraContract.CallOpts, arg0)
 }
 
-// Delegators is a free data retrieval call binding the contract method 0x5be612c7.
+// CommissionDiscounts is a free data retrieval call binding the contract method 0x184ddf85.
 //
-// Solidity: function delegators(uint256 ) view returns(address)
-func (_LaraContract *LaraContractCallerSession) Delegators(arg0 *big.Int) (common.Address, error) {
-	return _LaraContract.Contract.Delegators(&_LaraContract.CallOpts, arg0)
+// Solidity: function commissionDiscounts(address ) view returns(uint32)
+func (_LaraContract *LaraContractCallerSession) CommissionDiscounts(arg0 common.Address) (uint32, error) {
+	return _LaraContract.Contract.CommissionDiscounts(&_LaraContract.CallOpts, arg0)
 }
 
 // DposContract is a free data retrieval call binding the contract method 0xe1fb9ae2.
@@ -436,12 +436,12 @@ func (_LaraContract *LaraContractCallerSession) LastRebalance() (*big.Int, error
 	return _LaraContract.Contract.LastRebalance(&_LaraContract.CallOpts)
 }
 
-// LastSnapshot is a free data retrieval call binding the contract method 0xfb861ac1.
+// LastSnapshotBlock is a free data retrieval call binding the contract method 0x4f4ad3a6.
 //
-// Solidity: function lastSnapshot() view returns(uint256)
-func (_LaraContract *LaraContractCaller) LastSnapshot(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function lastSnapshotBlock() view returns(uint256)
+func (_LaraContract *LaraContractCaller) LastSnapshotBlock(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "lastSnapshot")
+	err := _LaraContract.contract.Call(opts, &out, "lastSnapshotBlock")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -453,18 +453,49 @@ func (_LaraContract *LaraContractCaller) LastSnapshot(opts *bind.CallOpts) (*big
 
 }
 
-// LastSnapshot is a free data retrieval call binding the contract method 0xfb861ac1.
+// LastSnapshotBlock is a free data retrieval call binding the contract method 0x4f4ad3a6.
 //
-// Solidity: function lastSnapshot() view returns(uint256)
-func (_LaraContract *LaraContractSession) LastSnapshot() (*big.Int, error) {
-	return _LaraContract.Contract.LastSnapshot(&_LaraContract.CallOpts)
+// Solidity: function lastSnapshotBlock() view returns(uint256)
+func (_LaraContract *LaraContractSession) LastSnapshotBlock() (*big.Int, error) {
+	return _LaraContract.Contract.LastSnapshotBlock(&_LaraContract.CallOpts)
 }
 
-// LastSnapshot is a free data retrieval call binding the contract method 0xfb861ac1.
+// LastSnapshotBlock is a free data retrieval call binding the contract method 0x4f4ad3a6.
 //
-// Solidity: function lastSnapshot() view returns(uint256)
-func (_LaraContract *LaraContractCallerSession) LastSnapshot() (*big.Int, error) {
-	return _LaraContract.Contract.LastSnapshot(&_LaraContract.CallOpts)
+// Solidity: function lastSnapshotBlock() view returns(uint256)
+func (_LaraContract *LaraContractCallerSession) LastSnapshotBlock() (*big.Int, error) {
+	return _LaraContract.Contract.LastSnapshotBlock(&_LaraContract.CallOpts)
+}
+
+// LastSnapshotId is a free data retrieval call binding the contract method 0x837afbc0.
+//
+// Solidity: function lastSnapshotId() view returns(uint256)
+func (_LaraContract *LaraContractCaller) LastSnapshotId(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _LaraContract.contract.Call(opts, &out, "lastSnapshotId")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// LastSnapshotId is a free data retrieval call binding the contract method 0x837afbc0.
+//
+// Solidity: function lastSnapshotId() view returns(uint256)
+func (_LaraContract *LaraContractSession) LastSnapshotId() (*big.Int, error) {
+	return _LaraContract.Contract.LastSnapshotId(&_LaraContract.CallOpts)
+}
+
+// LastSnapshotId is a free data retrieval call binding the contract method 0x837afbc0.
+//
+// Solidity: function lastSnapshotId() view returns(uint256)
+func (_LaraContract *LaraContractCallerSession) LastSnapshotId() (*big.Int, error) {
+	return _LaraContract.Contract.LastSnapshotId(&_LaraContract.CallOpts)
 }
 
 // MaxValidatorStakeCapacity is a free data retrieval call binding the contract method 0x2a8cf87f.
@@ -684,6 +715,37 @@ func (_LaraContract *LaraContractCallerSession) ProxiableUUID() ([32]byte, error
 	return _LaraContract.Contract.ProxiableUUID(&_LaraContract.CallOpts)
 }
 
+// RewardsPerSnapshot is a free data retrieval call binding the contract method 0xac0aa701.
+//
+// Solidity: function rewardsPerSnapshot(uint256 ) view returns(uint256)
+func (_LaraContract *LaraContractCaller) RewardsPerSnapshot(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _LaraContract.contract.Call(opts, &out, "rewardsPerSnapshot", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// RewardsPerSnapshot is a free data retrieval call binding the contract method 0xac0aa701.
+//
+// Solidity: function rewardsPerSnapshot(uint256 ) view returns(uint256)
+func (_LaraContract *LaraContractSession) RewardsPerSnapshot(arg0 *big.Int) (*big.Int, error) {
+	return _LaraContract.Contract.RewardsPerSnapshot(&_LaraContract.CallOpts, arg0)
+}
+
+// RewardsPerSnapshot is a free data retrieval call binding the contract method 0xac0aa701.
+//
+// Solidity: function rewardsPerSnapshot(uint256 ) view returns(uint256)
+func (_LaraContract *LaraContractCallerSession) RewardsPerSnapshot(arg0 *big.Int) (*big.Int, error) {
+	return _LaraContract.Contract.RewardsPerSnapshot(&_LaraContract.CallOpts, arg0)
+}
+
 // StTaraToken is a free data retrieval call binding the contract method 0x021b7a81.
 //
 // Solidity: function stTaraToken() view returns(address)
@@ -715,35 +777,35 @@ func (_LaraContract *LaraContractCallerSession) StTaraToken() (common.Address, e
 	return _LaraContract.Contract.StTaraToken(&_LaraContract.CallOpts)
 }
 
-// TotalDelegated is a free data retrieval call binding the contract method 0x80d04de8.
+// StakerSnapshotClaimed is a free data retrieval call binding the contract method 0xb9a6cc1d.
 //
-// Solidity: function totalDelegated() view returns(uint256)
-func (_LaraContract *LaraContractCaller) TotalDelegated(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function stakerSnapshotClaimed(address , uint256 ) view returns(bool)
+func (_LaraContract *LaraContractCaller) StakerSnapshotClaimed(opts *bind.CallOpts, arg0 common.Address, arg1 *big.Int) (bool, error) {
 	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "totalDelegated")
+	err := _LaraContract.contract.Call(opts, &out, "stakerSnapshotClaimed", arg0, arg1)
 
 	if err != nil {
-		return *new(*big.Int), err
+		return *new(bool), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
 
 	return out0, err
 
 }
 
-// TotalDelegated is a free data retrieval call binding the contract method 0x80d04de8.
+// StakerSnapshotClaimed is a free data retrieval call binding the contract method 0xb9a6cc1d.
 //
-// Solidity: function totalDelegated() view returns(uint256)
-func (_LaraContract *LaraContractSession) TotalDelegated() (*big.Int, error) {
-	return _LaraContract.Contract.TotalDelegated(&_LaraContract.CallOpts)
+// Solidity: function stakerSnapshotClaimed(address , uint256 ) view returns(bool)
+func (_LaraContract *LaraContractSession) StakerSnapshotClaimed(arg0 common.Address, arg1 *big.Int) (bool, error) {
+	return _LaraContract.Contract.StakerSnapshotClaimed(&_LaraContract.CallOpts, arg0, arg1)
 }
 
-// TotalDelegated is a free data retrieval call binding the contract method 0x80d04de8.
+// StakerSnapshotClaimed is a free data retrieval call binding the contract method 0xb9a6cc1d.
 //
-// Solidity: function totalDelegated() view returns(uint256)
-func (_LaraContract *LaraContractCallerSession) TotalDelegated() (*big.Int, error) {
-	return _LaraContract.Contract.TotalDelegated(&_LaraContract.CallOpts)
+// Solidity: function stakerSnapshotClaimed(address , uint256 ) view returns(bool)
+func (_LaraContract *LaraContractCallerSession) StakerSnapshotClaimed(arg0 common.Address, arg1 *big.Int) (bool, error) {
+	return _LaraContract.Contract.StakerSnapshotClaimed(&_LaraContract.CallOpts, arg0, arg1)
 }
 
 // TreasuryAddress is a free data retrieval call binding the contract method 0xc5f956af.
@@ -853,37 +915,6 @@ func (_LaraContract *LaraContractCallerSession) Undelegations(arg0 common.Addres
 	return _LaraContract.Contract.Undelegations(&_LaraContract.CallOpts, arg0, arg1)
 }
 
-// Validators is a free data retrieval call binding the contract method 0x35aa2e44.
-//
-// Solidity: function validators(uint256 ) view returns(address)
-func (_LaraContract *LaraContractCaller) Validators(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
-	var out []interface{}
-	err := _LaraContract.contract.Call(opts, &out, "validators", arg0)
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// Validators is a free data retrieval call binding the contract method 0x35aa2e44.
-//
-// Solidity: function validators(uint256 ) view returns(address)
-func (_LaraContract *LaraContractSession) Validators(arg0 *big.Int) (common.Address, error) {
-	return _LaraContract.Contract.Validators(&_LaraContract.CallOpts, arg0)
-}
-
-// Validators is a free data retrieval call binding the contract method 0x35aa2e44.
-//
-// Solidity: function validators(uint256 ) view returns(address)
-func (_LaraContract *LaraContractCallerSession) Validators(arg0 *big.Int) (common.Address, error) {
-	return _LaraContract.Contract.Validators(&_LaraContract.CallOpts, arg0)
-}
-
 // CancelUndelegate is a paid mutator transaction binding the contract method 0x6342306d.
 //
 // Solidity: function cancelUndelegate(uint64 id) returns()
@@ -945,6 +976,27 @@ func (_LaraContract *LaraContractSession) ConfirmUndelegate(id uint64) (*types.T
 // Solidity: function confirmUndelegate(uint64 id) returns()
 func (_LaraContract *LaraContractTransactorSession) ConfirmUndelegate(id uint64) (*types.Transaction, error) {
 	return _LaraContract.Contract.ConfirmUndelegate(&_LaraContract.TransactOpts, id)
+}
+
+// DistrbuteRewardsForSnapshot is a paid mutator transaction binding the contract method 0xbb285dd3.
+//
+// Solidity: function distrbuteRewardsForSnapshot(address staker, uint256 snapshotId) returns()
+func (_LaraContract *LaraContractTransactor) DistrbuteRewardsForSnapshot(opts *bind.TransactOpts, staker common.Address, snapshotId *big.Int) (*types.Transaction, error) {
+	return _LaraContract.contract.Transact(opts, "distrbuteRewardsForSnapshot", staker, snapshotId)
+}
+
+// DistrbuteRewardsForSnapshot is a paid mutator transaction binding the contract method 0xbb285dd3.
+//
+// Solidity: function distrbuteRewardsForSnapshot(address staker, uint256 snapshotId) returns()
+func (_LaraContract *LaraContractSession) DistrbuteRewardsForSnapshot(staker common.Address, snapshotId *big.Int) (*types.Transaction, error) {
+	return _LaraContract.Contract.DistrbuteRewardsForSnapshot(&_LaraContract.TransactOpts, staker, snapshotId)
+}
+
+// DistrbuteRewardsForSnapshot is a paid mutator transaction binding the contract method 0xbb285dd3.
+//
+// Solidity: function distrbuteRewardsForSnapshot(address staker, uint256 snapshotId) returns()
+func (_LaraContract *LaraContractTransactorSession) DistrbuteRewardsForSnapshot(staker common.Address, snapshotId *big.Int) (*types.Transaction, error) {
+	return _LaraContract.Contract.DistrbuteRewardsForSnapshot(&_LaraContract.TransactOpts, staker, snapshotId)
 }
 
 // Initialize is a paid mutator transaction binding the contract method 0xf8c8765e.
@@ -1052,6 +1104,27 @@ func (_LaraContract *LaraContractTransactorSession) SetCommission(_commission *b
 	return _LaraContract.Contract.SetCommission(&_LaraContract.TransactOpts, _commission)
 }
 
+// SetCommissionDiscounts is a paid mutator transaction binding the contract method 0x7ecad8f2.
+//
+// Solidity: function setCommissionDiscounts(address staker, uint32 discount) returns()
+func (_LaraContract *LaraContractTransactor) SetCommissionDiscounts(opts *bind.TransactOpts, staker common.Address, discount uint32) (*types.Transaction, error) {
+	return _LaraContract.contract.Transact(opts, "setCommissionDiscounts", staker, discount)
+}
+
+// SetCommissionDiscounts is a paid mutator transaction binding the contract method 0x7ecad8f2.
+//
+// Solidity: function setCommissionDiscounts(address staker, uint32 discount) returns()
+func (_LaraContract *LaraContractSession) SetCommissionDiscounts(staker common.Address, discount uint32) (*types.Transaction, error) {
+	return _LaraContract.Contract.SetCommissionDiscounts(&_LaraContract.TransactOpts, staker, discount)
+}
+
+// SetCommissionDiscounts is a paid mutator transaction binding the contract method 0x7ecad8f2.
+//
+// Solidity: function setCommissionDiscounts(address staker, uint32 discount) returns()
+func (_LaraContract *LaraContractTransactorSession) SetCommissionDiscounts(staker common.Address, discount uint32) (*types.Transaction, error) {
+	return _LaraContract.Contract.SetCommissionDiscounts(&_LaraContract.TransactOpts, staker, discount)
+}
+
 // SetEpochDuration is a paid mutator transaction binding the contract method 0x30024dfe.
 //
 // Solidity: function setEpochDuration(uint256 _epochDuration) returns()
@@ -1138,21 +1211,21 @@ func (_LaraContract *LaraContractTransactorSession) SetTreasuryAddress(_treasury
 
 // Snapshot is a paid mutator transaction binding the contract method 0x9711715a.
 //
-// Solidity: function snapshot() returns()
+// Solidity: function snapshot() returns(uint256 id)
 func (_LaraContract *LaraContractTransactor) Snapshot(opts *bind.TransactOpts) (*types.Transaction, error) {
 	return _LaraContract.contract.Transact(opts, "snapshot")
 }
 
 // Snapshot is a paid mutator transaction binding the contract method 0x9711715a.
 //
-// Solidity: function snapshot() returns()
+// Solidity: function snapshot() returns(uint256 id)
 func (_LaraContract *LaraContractSession) Snapshot() (*types.Transaction, error) {
 	return _LaraContract.Contract.Snapshot(&_LaraContract.TransactOpts)
 }
 
 // Snapshot is a paid mutator transaction binding the contract method 0x9711715a.
 //
-// Solidity: function snapshot() returns()
+// Solidity: function snapshot() returns(uint256 id)
 func (_LaraContract *LaraContractTransactorSession) Snapshot() (*types.Transaction, error) {
 	return _LaraContract.Contract.Snapshot(&_LaraContract.TransactOpts)
 }
@@ -2212,17 +2285,22 @@ func (it *LaraContractSnapshotTakenIterator) Close() error {
 
 // LaraContractSnapshotTaken represents a SnapshotTaken event raised by the LaraContract contract.
 type LaraContractSnapshotTaken struct {
+	SnapshotId        *big.Int
 	TotalDelegation   *big.Int
 	TotalRewards      *big.Int
 	NextSnapshotBlock *big.Int
 	Raw               types.Log // Blockchain specific contextual infos
 }
 
-// FilterSnapshotTaken is a free log retrieval operation binding the contract event 0x7be9d0a76c3aa32b2063c1e71a2737740371887411d23841efd15985cce48f53.
+// FilterSnapshotTaken is a free log retrieval operation binding the contract event 0xd11d1ddc246c645d33059cc6f86cc243717029293259f0b2ff7d3f96c7d860ef.
 //
-// Solidity: event SnapshotTaken(uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 indexed nextSnapshotBlock)
-func (_LaraContract *LaraContractFilterer) FilterSnapshotTaken(opts *bind.FilterOpts, totalDelegation []*big.Int, totalRewards []*big.Int, nextSnapshotBlock []*big.Int) (*LaraContractSnapshotTakenIterator, error) {
+// Solidity: event SnapshotTaken(uint256 indexed snapshotId, uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 nextSnapshotBlock)
+func (_LaraContract *LaraContractFilterer) FilterSnapshotTaken(opts *bind.FilterOpts, snapshotId []*big.Int, totalDelegation []*big.Int, totalRewards []*big.Int) (*LaraContractSnapshotTakenIterator, error) {
 
+	var snapshotIdRule []interface{}
+	for _, snapshotIdItem := range snapshotId {
+		snapshotIdRule = append(snapshotIdRule, snapshotIdItem)
+	}
 	var totalDelegationRule []interface{}
 	for _, totalDelegationItem := range totalDelegation {
 		totalDelegationRule = append(totalDelegationRule, totalDelegationItem)
@@ -2231,23 +2309,23 @@ func (_LaraContract *LaraContractFilterer) FilterSnapshotTaken(opts *bind.Filter
 	for _, totalRewardsItem := range totalRewards {
 		totalRewardsRule = append(totalRewardsRule, totalRewardsItem)
 	}
-	var nextSnapshotBlockRule []interface{}
-	for _, nextSnapshotBlockItem := range nextSnapshotBlock {
-		nextSnapshotBlockRule = append(nextSnapshotBlockRule, nextSnapshotBlockItem)
-	}
 
-	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "SnapshotTaken", totalDelegationRule, totalRewardsRule, nextSnapshotBlockRule)
+	logs, sub, err := _LaraContract.contract.FilterLogs(opts, "SnapshotTaken", snapshotIdRule, totalDelegationRule, totalRewardsRule)
 	if err != nil {
 		return nil, err
 	}
 	return &LaraContractSnapshotTakenIterator{contract: _LaraContract.contract, event: "SnapshotTaken", logs: logs, sub: sub}, nil
 }
 
-// WatchSnapshotTaken is a free log subscription operation binding the contract event 0x7be9d0a76c3aa32b2063c1e71a2737740371887411d23841efd15985cce48f53.
+// WatchSnapshotTaken is a free log subscription operation binding the contract event 0xd11d1ddc246c645d33059cc6f86cc243717029293259f0b2ff7d3f96c7d860ef.
 //
-// Solidity: event SnapshotTaken(uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 indexed nextSnapshotBlock)
-func (_LaraContract *LaraContractFilterer) WatchSnapshotTaken(opts *bind.WatchOpts, sink chan<- *LaraContractSnapshotTaken, totalDelegation []*big.Int, totalRewards []*big.Int, nextSnapshotBlock []*big.Int) (event.Subscription, error) {
+// Solidity: event SnapshotTaken(uint256 indexed snapshotId, uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 nextSnapshotBlock)
+func (_LaraContract *LaraContractFilterer) WatchSnapshotTaken(opts *bind.WatchOpts, sink chan<- *LaraContractSnapshotTaken, snapshotId []*big.Int, totalDelegation []*big.Int, totalRewards []*big.Int) (event.Subscription, error) {
 
+	var snapshotIdRule []interface{}
+	for _, snapshotIdItem := range snapshotId {
+		snapshotIdRule = append(snapshotIdRule, snapshotIdItem)
+	}
 	var totalDelegationRule []interface{}
 	for _, totalDelegationItem := range totalDelegation {
 		totalDelegationRule = append(totalDelegationRule, totalDelegationItem)
@@ -2256,12 +2334,8 @@ func (_LaraContract *LaraContractFilterer) WatchSnapshotTaken(opts *bind.WatchOp
 	for _, totalRewardsItem := range totalRewards {
 		totalRewardsRule = append(totalRewardsRule, totalRewardsItem)
 	}
-	var nextSnapshotBlockRule []interface{}
-	for _, nextSnapshotBlockItem := range nextSnapshotBlock {
-		nextSnapshotBlockRule = append(nextSnapshotBlockRule, nextSnapshotBlockItem)
-	}
 
-	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "SnapshotTaken", totalDelegationRule, totalRewardsRule, nextSnapshotBlockRule)
+	logs, sub, err := _LaraContract.contract.WatchLogs(opts, "SnapshotTaken", snapshotIdRule, totalDelegationRule, totalRewardsRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2293,9 +2367,9 @@ func (_LaraContract *LaraContractFilterer) WatchSnapshotTaken(opts *bind.WatchOp
 	}), nil
 }
 
-// ParseSnapshotTaken is a log parse operation binding the contract event 0x7be9d0a76c3aa32b2063c1e71a2737740371887411d23841efd15985cce48f53.
+// ParseSnapshotTaken is a log parse operation binding the contract event 0xd11d1ddc246c645d33059cc6f86cc243717029293259f0b2ff7d3f96c7d860ef.
 //
-// Solidity: event SnapshotTaken(uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 indexed nextSnapshotBlock)
+// Solidity: event SnapshotTaken(uint256 indexed snapshotId, uint256 indexed totalDelegation, uint256 indexed totalRewards, uint256 nextSnapshotBlock)
 func (_LaraContract *LaraContractFilterer) ParseSnapshotTaken(log types.Log) (*LaraContractSnapshotTaken, error) {
 	event := new(LaraContractSnapshotTaken)
 	if err := _LaraContract.contract.UnpackLog(event, "SnapshotTaken", log); err != nil {
