@@ -63,6 +63,7 @@ func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_add
 	l.contract = contract
 	l.graphQLEndpoint = graphQLEndpoint
 	l.SyncState()
+	l.FetchAndDistributePastRewards()
 	l.ScanAndDistributeRewards()
 	return l
 }
@@ -327,7 +328,7 @@ func (l *Lara) Snapshot() {
 		} else if strings.Contains(err.Error(), "EpochDurationNotMet") {
 			log.Warn("Epoch duration not met")
 		} else {
-			log.Fatalf("Failed to make snapshot: %v", err)
+			log.Warnf("Failed to make snapshot: %v", err)
 		}
 	}
 	// wait 4 secs ~ 1 block
@@ -403,7 +404,7 @@ func (l *Lara) ScanAndDistributeRewards() {
 		}
 		defer sub.Unsubscribe()
 
-		log.Warn("Successfully started subscribing to SnapshotTaken events")
+		log.Info("Successfully started subscribing to SnapshotTaken events")
 
 		for {
 			select {
@@ -422,31 +423,77 @@ func (l *Lara) distributeRewardsUpToSnapshot(latestSnapshotId *big.Int) {
 	for snapshotId := new(big.Int).Add(l.state.lastSnapshotIdDistributed, big.NewInt(1)); snapshotId.Cmp(latestSnapshotId) <= 0; snapshotId.Add(snapshotId, big.NewInt(1)) {
 		log.Infof("Checking rewards distribution for SnapshotID %s", snapshotId)
 
-		blockNumber, err := l.GetLastSnapshotIDUpdateTime(snapshotId)
-		if err != nil {
-			log.Errorf("Failed to get block number for SnapshotID %s: %v", snapshotId, err)
-			continue
-		}
-
-		holders := GetStakedTaraHolders(l, blockNumber)
-		allDistributed := true
-
-		for _, holder := range holders {
-			holderAddress := common.HexToAddress(holder)
-			isDistributed := l.IsSnapshotDistributedToUser(snapshotId, holderAddress)
-			if !isDistributed {
-				allDistributed = false
-				break
-			}
-		}
-
-		if !allDistributed {
-			log.Infof("Distributing rewards for SnapshotID %s", snapshotId)
-			l.DisburseRewardsBetweenHolders(snapshotId)
-		} else {
-			log.Infof("All rewards already distributed for SnapshotID %s", snapshotId)
-		}
-
+		l.distributeRewardsForSnapshot(snapshotId)
 		l.state.lastSnapshotIdDistributed = snapshotId
+	}
+}
+
+func (l *Lara) FetchAndDistributePastRewards() {
+	go func() {
+		log.Info("Starting to fetch and distribute past rewards")
+
+		// Get the latest block number
+		latestBlock, err := l.Eth.BlockNumber(context.Background())
+		if err != nil {
+			log.Errorf("Failed to get latest block number: %v", err)
+			return
+		}
+
+		// Create a filter for SnapshotTaken events from block 0 to the latest block
+		filterOpts := &bind.FilterOpts{
+			Start:   0,
+			End:     &latestBlock,
+			Context: context.Background(),
+		}
+
+		// Filter for SnapshotTaken events
+		iter, err := l.contract.FilterSnapshotTaken(filterOpts, nil, nil, nil)
+		if err != nil {
+			log.Errorf("Failed to filter SnapshotTaken events: %v", err)
+			return
+		}
+		defer iter.Close()
+
+		for iter.Next() {
+			event := iter.Event
+			log.Infof("Processing past SnapshotTaken event: SnapshotID %s", event.SnapshotId)
+
+			// Check and distribute rewards for this snapshot
+			l.distributeRewardsUpToSnapshot(event.SnapshotId)
+		}
+
+		if err := iter.Error(); err != nil {
+			log.Errorf("Error iterating through SnapshotTaken events: %v", err)
+		}
+
+		log.Info("Finished processing past SnapshotTaken events")
+	}()
+}
+
+func (l *Lara) distributeRewardsForSnapshot(snapshotId *big.Int) {
+	log.Infof("Checking rewards distribution for SnapshotID %s", snapshotId)
+
+	blockNumber, err := l.GetLastSnapshotIDUpdateTime(snapshotId)
+	if err != nil {
+		log.Errorf("Failed to get block number for SnapshotID %s: %v", snapshotId, err)
+		return
+	}
+
+	holders := GetStakedTaraHolders(l, blockNumber)
+	rewardsDistributed := false
+
+	for _, holder := range holders {
+		holderAddress := common.HexToAddress(holder)
+		isDistributed := l.IsSnapshotDistributedToUser(snapshotId, holderAddress)
+		if !isDistributed {
+			log.Infof("Distributing rewards for SnapshotID %s to holder %s", snapshotId, holder)
+			l.DisburseRewardsBetweenHolders(snapshotId)
+			rewardsDistributed = true
+			break
+		}
+	}
+
+	if !rewardsDistributed {
+		log.Infof("All rewards already distributed for SnapshotID %s", snapshotId)
 	}
 }
