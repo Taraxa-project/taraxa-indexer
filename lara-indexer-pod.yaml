@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: taraxa-node
+    app.kubernetes.io/instance: pr-2609
+    app.kubernetes.io/name: taraxa-node
+    partition: a
+  name: pr-2609-lara-indexer
+  namespace: blockchain-prnet
+spec:
+  containers:
+  - args:
+    - -data_dir
+    - /data
+    - -blockchain_ws
+    - ws://pr-2609-taraxa-node:8777
+    - -chain_id
+    - "200"
+    - -yield_saving_interval
+    - "100"
+    - -validators_yield_saving_interval
+    - "100"
+    - -signing_key
+    - xxxx
+    - -oracle_address
+    - "0xd170c33a27A9C3cb599d9B41970DAD2AaCeE96e2"
+    - -lara_address
+    - "0x397F45dCaC0DC00cb927d8eCE7d449F726A517cF"
+    - -graphQLEndpoint
+    - "https://indexer.prnet.taraxa.io/subgraphs/name/Liquid-staking/lara-subgraph"
+    command:
+    - /taraxa-indexer
+    image: elodtaraxa/lara-indexer:v1.0.0
+    imagePullPolicy: Always
+    name: taraxa-indexer
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /data
+      name: indexer-data
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-x46jh
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeSelector:
+    cloud.google.com/gke-nodepool: blockchain-prnet
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: indexer-data
+    persistentVolumeClaim:
+      claimName: pr-2609-lara-indexer
+  - name: kube-api-access-x46jh
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace

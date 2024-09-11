@@ -63,6 +63,7 @@ func MakeLara(rpc *ethclient.Client, signing_key, deployment_address, oracle_add
 	l.contract = contract
 	l.graphQLEndpoint = graphQLEndpoint
 	l.SyncState()
+	l.ScanAndDistributeRewards()
 	return l
 }
 
@@ -86,8 +87,7 @@ func (l *Lara) Run() {
 		if int64(currentBlock) > expenctedSnapshotTime {
 			// if the epoch is running
 			// end the epoch
-			newSnapshot := l.Snapshot()
-			l.DisburseRewardsBetweenHolders(newSnapshot)
+			l.Snapshot()
 			// wait 3 sec
 			time.Sleep(4 * time.Second)
 
@@ -167,10 +167,6 @@ func (l *Lara) DisburseRewardsBetweenHolders(snapshotId *big.Int) {
 			} else {
 				log.Fatalf("Failed to disburse rewards for snapshot: %v with address: %s and snapshotID: %s", err, holderAddress.Hex(), snapshotId.String())
 			}
-		}
-		_, err = l.oracle.LogRewardDistribution(opts, holderAddress, snapshotId, rewards)
-		if err != nil {
-			log.Fatalf("Failed to log reward distribution: %v with address: %s and snapshotID: %s", err, holderAddress.Hex(), snapshotId.String())
 		}
 		log.WithFields(log.Fields{"txhash": tx.Hash().Hex(), "holder": holder, "snapshotID": snapshotId}).Info("LARA: Disbursed rewards to holder")
 	}
@@ -303,7 +299,7 @@ func (l *Lara) SyncState() {
 	log.WithFields(log.Fields{"currentBlock": currentBlock, "lastRebalance": l.state.lastRebalance, "lastSnapshotBlock": l.state.lastSnapshotBlock, "nextSnapshotBlock": nextSnapshot, "nodesDelegatedTo": len(l.state.validators), "totalDelegated": l.state.lastEpochTotalDelegatedAmount}).Info("LARA STATE: ")
 }
 
-func (l *Lara) Snapshot() (snapshotID *big.Int) {
+func (l *Lara) Snapshot() {
 	if l.state.isMakingSnapshot {
 		log.Warn("WARN: PENDING SNPAHSOT")
 		return
@@ -331,28 +327,15 @@ func (l *Lara) Snapshot() (snapshotID *big.Int) {
 		} else if strings.Contains(err.Error(), "EpochDurationNotMet") {
 			log.Warn("Epoch duration not met")
 		} else {
-			log.Warnf("Failed to make snapshot: %v", err)
+			log.Fatalf("Failed to make snapshot: %v", err)
 		}
 	}
 	// wait 4 secs ~ 1 block
 	time.Sleep(4 * time.Second)
 
-	if tx != nil {
-		receipt, err := l.Eth.TransactionReceipt(context.Background(), tx.Hash())
+	log.Warnf("Snapshot hash: %s", tx.Hash().Hex())
 
-		if err != nil {
-			if strings.Contains(err.Error(), "not found") {
-				log.Warn("WARN: SNAPSHOT NOT FOUND")
-			} else {
-				log.Fatalf("Failed to get receipt: %v", err)
-			}
-		}
-		if receipt != nil {
-			log.Warnf("Made snapshot at block: %d, hash: %s", receipt.BlockNumber, tx.Hash().Hex())
-		}
-
-		l.state.isMakingSnapshot = false
-	}
+	l.state.isMakingSnapshot = false
 	// wait 3 sec
 	time.Sleep(3 * time.Second)
 	l.SyncState()
@@ -361,7 +344,6 @@ func (l *Lara) Snapshot() (snapshotID *big.Int) {
 		log.Warnf("Snapshot not made after : %d", timer.C)
 		timer.Stop()
 	}
-	return l.state.lastSnapshotBlock
 }
 
 func (l *Lara) GetState() State {
@@ -410,4 +392,61 @@ func (l *Lara) GetLastSnapshotIDUpdateTime(snapshotID *big.Int) (uint64, error) 
 	}
 
 	return 0, fmt.Errorf("no SnapshotTaken event found for snapshotID %s", snapshotID.String())
+}
+
+func (l *Lara) ScanAndDistributeRewards() {
+	go func() {
+		logs := make(chan *lara_contract.LaraContractSnapshotTaken)
+		sub, err := l.contract.WatchSnapshotTaken(nil, logs, nil, nil, nil)
+		if err != nil {
+			log.Fatalf("Failed to watch SnapshotTaken events: %v", err)
+		}
+		defer sub.Unsubscribe()
+
+		log.Warn("Successfully started subscribing to SnapshotTaken events")
+
+		for {
+			select {
+			case err := <-sub.Err():
+				log.Errorf("Error in SnapshotTaken subscription: %v", err)
+				return
+			case event := <-logs:
+				log.Infof("New SnapshotTaken event: SnapshotID %s", event.SnapshotId)
+				l.distributeRewardsUpToSnapshot(event.SnapshotId)
+			}
+		}
+	}()
+}
+
+func (l *Lara) distributeRewardsUpToSnapshot(latestSnapshotId *big.Int) {
+	for snapshotId := new(big.Int).Add(l.state.lastSnapshotIdDistributed, big.NewInt(1)); snapshotId.Cmp(latestSnapshotId) <= 0; snapshotId.Add(snapshotId, big.NewInt(1)) {
+		log.Infof("Checking rewards distribution for SnapshotID %s", snapshotId)
+
+		blockNumber, err := l.GetLastSnapshotIDUpdateTime(snapshotId)
+		if err != nil {
+			log.Errorf("Failed to get block number for SnapshotID %s: %v", snapshotId, err)
+			continue
+		}
+
+		holders := GetStakedTaraHolders(l, blockNumber)
+		allDistributed := true
+
+		for _, holder := range holders {
+			holderAddress := common.HexToAddress(holder)
+			isDistributed := l.IsSnapshotDistributedToUser(snapshotId, holderAddress)
+			if !isDistributed {
+				allDistributed = false
+				break
+			}
+		}
+
+		if !allDistributed {
+			log.Infof("Distributing rewards for SnapshotID %s", snapshotId)
+			l.DisburseRewardsBetweenHolders(snapshotId)
+		} else {
+			log.Infof("All rewards already distributed for SnapshotID %s", snapshotId)
+		}
+
+		l.state.lastSnapshotIdDistributed = snapshotId
+	}
 }

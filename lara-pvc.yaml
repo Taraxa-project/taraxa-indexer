@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pr-2609-lara-indexer
+  namespace: blockchain-prnet
+  labels:
+    app: taraxa-node
+    app.kubernetes.io/instance: pr-2609
+    app.kubernetes.io/name: taraxa-node
+    partition: a
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Gi
+  storageClassName: standard
