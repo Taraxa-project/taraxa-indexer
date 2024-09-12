@@ -330,11 +330,11 @@ func (l *Lara) Snapshot() {
 		} else {
 			log.Warnf("Failed to make snapshot: %v", err)
 		}
+	} else {
+		log.Warnf("Snapshot hash: %s", tx.Hash().Hex())
 	}
 	// wait 4 secs ~ 1 block
 	time.Sleep(4 * time.Second)
-
-	log.Warnf("Snapshot hash: %s", tx.Hash().Hex())
 
 	l.state.isMakingSnapshot = false
 	// wait 3 sec
