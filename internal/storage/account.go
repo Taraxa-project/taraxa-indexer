@@ -30,6 +30,14 @@ func (a *Accounts) SortByBalanceDescending() {
 	})
 }
 
+func (a *Accounts) SetNegativeBalanceToZero() {
+	for i := 0; i < len(*a); i++ {
+		if (*a)[i].Balance.Cmp(big.NewInt(0)) == -1 {
+			(*a)[i].Balance = big.NewInt(0)
+		}
+	}
+}
+
 func (a *Accounts) findIndex(address string) int {
 	for i := 0; i < len(*a); i++ {
 		if strings.EqualFold((*a)[i].Address, address) {

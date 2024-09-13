@@ -18,9 +18,9 @@ spec:
     - -chain_id
     - "200"
     - -yield_saving_interval
-    - "100"
+    - "999"
     - -validators_yield_saving_interval
-    - "100"
+    - "999"
     - -signing_key
     - xxxx
     - -oracle_address
@@ -31,7 +31,7 @@ spec:
     - "https://indexer.prnet.taraxa.io/subgraphs/name/Liquid-staking/lara-subgraph"
     command:
     - /taraxa-indexer
-    image: elodtaraxa/lara-indexer:v1.0.0
+    image: elodtaraxa/lara-indexer:v1.0.5
     imagePullPolicy: Always
     name: taraxa-indexer
     resources: {}

@@ -20,6 +20,24 @@
     },
     {
       "type": "function",
+      "name": "batchCancelUndelegate",
+      "inputs": [
+        { "name": "ids", "type": "uint64[]", "internalType": "uint64[]" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "batchConfirmUndelegate",
+      "inputs": [
+        { "name": "ids", "type": "uint64[]", "internalType": "uint64[]" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
       "name": "cancelUndelegate",
       "inputs": [{ "name": "id", "type": "uint64", "internalType": "uint64" }],
       "outputs": [],
@@ -57,7 +75,7 @@
     },
     {
       "type": "function",
-      "name": "distrbuteRewardsForSnapshot",
+      "name": "distributeRewardsForSnapshot",
       "inputs": [
         { "name": "staker", "type": "address", "internalType": "address" },
         { "name": "snapshotId", "type": "uint256", "internalType": "uint256" }
@@ -496,6 +514,37 @@
           "type": "address",
           "indexed": true,
           "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RewardsClaimedForSnapshot",
+      "inputs": [
+        {
+          "name": "snapshotId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "staker",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "reward",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "balance",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
         }
       ],
       "anonymous": false
