@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "lara-indexer.fullname" . }}
+  labels:
+    {{- include "lara-indexer.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "lara-indexer.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "lara-indexer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "lara-indexer.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - -data_dir
+        - {{ .Values.indexer.dataDir }}
+        - -blockchain_ws
+        - {{ .Values.indexer.blockchainWs }}
+        - -chain_id
+        - {{ .Values.indexer.chainId | quote }}
+        - -yield_saving_interval
+        - {{ .Values.indexer.yieldSavingInterval | quote }}
+        - -validators_yield_saving_interval
+        - {{ .Values.indexer.validatorsYieldSavingInterval | quote }}
+        - -signing_key
+        - {{ .Values.indexer.signingKey }}
+        - -oracle_address
+        - {{ .Values.indexer.oracleAddress }}
+        - -lara_address
+        - {{ .Values.indexer.laraAddress }}
+        - -graphQLEndpoint
+        - {{ .Values.indexer.graphQLEndpoint }}
+        volumeMounts:
+        - name: indexer-data
+          mountPath: {{ .Values.indexer.dataDir }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+  - metadata:
+      name: indexer-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.storage.size }}
