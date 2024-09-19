@@ -31,10 +31,6 @@ func NewWsClient(url string) (*WsClient, error) {
 	client := &WsClient{rpc: ws, ctx: ctx}
 	client.GetChainId()
 
-	if err != nil {
-		log.WithError(err).Fatal("Can't create dpos client")
-	}
-
 	return client, nil
 }
 
