@@ -32,6 +32,7 @@ func (bc *blockContext) processTransactions() (err error) {
 		}
 		// remove value from sender and add to receiver
 		receiver := bc.Block.Transactions[t_idx].To
+		// handle contract creation
 		if receiver == "" {
 			receiver = bc.Block.Transactions[t_idx].ContractAddress
 		}

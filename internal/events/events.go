@@ -14,9 +14,10 @@ import (
 )
 
 var rewardTopics = map[string]bool{
-	"CommissionRewardsClaimed(address,address,uint256)": true,
-	"RewardsClaimed(address,address,uint256)":           true,
-	"UndelegateConfirmed(address,address,uint256)":      true,
+	"CommissionRewardsClaimed(address,address,uint256)":     true,
+	"RewardsClaimed(address,address,uint256)":               true,
+	"UndelegateConfirmed(address,address,uint256)":          true,
+	"UndelegateConfirmedV2(address,address,uint64,uint256)": true,
 }
 
 func DecodeEventDynamic(log models.EventLog) (string, any, error) {

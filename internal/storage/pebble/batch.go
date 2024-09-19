@@ -1,6 +1,7 @@
 package pebble
 
 import (
+	"encoding/json"
 	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
@@ -67,7 +68,8 @@ func (b *Batch) AddToBatch(o interface{}, key1 string, key2 uint64) {
 func (b *Batch) AddToBatchSingleKey(o interface{}, key string) {
 	err := b.AddToBatchFullKey(o, GetPrefixKey(GetPrefix(o), key))
 	if err != nil {
-		log.WithError(err).WithField("key", string(GetPrefixKey(GetPrefix(o), key))).Fatal("AddToBatchSingleKey failed")
+		obj_json, _ := json.Marshal(o)
+		log.WithError(err).WithField("object", string(obj_json)).WithField("key", string(GetPrefixKey(GetPrefix(o), key))).Fatal("AddToBatchSingleKey failed")
 	}
 }
 
