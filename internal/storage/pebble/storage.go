@@ -174,7 +174,10 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 		UpperBound: keyUpperBound(prefix),
 	}
 
-	iter := s.db.NewIter(&prefixIterOptions)
+	iter, err := s.db.NewIter(&prefixIterOptions)
+	if err != nil {
+		log.WithError(err).Fatal("NewIter failed")
+	}
 	return iter
 }
 
