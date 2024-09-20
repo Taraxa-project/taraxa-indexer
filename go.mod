@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.7-cornus-beta
 	github.com/cockroachdb/pebble v1.1.2
-	github.com/deepmap/oapi-codegen/v2 v2.0.0
 	github.com/ethereum/go-ethereum v1.13.14
 	github.com/getkin/kin-openapi v0.125.0
 	github.com/go-playground/assert/v2 v2.2.0

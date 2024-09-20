@@ -75,7 +75,7 @@ func (m *AddCommission) migrateStats(s *pebble.Storage) {
 				TransactionsCount:        o.TransactionsCount,
 				ValidatorRegisteredBlock: o.ValidatorRegisteredBlock,
 			}
-			err = batch.AddToBatchFullKey(&storage.AddressStats{Address: o.Address, StatsResponse: sr}, key)
+			err = batch.AddWithKey(&storage.AddressStats{Address: o.Address, StatsResponse: sr}, key)
 
 			if err != nil {
 				log.WithFields(log.Fields{"migration": m.id, "error": err}).Fatal("Error adding AddressStats to batch")
@@ -133,7 +133,7 @@ func (m *AddCommission) Apply(s *pebble.Storage) error {
 			} else {
 				addressStats.Commission = &validator.Commission
 			}
-			batch.AddToBatch(addressStats, addressStats.Address, 0)
+			batch.Add(addressStats, addressStats.Address, 0)
 		}
 	}
 	batch.CommitBatch()
