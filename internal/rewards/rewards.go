@@ -53,7 +53,7 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, total_minted *
 	if r.blockNum%uint64(distributionFrequency) != 0 {
 		// Save blockFee to db to process it later and return it from this method to avoid yield double counting
 		toStore := periodStats
-		r.batch.AddToBatchSingleKey(toStore, storage.FormatIntToKey(r.blockNum))
+		r.batch.AddSingleKey(toStore, storage.FormatIntToKey(r.blockNum))
 		return big.NewInt(0), big.NewInt(0)
 	}
 
@@ -66,8 +66,8 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, total_minted *
 	}
 
 	validators_yield := GetValidatorsYield(periodRewards.ValidatorRewards, r.validators)
-	r.batch.AddToBatchSingleKey(storage.ValidatorsYield{Yields: validators_yield}, storage.FormatIntToKey(r.blockNum))
-	r.batch.AddToBatchSingleKey(storage.MultipliedYield{Yield: GetMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
+	r.batch.AddSingleKey(storage.ValidatorsYield{Yields: validators_yield}, storage.FormatIntToKey(r.blockNum))
+	r.batch.AddSingleKey(storage.MultipliedYield{Yield: GetMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
 	return periodRewards.TotalReward, periodRewards.BlockFee
 }
 

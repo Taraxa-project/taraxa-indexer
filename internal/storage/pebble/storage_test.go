@@ -150,9 +150,9 @@ func TestBatch(t *testing.T) {
 	addr := storage.MakeEmptyAddressStats("test")
 	batch := st.NewBatch()
 
-	batch.AddToBatch(addr, addr.Address, 0)
+	batch.Add(addr, addr.Address, 0)
 	addr1 := storage.MakeEmptyAddressStats("test1")
-	batch.AddToBatch(addr1, addr1.Address, 0)
+	batch.Add(addr1, addr1.Address, 0)
 	batch.CommitBatch()
 
 	ret := st.GetAddressStats("test")
@@ -206,7 +206,7 @@ func TestTxByHash(t *testing.T) {
 	}
 
 	batch := st.NewBatch()
-	batch.AddToBatchSingleKey(tx, tx.Hash)
+	batch.AddSingleKey(tx, tx.Hash)
 	batch.CommitBatch()
 
 	ret := st.GetTransactionByHash(tx.Hash)
