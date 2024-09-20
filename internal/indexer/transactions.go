@@ -6,6 +6,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,8 +15,8 @@ func (bc *blockContext) processTransactions() (err error) {
 		return
 	}
 
-	if err != nil || len(bc.Block.Pbft.Transactions) != len(bc.Block.Transactions) || len(bc.Block.Traces) != len(bc.Block.Transactions) {
-		return
+	if len(bc.Block.Pbft.Transactions) != len(bc.Block.Transactions) || len(bc.Block.Traces) != len(bc.Block.Transactions) {
+		log.WithFields(log.Fields{"in_block": len(bc.Block.Pbft.Transactions), "transactions": len(bc.Block.Transactions), "traces": len(bc.Block.Traces)}).Error("Transactions count mismatch")
 	}
 	feeReward := big.NewInt(0)
 	for t_idx := 0; t_idx < len(bc.Block.Transactions); t_idx++ {
@@ -32,6 +33,7 @@ func (bc *blockContext) processTransactions() (err error) {
 		}
 		// remove value from sender and add to receiver
 		receiver := bc.Block.Transactions[t_idx].To
+		// handle contract creation
 		if receiver == "" {
 			receiver = bc.Block.Transactions[t_idx].ContractAddress
 		}
@@ -44,7 +46,7 @@ func (bc *blockContext) processTransactions() (err error) {
 		}
 
 		if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
-			bc.Batch.AddToBatchSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
+			bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
 		}
 	}
 	// add total fee to the block producer balance before the magnolia hardfork
@@ -91,14 +93,19 @@ func makeInternal(trx models.Transaction, entry chain.TraceEntry, gasCost uint64
 func (bc *blockContext) SaveTransaction(trx models.Transaction) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 
+	// As the same data is saved with a different keys, it is better to serialize it only once
+	trx_bytes, err := rlp.EncodeToBytes(trx)
+	if err != nil {
+		log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Error("Failed to encode transaction")
+	}
 	from_index := bc.addressStats.GetAddress(bc.Storage, trx.From).AddTransaction(trx.Timestamp)
-	bc.Batch.AddToBatch(trx, trx.From, from_index)
+	bc.Batch.AddSerialized(trx, trx_bytes, trx.From, from_index)
 	if trx.To != "" {
 		to_index := bc.addressStats.GetAddress(bc.Storage, trx.To).AddTransaction(trx.Timestamp)
-		bc.Batch.AddToBatch(trx, trx.To, to_index)
+		bc.Batch.AddSerialized(trx, trx_bytes, trx.To, to_index)
 	}
 
 	if (trx.Input != "0x") && (trx.Input != "") {
-		bc.Batch.AddToBatchSingleKey(trx, trx.Hash)
+		bc.Batch.AddSerializedSingleKey(trx, trx_bytes, trx.Hash)
 	}
 }

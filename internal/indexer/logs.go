@@ -20,7 +20,7 @@ func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error)
 	logsResponse := models.TransactionLogsResponse{
 		Data: logs,
 	}
-	bc.Batch.AddToBatchSingleKey(logsResponse, tx.Hash)
+	bc.Batch.AddSingleKey(logsResponse, tx.Hash)
 	err = bc.accounts.UpdateEvents(logs)
 	if err != nil {
 		return err

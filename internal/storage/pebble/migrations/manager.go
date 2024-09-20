@@ -47,7 +47,7 @@ func (m *Manager) ApplyAll() (err error) {
 				return
 			}
 			b := m.storage.NewBatch()
-			err = b.AddToBatchFullKey(migration.GetId(), []byte(migration_prefix+migration.GetId()))
+			err = b.AddWithKey(migration.GetId(), []byte(migration_prefix+migration.GetId()))
 			if err != nil {
 				return
 			}

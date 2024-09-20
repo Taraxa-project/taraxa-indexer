@@ -7,8 +7,11 @@ type Batch interface {
 	SetGenesisHash(h GenesisHash)
 	UpdateWeekStats(w WeekStats)
 	SaveAccounts(a Accounts)
-	AddToBatchFullKey(o interface{}, key []byte) error
-	AddToBatch(o interface{}, key1 string, key2 uint64)
-	AddToBatchSingleKey(o interface{}, key string)
+	Add(o interface{}, key1 string, key2 uint64)
+	AddSerialized(o interface{}, data []byte, key1 string, key2 uint64)
+	AddSingleKey(o interface{}, key string)
+	AddSerializedSingleKey(o interface{}, data []byte, key string)
+	AddWithKey(o interface{}, key []byte) error
+	AddSerializedWithKey(o interface{}, data, key []byte) error
 	Remove(key []byte)
 }

@@ -35,10 +35,6 @@ func NewWsClient(url string) (*WsClient, error) {
 	client := &WsClient{Rpc: ws, ctx: ctx}
 	client.GetChainId()
 
-	if err != nil {
-		log.WithError(err).Fatal("Can't create websocket client")
-	}
-
 	return client, nil
 }
 
