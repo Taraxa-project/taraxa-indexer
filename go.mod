@@ -8,7 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.14
 	github.com/getkin/kin-openapi v0.125.0
 	github.com/go-playground/assert/v2 v2.2.0
-	github.com/labstack/echo/v4 v4.11.4
+	github.com/labstack/echo/v4 v4.12.0
 	github.com/nleeper/goment v1.4.4
 	github.com/oapi-codegen/echo-middleware v1.0.1
 	github.com/oapi-codegen/oapi-codegen/v2 v2.3.0
