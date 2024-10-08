@@ -71,7 +71,6 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
 		bc.SaveTransaction(internal, true)
-		// TODO: hotfix, remove after fix in taraxa-node
 		if entry.Action.CallType != "delegatecall" {
 			bc.accounts.UpdateBalances(internal.From, internal.To, internal.Value)
 		}

@@ -41,7 +41,7 @@ func scheduleBlockDataTasks(tp pool.Pool, c Client, period uint64, bd *BlockData
 	tp.Go(common.MakeTaskWithResult(c.GetValidatorsAtBlock, period, &bd.Validators, err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetTotalAmountDelegated, period, &bd.TotalAmountDelegated, err).Run)
 	supplyPeriod := period
-	if period > 100 {
+	if period >= 100 {
 		supplyPeriod = period - 100
 	}
 	tp.Go(common.MakeTaskWithResult(c.GetTotalSupply, supplyPeriod, &bd.TotalSupply, err).Run)
