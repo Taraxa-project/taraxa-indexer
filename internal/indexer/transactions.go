@@ -22,7 +22,7 @@ func (bc *blockContext) processTransactions() (err error) {
 	for t_idx := 0; t_idx < len(bc.Block.Transactions); t_idx++ {
 		bc.Block.Transactions[t_idx].SetTimestamp(bc.Block.Pbft.Timestamp)
 
-		bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel())
+		bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel(), false)
 
 		trx_fee := bc.Block.Transactions[t_idx].GetFee()
 		feeReward.Add(feeReward, trx_fee)
@@ -70,7 +70,7 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		internal := makeInternal(*bc.Block.Transactions[t_idx].GetModel(), entry, gasPrice)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
-		bc.SaveTransaction(internal)
+		bc.SaveTransaction(internal, true)
 		// TODO: hotfix, remove after fix in taraxa-node
 		if entry.Action.CallType != "delegatecall" {
 			bc.accounts.UpdateBalances(internal.From, internal.To, internal.Value)
@@ -90,7 +90,7 @@ func makeInternal(trx models.Transaction, entry chain.TraceEntry, gasCost uint64
 	return
 }
 
-func (bc *blockContext) SaveTransaction(trx models.Transaction) {
+func (bc *blockContext) SaveTransaction(trx models.Transaction, internal bool) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 
 	// As the same data is saved with a different keys, it is better to serialize it only once
@@ -105,7 +105,7 @@ func (bc *blockContext) SaveTransaction(trx models.Transaction) {
 		bc.Batch.AddSerialized(trx, trx_bytes, trx.To, to_index)
 	}
 
-	if (trx.Input != "0x") && (trx.Input != "") {
+	if !internal {
 		bc.Batch.AddSerializedSingleKey(trx, trx_bytes, trx.Hash)
 	}
 }
