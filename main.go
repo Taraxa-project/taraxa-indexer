@@ -56,7 +56,7 @@ func init() {
 	oracle_address = flag.String("oracle_address", "0xd6F1DbeC984e845d6088Ca9de6cdfD6670F2c300", "oracles address")
 	lara_address = flag.String("lara_address", "0x2057B7D8Cf6C5750e018F69C49dd65e5454e1016", "lara address")
 	signing_key = flag.String("signing_key", "", "signing key")
-	graphQLEndpoint = flag.String("graphQLEndpoint", "https://indexer.prnet.taraxa.io/subgraphs/name/Liquid-staking/lara-subgraph", "graphql endpoint")
+	graphQLEndpoint = flag.String("graphQLEndpoint", "https://indexer.testnet.taraxa.io/subgraphs/name/Liquid-staking/lara-subgraph", "graphql endpoint")
 	flag.Parse()
 
 	logging.Config(filepath.Join(*data_dir, "logs"), *log_level)
