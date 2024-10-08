@@ -102,6 +102,17 @@ func (o *Oracle) PushValidators(validators []RawValidator) {
 		yieldInt := uint64(yield * 1000)
 		yieldedValidators[i].Rating = uint64(yieldedValidators[i].Rank) * yieldInt
 	}
+
+	// Sort by rating in descending order
+	sort.Slice(yieldedValidators, func(i, j int) bool {
+		return yieldedValidators[i].Rating > yieldedValidators[j].Rating
+	})
+
+	// Limit to the first 100 validators if the list is longer
+	if len(yieldedValidators) > 100 {
+		yieldedValidators = yieldedValidators[:100]
+	}
+
 	o.UpdateValidators(yieldedValidators)
 	log.Infof("Loading validators into oracle instance: %d", len(yieldedValidators))
 }
@@ -128,6 +139,10 @@ func (o *Oracle) pushDataToContract() {
 	})
 
 	for {
+		nodeCount, err := o.contract.NodeCount(nil)
+		if err != nil {
+			log.Errorf("Failed to get node count: %v", err)
+		}
 		tx, err := o.contract.BatchUpdateNodeData(o.signer, validatorDatas)
 		if err != nil {
 			if strings.Contains(err.Error(), "Transaction already in transactions pool") || strings.Contains(err.Error(), "nonce too low") || strings.Contains(err.Error(), "out of gas") {
@@ -138,12 +153,9 @@ func (o *Oracle) pushDataToContract() {
 		}
 
 		log.WithFields(log.Fields{"txHash": tx.Hash().Hex()}).Infof("Pushed %d validators to contract", len(validatorDatas))
-		// wait 1 second
-		time.Sleep(1 * time.Second)
-		nodeCount, err := o.contract.NodeCount(nil)
-		if err != nil {
-			log.Errorf("Failed to get node count: %v", err)
-		}
+		// wait 4 seconds ~ 1 block
+		time.Sleep(4 * time.Second)
+
 		if nodeCount.Cmp(big.NewInt(int64(len(validatorDatas)))) != 0 {
 			log.Errorf("Node count mismatch: %d != %d", nodeCount, len(validatorDatas))
 		} else {
