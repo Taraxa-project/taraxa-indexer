@@ -65,12 +65,18 @@ func (validator *YieldedValidator) calculateRating(currentBlock uint64) (int64, 
 	if err != nil {
 		log.Fatalf("Failed to parse yield: %v", err)
 	}
-	commission_percentage := commission_float / float64(100000)
+	commission_percentage := commission_float / float64(10000)
 	adjusted_apy := (1 - commission_percentage) * yield_float * 100
 	continuity := float64(validator.PbftCount) / float64(currentBlock-validator.RegistrationBlock)
 
-	//w1 * (APY) - (Commission * w2) + w3 * Continuity + w4 * stake
-	score := float64(0.4)*adjusted_apy - float64(0.1)*commission_float + float64(0.5)*continuity
+	// Check for 100% commission and zero yield
+	score := float64(0)
+	if commission_float == 10000 || yield_float == 0 {
+		score = 0
+	} else {
+		//w1 * (APY) - (Commission * w2) + w3 * Continuity + w4 * stake
+		score = float64(0.4)*adjusted_apy - float64(0.1)*commission_float + float64(0.5)*continuity
+	}
 	log.WithFields(log.Fields{"validator": validator.Account.String(), "currentBlock": currentBlock, "score": score, "continuity": continuity, "apy": adjusted_apy, "commission": commission_float}).Info("Validator score")
 	file, err := os.OpenFile("validator_scores.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
