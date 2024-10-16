@@ -43,7 +43,7 @@ func (g *Genesis) process() {
 	accounts := g.storage.GetAccounts()
 	for addr, value := range g.genesis.InitialBalances {
 		trx := g.makeInitBalanceTrx(addr, value)
-		g.bc.SaveTransaction(trx)
+		g.bc.SaveTransaction(trx, false)
 		value := common.ParseStringToBigInt(trx.Value)
 		genesisSupply.Add(genesisSupply, value)
 		accounts.AddToBalance(trx.To, value)

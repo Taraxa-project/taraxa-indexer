@@ -127,7 +127,7 @@ func TestRewards(t *testing.T) {
 
 	st := pebble.NewStorage("")
 	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
-	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(5000000 * 4), Validators: validators_list}
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(5000000 * 4), TotalSupply: big.NewInt(1), Validators: validators_list}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 
 	trxs := makeTransactions(5)
@@ -180,7 +180,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 	// Simulated rewards statistics
 	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
-	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8)), Validators: validators_list}
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8)), TotalSupply: big.NewInt(1), Validators: validators_list}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 	{
 		rewardsStats := storage.RewardsStats{}
@@ -351,7 +351,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	totalStake := big.NewInt(0)
 
 	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
-	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake}
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
@@ -396,7 +396,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	totalStake := big.NewInt(0)
 
 	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
-	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake}
+	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})

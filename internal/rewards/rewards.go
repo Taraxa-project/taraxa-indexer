@@ -22,6 +22,11 @@ type Rewards struct {
 
 func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.BlockData) *Rewards {
 	r := Rewards{storage, batch, config, MakeValidators(config, block.Validators), block.TotalAmountDelegated, block.TotalSupply, block.Pbft.Number}
+	// special case for  the networks without aspen hf part1 (incorrect initialization of the supply without aspen hf part1)
+	if r.totalSupply.Sign() == 0 {
+		r.totalSupply = r.storage.GetTotalSupply()
+	}
+
 	return &r
 }
 
@@ -32,22 +37,22 @@ func (r *Rewards) addTotalMinted(amount *big.Int) {
 	r.batch.SetTotalSupply(current)
 }
 
-func (r *Rewards) Process(total_minted *big.Int, dags []chain.DagBlock, trxs []chain.Transaction, votes chain.VotesResponse, block_author string) (currentBlockFee *big.Int) {
+func (r *Rewards) Process(totalMinted *big.Int, dags []chain.DagBlock, trxs []chain.Transaction, votes chain.VotesResponse, blockAuthor string) (currentBlockFee *big.Int) {
 	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
 		log.WithFields(log.Fields{"total_stake": r.totalStake}).Info("totalStake")
 	}
-	rewardsStats := r.makeRewardsStats(dags, votes, trxs, block_author)
-	totalReward, currentBlockFee := r.ProcessStats(rewardsStats, total_minted, r.totalStake)
+	rewardsStats := r.makeRewardsStats(dags, votes, trxs, blockAuthor)
+	totalReward, currentBlockFee := r.ProcessStats(rewardsStats, totalMinted)
 
-	if totalReward.Cmp(total_minted) != 0 {
-		log.WithFields(log.Fields{"period": r.blockNum, "total_reward_check": totalReward, "total_minted": total_minted}).Fatal("Total reward check failed")
+	if totalReward.Cmp(totalMinted) != 0 {
+		log.WithFields(log.Fields{"period": r.blockNum, "total_reward_check": totalReward, "total_minted": totalMinted}).Fatal("Total reward check failed")
 	}
 	r.addTotalMinted(totalReward)
 
 	return
 }
 
-func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, total_minted *big.Int, totalStake *big.Int) (*big.Int, *big.Int) {
+func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, totalMinted *big.Int) (*big.Int, *big.Int) {
 	distributionFrequency := r.config.Chain.Hardforks.GetDistributionFrequency(r.blockNum)
 
 	if r.blockNum%uint64(distributionFrequency) != 0 {
@@ -67,7 +72,7 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, total_minted *
 
 	validators_yield := GetValidatorsYield(periodRewards.ValidatorRewards, r.validators)
 	r.batch.AddSingleKey(storage.ValidatorsYield{Yields: validators_yield}, storage.FormatIntToKey(r.blockNum))
-	r.batch.AddSingleKey(storage.MultipliedYield{Yield: GetMultipliedYield(total_minted, totalStake)}, storage.FormatIntToKey(r.blockNum))
+	r.batch.AddSingleKey(storage.MultipliedYield{Yield: GetMultipliedYield(totalMinted, r.totalStake)}, storage.FormatIntToKey(r.blockNum))
 	return periodRewards.TotalReward, periodRewards.BlockFee
 }
 
