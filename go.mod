@@ -8,12 +8,12 @@ require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.7
 	github.com/cockroachdb/pebble v1.1.2
 	github.com/ethereum/go-ethereum v1.14.12
-	github.com/getkin/kin-openapi v0.125.0
+	github.com/getkin/kin-openapi v0.127.0
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.13.2
 	github.com/nleeper/goment v1.4.4
 	github.com/oapi-codegen/echo-middleware v1.0.2
-	github.com/oapi-codegen/oapi-codegen/v2 v2.3.0
+	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spiretechnology/go-pool v1.0.0
@@ -32,6 +32,7 @@ require (
 	github.com/crate-crypto/go-ipa v0.0.0-20240223125850-b1e8a79f509c // indirect
 	github.com/crate-crypto/go-kzg-4844 v1.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
+	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
 	github.com/ethereum/go-verkle v0.1.1-0.20240829091221-dffa7562dbe9 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -40,7 +41,9 @@ require (
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
+	github.com/speakeasy-api/openapi-overlay v0.9.0 // indirect
 	github.com/supranational/blst v0.3.13 // indirect
+	github.com/vmware-labs/yaml-jsonpath v0.3.2 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
