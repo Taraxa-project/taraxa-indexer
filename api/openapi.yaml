@@ -285,14 +285,14 @@ paths:
           description: |
             From block number
           schema:
-            $ref: "#/components/schemas/Counter"
+            $ref: "#/components/schemas/Uint64"
         - in: query
           name: toBlock
           required: true
           description: |
             To block number
           schema:
-            $ref: "#/components/schemas/Counter"
+            $ref: "#/components/schemas/Uint64"
       responses:
         "200":
           description: |
@@ -379,15 +379,14 @@ components:
     Hash:
       type: string
       example: "0x0000000000000000000000000000000000000000000000000000000000000000"
-    Counter:
+    BigInt:
+      type: string
+      format: big.Int
+    Uint64:
       type: integer
       format: uint64
       example: 123
-    Timestamp:
-      type: integer
-      format: uint64
-      example: 1676682705
-    NilableUint64:
+    OptionalUint64:
       type: integer
       format: uint64
       nullable: true
@@ -445,9 +444,9 @@ components:
         - hasNext
       properties:
         startDate:
-          $ref: "#/components/schemas/Timestamp"
+          $ref: "#/components/schemas/Uint64"
         endDate:
-          $ref: "#/components/schemas/Timestamp"
+          $ref: "#/components/schemas/Uint64"
         hasNext:
           type: boolean
           default: true
@@ -458,19 +457,16 @@ components:
         - address
         - pbftCount
         - yield
-      optional:
         - registrationBlock
       properties:
         rank:
-          type: integer
-          format: uint64
-          example: 1
+          $ref: "#/components/schemas/Uint64"
           x-oapi-codegen-extra-tags:
             rlp: "-"
         address:
           $ref: "#/components/schemas/Address"
         pbftCount:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         yield:
           type: string
           example: "0,1999"
@@ -478,10 +474,7 @@ components:
             rlp: "-"
             json: "yield,omitempty"
         registrationBlock:
-          type: integer
-          format: uint64
-          nullable: true
-          example: 1676682705
+          $ref: "#/components/schemas/OptionalUint64"
           # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
           x-oapi-codegen-extra-tags:
             rlp: "-"
@@ -500,7 +493,7 @@ components:
         - transactionIndex
       properties:
         logIndex:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         address:
           $ref: "#/components/schemas/Address"
         topics:
@@ -521,7 +514,7 @@ components:
         transactionHash:
           $ref: "#/components/schemas/Hash"
         transactionIndex:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
     Transaction:
       type: object
       required:
@@ -541,7 +534,7 @@ components:
         hash:
           $ref: "#/components/schemas/Hash"
         blockNumber:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         calldata:
           $ref: "#/components/schemas/CallData"
         input:
@@ -551,12 +544,11 @@ components:
         to:
           $ref: "#/components/schemas/Address"
         value:
-          type: string
-          example: "0"
+          $ref: "#/components/schemas/BigInt"
         gasCost:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/BigInt"
         timestamp:
-          $ref: "#/components/schemas/Timestamp"
+          $ref: "#/components/schemas/Uint64"
         status:
           type: boolean
           example: true
@@ -584,11 +576,11 @@ components:
         hash:
           $ref: "#/components/schemas/Hash"
         level:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         transactionCount:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         timestamp:
-          $ref: "#/components/schemas/Timestamp"
+          $ref: "#/components/schemas/Uint64"
     Pbft:
       type: object
       required:
@@ -603,11 +595,11 @@ components:
         hash:
           $ref: "#/components/schemas/Hash"
         number:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         transactionCount:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         timestamp:
-          $ref: "#/components/schemas/Timestamp"
+          $ref: "#/components/schemas/Uint64"
     WeekResponse:
       type: object
       allOf:
@@ -619,7 +611,7 @@ components:
         - total
       properties:
         total:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
     StatsResponse:
       type: object
       required:
@@ -632,19 +624,19 @@ components:
         - validatorRegisteredBlock
       properties:
         pbftCount:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         dagsCount:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         transactionsCount:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         lastPbftTimestamp:
-          $ref: "#/components/schemas/NilableUint64"
+          $ref: "#/components/schemas/OptionalUint64"
         lastDagTimestamp:
-          $ref: "#/components/schemas/NilableUint64"
+          $ref: "#/components/schemas/OptionalUint64"
         lastTransactionTimestamp:
-          $ref: "#/components/schemas/NilableUint64"
+          $ref: "#/components/schemas/OptionalUint64"
         validatorRegisteredBlock:
-          $ref: "#/components/schemas/NilableUint64"
+          $ref: "#/components/schemas/OptionalUint64"
     PaginatedResponse:
       type: object
       required:
@@ -654,11 +646,11 @@ components:
         - hasNext
       properties:
         total:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         start:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         end:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         hasNext:
           type: boolean
           default: true
@@ -719,9 +711,9 @@ components:
           type: string
           example: "0,1999"
         fromBlock:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
         toBlock:
-          $ref: "#/components/schemas/Counter"
+          $ref: "#/components/schemas/Uint64"
     InternalTransactionsResponse:
       required:
         - data
@@ -798,7 +790,7 @@ components:
       description: |
         Block Number
       schema:
-        $ref: "#/components/schemas/Counter"
+        $ref: "#/components/schemas/Uint64"
     addressesParam:
       name: addresses
       in: query

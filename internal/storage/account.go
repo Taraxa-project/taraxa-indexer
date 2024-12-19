@@ -76,12 +76,11 @@ func (a *Accounts) AddToBalance(address string, value *big.Int) {
 	}
 }
 
-func (a *Accounts) UpdateBalances(from, to, value_str string) {
+func (a *Accounts) UpdateBalances(from, to string, value *big.Int) {
 	from = strings.ToLower(from)
 	to = strings.ToLower(to)
-	value, ok := big.NewInt(0).SetString(value_str, 0)
 
-	if ok && value.Cmp(big.NewInt(0)) == 1 {
+	if value.Cmp(big.NewInt(0)) == 1 {
 		a.AddToBalance(from, big.NewInt(0).Neg(value))
 		a.AddToBalance(to, value)
 	}

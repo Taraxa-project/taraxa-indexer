@@ -26,7 +26,7 @@ type blockContext struct {
 }
 
 func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
-	var bc blockContext
+	bc := new(blockContext)
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
 	bc.Config = config
@@ -35,7 +35,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 	bc.finalized = s.GetFinalizationData()
 	bc.Client = client
 
-	return &bc
+	return bc
 }
 
 func (bc *blockContext) SetBlockData(bd *chain.BlockData) {

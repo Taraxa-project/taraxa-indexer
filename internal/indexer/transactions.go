@@ -5,7 +5,7 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
-	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,7 +22,7 @@ func (bc *blockContext) processTransactions() (err error) {
 	for t_idx := 0; t_idx < len(bc.Block.Transactions); t_idx++ {
 		bc.Block.Transactions[t_idx].SetTimestamp(bc.Block.Pbft.Timestamp)
 
-		bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel(), false)
+		bc.SaveTransaction(bc.Block.Transactions[t_idx].GetStorage(), false)
 
 		trx_fee := bc.Block.Transactions[t_idx].GetFee()
 		feeReward.Add(feeReward, trx_fee)
@@ -56,18 +56,18 @@ func (bc *blockContext) processTransactions() (err error) {
 	return
 }
 
-func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace, t_idx int, gasPrice uint64) (internal_transactions *models.InternalTransactionsResponse) {
+func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace, t_idx int, gasPrice uint64) (internal_transactions *storage.InternalTransactionsResponse) {
 	if len(trace.Trace) <= 1 {
 		return
 	}
-	internal_transactions = new(models.InternalTransactionsResponse)
-	internal_transactions.Data = make([]models.Transaction, 0, len(trace.Trace)-1)
+	internal_transactions = new(storage.InternalTransactionsResponse)
+	internal_transactions.Data = make([]storage.Transaction, 0, len(trace.Trace)-1)
 
 	for e_idx, entry := range trace.Trace {
 		if e_idx == 0 {
 			continue
 		}
-		internal := makeInternal(*bc.Block.Transactions[t_idx].GetModel(), entry, gasPrice)
+		internal := makeInternal(bc.Block.Transactions[t_idx].GetStorage(), entry, gasPrice)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
 		bc.SaveTransaction(internal, true)
@@ -78,18 +78,18 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 	return
 }
 
-func makeInternal(trx models.Transaction, entry chain.TraceEntry, gasCost uint64) (internal models.Transaction) {
+func makeInternal(trx storage.Transaction, entry chain.TraceEntry, gasPrice uint64) (internal storage.Transaction) {
 	internal = trx
 	internal.From = entry.Action.From
 	internal.To = chain.GetInternalTransactionTarget(entry)
-	internal.Value = entry.Action.Value
-	internal.GasCost = common.ParseUInt(entry.Result.GasUsed) * gasCost
+	internal.Value = common.ParseStringToBigInt(entry.Action.Value)
+	internal.GasCost = chain.GetTransactionFee(common.ParseUInt(entry.Result.GasUsed), gasPrice)
 	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, entry.Type, true)
 	internal.BlockNumber = trx.BlockNumber
 	return
 }
 
-func (bc *blockContext) SaveTransaction(trx models.Transaction, internal bool) {
+func (bc *blockContext) SaveTransaction(trx storage.Transaction, internal bool) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 
 	// As the same data is saved with a different keys, it is better to serialize it only once

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
@@ -115,11 +116,11 @@ func TestTraceInternalCreationParsing(t *testing.T) {
 		assert.Equal(t, internal.Hash, trx.Hash)
 		assert.Equal(t, internal.From, trace.Action.From)
 		assert.Equal(t, internal.To, trace.Result.Address)
-		assert.Equal(t, internal.Value, trace.Action.Value)
+		assert.Equal(t, internal.Value, common.ParseStringToBigInt(trace.Action.Value))
 	}
 
 	for addr, count := range addr_trx_count {
-		res, _ := storage.GetObjectsPage[models.Transaction](bc.Storage, addr, 0, 20)
+		res, _ := storage.GetObjectsPage[storage.Transaction](bc.Storage, addr, 0, 20)
 		assert.Equal(t, len(res), count, addr)
 	}
 }
