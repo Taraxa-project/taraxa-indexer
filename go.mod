@@ -1,7 +1,8 @@
 module github.com/Taraxa-project/taraxa-indexer
 
-go 1.21
-toolchain go1.22.5
+go 1.22
+
+toolchain go1.23.3
 
 require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.7
