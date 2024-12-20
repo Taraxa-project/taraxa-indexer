@@ -41,8 +41,8 @@ func init() {
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
-	yield_saving_interval = flag.Int("yield_saving_interval", 150000, "interval for saving total yield")
-	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 150000, "interval for saving validators yield")
+	yield_saving_interval = flag.Int("yield_saving_interval", 25000, "interval for saving total yield")
+	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 25000, "interval for saving validators yield")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
 
 	flag.Parse()
