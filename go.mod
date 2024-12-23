@@ -8,7 +8,7 @@ require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.7
 	github.com/cockroachdb/pebble v1.1.2
 	github.com/ethereum/go-ethereum v1.14.12
-	github.com/getkin/kin-openapi v0.127.0
+	github.com/getkin/kin-openapi v0.128.0
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.13.2
 	github.com/nleeper/goment v1.4.4
