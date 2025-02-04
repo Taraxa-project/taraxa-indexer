@@ -14,15 +14,15 @@ type Stats struct {
 
 func MakeStats(interval int) *Stats {
 	return &Stats{
-		blocks:   make([]models.Pbft, interval),
+		blocks:   make([]models.Pbft, 0, interval+1),
 		interval: interval,
 	}
 }
 
 func (s *Stats) AddPbft(lastPbft *models.Pbft) {
 	s.blocks = append(s.blocks, *lastPbft)
-	mapLen := len(s.blocks)
-	if mapLen != s.interval+1 {
+	block_len := len(s.blocks)
+	if block_len != s.interval+1 {
 		return
 	}
 	if s.stats == nil {
