@@ -371,8 +371,46 @@ paths:
         default:
           description: |
             Unexpected error
+  /chainStats:
+    get:
+      tags:
+        - ChainStats
+      summary: "Returns chain stats"
+      description: |
+        Returns chain stats for the last 100 blocks(TPS, block interval)
+      operationId: "getChainStats"
+      responses:
+        "200":
+          description: |
+            decimal with 2 decimal places
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChainStats"
+        default:
+          description: |
+            Unexpected error
+
 components:
   schemas:
+    ChainStats:
+      type: object
+      required:
+        - startBlock
+        - endBlock
+        - tps
+        - blockInterval
+      properties:
+        startBlock:
+          $ref: "#/components/schemas/Counter"
+        endBlock:
+          $ref: "#/components/schemas/Counter"
+        tps:
+          type: number
+          example: 100.00
+        blockInterval:
+          type: number
+          example: 100.00
     Address:
       type: string
       example: "0x0000000000000000000000000000000000000000"
