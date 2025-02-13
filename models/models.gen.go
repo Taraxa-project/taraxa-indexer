@@ -34,6 +34,14 @@ type CallData struct {
 	Params any    `json:"params"`
 }
 
+// ChainStats defines model for ChainStats.
+type ChainStats struct {
+	BlockInterval float32 `json:"blockInterval"`
+	EndBlock      Uint64  `json:"endBlock"`
+	StartBlock    Uint64  `json:"startBlock"`
+	Tps           float32 `json:"tps"`
+}
+
 // CountResponse defines model for CountResponse.
 type CountResponse struct {
 	Total Uint64 `json:"total"`

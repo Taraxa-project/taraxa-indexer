@@ -108,6 +108,7 @@ type Config struct {
 	TotalYieldSavingInterval      uint64
 	ValidatorsYieldSavingInterval uint64
 	SyncQueueLimit                uint64
+	ChainStatsInterval            int
 }
 
 func (c *Config) IsEligible(stake *big.Int) bool {

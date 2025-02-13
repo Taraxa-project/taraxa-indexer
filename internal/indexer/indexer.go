@@ -15,10 +15,11 @@ type Indexer struct {
 	config                      *common.Config
 	retry_time                  time.Duration
 	consistency_check_available bool
+	stats                       *chain.Stats
 }
 
-func MakeAndRun(url string, s storage.Storage, c *common.Config) {
-	i := NewIndexer(url, s, c)
+func MakeAndRun(url string, s storage.Storage, c *common.Config, stats *chain.Stats) {
+	i := NewIndexer(url, s, c, stats)
 	for {
 		err := i.run()
 		f := i.storage.GetFinalizationData()
@@ -27,11 +28,13 @@ func MakeAndRun(url string, s storage.Storage, c *common.Config) {
 	}
 }
 
-func NewIndexer(url string, s storage.Storage, c *common.Config) (i *Indexer) {
+func NewIndexer(url string, s storage.Storage, c *common.Config, stats *chain.Stats) (i *Indexer) {
 	i = new(Indexer)
 	i.retry_time = 5 * time.Second
 	i.storage = s
 	i.config = c
+	i.stats = stats
+
 	// connect is retrying to connect every retry_time
 	i.connect(url)
 	return
@@ -122,7 +125,7 @@ func (i *Indexer) sync() error {
 			continue
 		}
 		bc := MakeBlockContext(i.storage, i.client, i.config)
-		dc, tc, err := bc.process(bd)
+		dc, tc, err := bc.process(bd, i.stats)
 		if err != nil {
 			return err
 		}
@@ -178,7 +181,7 @@ func (i *Indexer) run() error {
 			}
 
 			bc := MakeBlockContext(i.storage, i.client, i.config)
-			dc, tc, err := bc.process(bd)
+			dc, tc, err := bc.process(bd, i.stats)
 			if err != nil {
 				return err
 			}
