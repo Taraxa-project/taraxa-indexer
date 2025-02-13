@@ -15,7 +15,7 @@ func (bc *blockContext) processTransactions() (err error) {
 		return
 	}
 
-	if len(bc.Block.Pbft.Transactions) != len(bc.Block.Transactions) || len(bc.Block.Traces) != len(bc.Block.Transactions) {
+	if len(bc.Block.Pbft.Transactions) != len(bc.Block.Transactions) {
 		log.WithFields(log.Fields{"in_block": len(bc.Block.Pbft.Transactions), "transactions": len(bc.Block.Transactions), "traces": len(bc.Block.Traces)}).Error("Transactions count mismatch")
 	}
 	feeReward := big.NewInt(0)
@@ -44,9 +44,10 @@ func (bc *blockContext) processTransactions() (err error) {
 		if err != nil {
 			return
 		}
-
-		if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
-			bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
+		if len(bc.Block.Traces) > 0 {
+			if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
+				bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
+			}
 		}
 	}
 	// add total fee to the block producer balance before the magnolia hardfork
