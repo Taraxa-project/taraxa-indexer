@@ -23,6 +23,7 @@ func (s *Stats) AddPbft(lastPbft *models.Pbft) {
 	s.blocks = append(s.blocks, *lastPbft)
 	block_len := len(s.blocks)
 	if block_len != s.interval+1 {
+		s.totalTrxCount += lastPbft.TransactionCount
 		return
 	}
 	if s.stats == nil {
