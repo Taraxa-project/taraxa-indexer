@@ -181,7 +181,7 @@ func (client *WsClient) GetTotalSupply(block_num uint64) (totalSupply *big.Int, 
 
 func (client *WsClient) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {
 	ch := make(chan Block)
-	sub, err := client.rpc.Subscribe(client.ctx, "eth", ch, "newHeads")
+	sub, err := client.rpc.Subscribe(client.ctx, "eth", ch, "newHeads", true)
 	metrics.RpcCallsCounter.Inc()
 	return ch, sub, err
 }
