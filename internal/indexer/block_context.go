@@ -50,7 +50,7 @@ func (bc *blockContext) commit() {
 	metrics.StorageCommitCounter.Inc()
 }
 
-func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint64, err error) {
+func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_count, trx_count uint64, err error) {
 	if (bc.finalized.PbftCount + 1) != bd.Pbft.Number {
 		err = fmt.Errorf("block number mismatch: %d != %d", bc.finalized.PbftCount+1, bd.Pbft.Number)
 		return
@@ -96,7 +96,9 @@ func (bc *blockContext) process(bd *chain.BlockData) (dags_count, trx_count uint
 
 	pbft_author_index := bc.addressStats.GetAddress(bc.Storage, bc.Block.Pbft.Author).AddPbft(bc.Block.Pbft.Timestamp)
 	log.WithFields(log.Fields{"author": bc.Block.Pbft.Author, "hash": bc.Block.Pbft.Hash}).Debug("Saving PBFT block")
-	bc.Batch.Add(bc.Block.Pbft.GetModel(), bc.Block.Pbft.Author, pbft_author_index)
+	pbft_model := bc.Block.Pbft.GetModel()
+	bc.Batch.Add(pbft_model, bc.Block.Pbft.Author, pbft_author_index)
+	stats.AddPbft(pbft_model)
 
 	bc.commit()
 	r.AfterCommit()

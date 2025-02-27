@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
@@ -23,10 +24,11 @@ import (
 type ApiHandler struct {
 	storage storage.Storage
 	config  *common.Config
+	stats   *chain.Stats
 }
 
-func NewApiHandler(s storage.Storage, c *common.Config) *ApiHandler {
-	return &ApiHandler{s, c}
+func NewApiHandler(s storage.Storage, c *common.Config, stats *chain.Stats) *ApiHandler {
+	return &ApiHandler{s, c, stats}
 }
 
 func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilter, pag *PaginationParam) interface{} {
@@ -58,6 +60,14 @@ func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
 	}
 
 	return response
+}
+
+func (a *ApiHandler) GetChainStats(ctx echo.Context) error {
+	stats := a.stats.GetStats()
+	if stats == nil {
+		return ctx.JSON(http.StatusNotFound, "Chain stats not found")
+	}
+	return ctx.JSON(http.StatusOK, *stats)
 }
 
 func (a *ApiHandler) GetTransaction(ctx echo.Context, hash string) error {
