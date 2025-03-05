@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -15,14 +16,20 @@ func (bc *blockContext) processTransactions() (err error) {
 		return
 	}
 
+	start := time.Now()
 	if len(bc.Block.Pbft.Transactions) != len(bc.Block.Transactions) {
 		log.WithFields(log.Fields{"in_block": len(bc.Block.Pbft.Transactions), "transactions": len(bc.Block.Transactions), "traces": len(bc.Block.Traces)}).Error("Transactions count mismatch")
 	}
 	feeReward := big.NewInt(0)
 	for t_idx := 0; t_idx < len(bc.Block.Transactions); t_idx++ {
+		start_transaction := time.Now()
 		bc.Block.Transactions[t_idx].SetTimestamp(bc.Block.Pbft.Timestamp)
 
 		bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel(), false)
+		elapsed_transaction := time.Since(start_transaction)
+		log.WithFields(log.Fields{"func": "SaveTransaction", "elapsed": elapsed_transaction}).Debug("Save transaction time")
+
+		start_transaction = time.Now()
 
 		trx_fee := bc.Block.Transactions[t_idx].GetFee()
 		feeReward.Add(feeReward, trx_fee)
@@ -38,22 +45,33 @@ func (bc *blockContext) processTransactions() (err error) {
 			receiver = bc.Block.Transactions[t_idx].ContractAddress
 		}
 		bc.accounts.UpdateBalances(bc.Block.Transactions[t_idx].From, receiver, bc.Block.Transactions[t_idx].Value)
+		elapsed_update_balances := time.Since(start_transaction)
+		log.WithFields(log.Fields{"func": "UpdateBalances", "elapsed": elapsed_update_balances}).Debug("Update balances time")
 
+		start_transaction = time.Now()
 		// process logs
 		err = bc.processTransactionLogs(bc.Block.Transactions[t_idx])
 		if err != nil {
 			return
 		}
+		elapsed_process_logs := time.Since(start_transaction)
+		log.WithFields(log.Fields{"func": "processTransactionLogs", "elapsed": elapsed_process_logs}).Debug("Process logs time")
+
+		start_transaction = time.Now()
 		if len(bc.Block.Traces) > 0 {
 			if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
 				bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
 			}
 		}
+		elapsed_process_internal_transactions := time.Since(start_transaction)
+		log.WithFields(log.Fields{"func": "processInternalTransactions", "elapsed": elapsed_process_internal_transactions}).Debug("Process internal transactions time")
 	}
 	// add total fee to the block producer balance before the magnolia hardfork
 	if bc.Config.Chain != nil && (bc.Block.Pbft.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
 		bc.accounts.AddToBalance(bc.Block.Pbft.Author, feeReward)
 	}
+	elapsed := time.Since(start)
+	log.WithFields(log.Fields{"func": "processTransactions", "elapsed": elapsed}).Debug("Process transactions time")
 	return
 }
 
