@@ -21,51 +21,20 @@ func (bc *blockContext) processTransactions() (err error) {
 		log.WithFields(log.Fields{"in_block": len(bc.Block.Pbft.Transactions), "transactions": len(bc.Block.Transactions), "traces": len(bc.Block.Traces)}).Error("Transactions count mismatch")
 	}
 	feeReward := big.NewInt(0)
+
+	start_tp := time.Now()
 	for t_idx := 0; t_idx < len(bc.Block.Transactions); t_idx++ {
-		start_transaction := time.Now()
-		bc.Block.Transactions[t_idx].SetTimestamp(bc.Block.Pbft.Timestamp)
-
-		bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel(), false)
-		elapsed_transaction := time.Since(start_transaction)
-		log.WithFields(log.Fields{"func": "SaveTransaction", "elapsed": elapsed_transaction}).Debug("Save transaction time")
-
-		start_transaction = time.Now()
-
 		trx_fee := bc.Block.Transactions[t_idx].GetFee()
 		feeReward.Add(feeReward, trx_fee)
 		// Remove fee from sender balance
 		bc.accounts.AddToBalance(bc.Block.Transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
-		if !bc.Block.Transactions[t_idx].Status {
-			continue
-		}
-		// remove value from sender and add to receiver
-		receiver := bc.Block.Transactions[t_idx].To
-		// handle contract creation
-		if receiver == "" {
-			receiver = bc.Block.Transactions[t_idx].ContractAddress
-		}
-		bc.accounts.UpdateBalances(bc.Block.Transactions[t_idx].From, receiver, bc.Block.Transactions[t_idx].Value)
-		elapsed_update_balances := time.Since(start_transaction)
-		log.WithFields(log.Fields{"func": "UpdateBalances", "elapsed": elapsed_update_balances}).Debug("Update balances time")
-
-		start_transaction = time.Now()
-		// process logs
-		err = bc.processTransactionLogs(bc.Block.Transactions[t_idx])
+		err = bc.processTransaction(t_idx)
 		if err != nil {
 			return
 		}
-		elapsed_process_logs := time.Since(start_transaction)
-		log.WithFields(log.Fields{"func": "processTransactionLogs", "elapsed": elapsed_process_logs}).Debug("Process logs time")
-
-		start_transaction = time.Now()
-		if len(bc.Block.Traces) > 0 {
-			if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
-				bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
-			}
-		}
-		elapsed_process_internal_transactions := time.Since(start_transaction)
-		log.WithFields(log.Fields{"func": "processInternalTransactions", "elapsed": elapsed_process_internal_transactions}).Debug("Process internal transactions time")
 	}
+	elapsed_tp := time.Since(start_tp)
+	log.WithFields(log.Fields{"func": "scheduleTransactions", "period": bc.Block.Pbft.Number, "elapsed": elapsed_tp}).Debug("Schedule transactions time")
 	// add total fee to the block producer balance before the magnolia hardfork
 	if bc.Config.Chain != nil && (bc.Block.Pbft.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
 		bc.accounts.AddToBalance(bc.Block.Pbft.Author, feeReward)
@@ -75,7 +44,53 @@ func (bc *blockContext) processTransactions() (err error) {
 	return
 }
 
-func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace, t_idx int, gasPrice uint64) (internal_transactions *models.InternalTransactionsResponse) {
+func (bc *blockContext) processTransaction(t_idx int) (err error) {
+	start_transaction := time.Now()
+	bc.Block.Transactions[t_idx].SetTimestamp(bc.Block.Pbft.Timestamp)
+
+	bc.SaveTransaction(*bc.Block.Transactions[t_idx].GetModel(), false)
+	elapsed_transaction := time.Since(start_transaction)
+	log.WithFields(log.Fields{"func": "SaveTransaction", "elapsed": elapsed_transaction}).Debug("Save transaction time")
+
+	start_transaction = time.Now()
+
+	if !bc.Block.Transactions[t_idx].Status {
+		return
+	}
+	// remove value from sender and add to receiver
+	receiver := bc.Block.Transactions[t_idx].To
+	// handle contract creation
+	if receiver == "" {
+		receiver = bc.Block.Transactions[t_idx].ContractAddress
+	}
+	bc.accounts.UpdateBalances(bc.Block.Transactions[t_idx].From, receiver, bc.Block.Transactions[t_idx].Value)
+	elapsed_update_balances := time.Since(start_transaction)
+	log.WithFields(log.Fields{"func": "UpdateBalances", "elapsed": elapsed_update_balances}).Debug("Update balances time")
+
+	start_transaction = time.Now()
+	// process logs
+	err = bc.processTransactionLogs(bc.Block.Transactions[t_idx])
+	if err != nil {
+		return
+	}
+	elapsed_process_logs := time.Since(start_transaction)
+	log.WithFields(log.Fields{"func": "processTransactionLogs", "elapsed": elapsed_process_logs}).Debug("Process logs time")
+
+	start_transaction = time.Now()
+	if len(bc.Block.Traces) > 0 {
+		if internal_transactions := bc.processInternalTransactions(t_idx); internal_transactions != nil {
+			bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
+		}
+	}
+	elapsed_process_internal_transactions := time.Since(start_transaction)
+	log.WithFields(log.Fields{"func": "processInternalTransactions", "elapsed": elapsed_process_internal_transactions}).Debug("Process internal transactions time")
+
+	return
+}
+
+func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transactions *models.InternalTransactionsResponse) {
+	trace := &bc.Block.Traces[t_idx]
+	trx := &bc.Block.Transactions[t_idx]
 	if len(trace.Trace) <= 1 {
 		return
 	}
@@ -86,7 +101,7 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		if e_idx == 0 {
 			continue
 		}
-		internal := makeInternal(*bc.Block.Transactions[t_idx].GetModel(), entry, gasPrice)
+		internal := makeInternal(*trx.GetModel(), entry, trx.GasPrice)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
 		bc.SaveTransaction(internal, true)
