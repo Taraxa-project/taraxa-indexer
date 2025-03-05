@@ -59,7 +59,7 @@ func (bc *blockContext) processTransactions() (err error) {
 
 		start_transaction = time.Now()
 		if len(bc.Block.Traces) > 0 {
-			if internal_transactions := bc.processInternalTransactions(bc.Block.Traces[t_idx], t_idx, bc.Block.Transactions[t_idx].GasPrice); internal_transactions != nil {
+			if internal_transactions := bc.processInternalTransactions(t_idx); internal_transactions != nil {
 				bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
 			}
 		}
@@ -75,7 +75,9 @@ func (bc *blockContext) processTransactions() (err error) {
 	return
 }
 
-func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace, t_idx int, gasPrice uint64) (internal_transactions *models.InternalTransactionsResponse) {
+func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transactions *models.InternalTransactionsResponse) {
+	trace := &bc.Block.Traces[t_idx]
+	trx := &bc.Block.Transactions[t_idx]
 	if len(trace.Trace) <= 1 {
 		return
 	}
@@ -86,7 +88,7 @@ func (bc *blockContext) processInternalTransactions(trace chain.TransactionTrace
 		if e_idx == 0 {
 			continue
 		}
-		internal := makeInternal(*bc.Block.Transactions[t_idx].GetModel(), entry, gasPrice)
+		internal := makeInternal(*trx.GetModel(), entry, trx.GasPrice)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
 		bc.SaveTransaction(internal, true)

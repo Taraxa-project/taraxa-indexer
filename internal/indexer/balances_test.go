@@ -12,16 +12,10 @@ import (
 
 func TestUpdateBalancesInternal(t *testing.T) {
 	// Prepare test data
-	accounts := storage.Accounts([]storage.Account{
-		{
-			Address: "0x1111111111111111111111111111111111111111",
-			Balance: big.NewInt(100),
-		},
-		{
-			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-			Balance: big.NewInt(50),
-		},
-	})
+	accounts := make(storage.AccountsMap)
+	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
+	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
+
 	trx := models.Transaction{
 		From:    "0x1111111111111111111111111111111111111111",
 		To:      "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
@@ -33,28 +27,22 @@ func TestUpdateBalancesInternal(t *testing.T) {
 
 	// Validate the updated balances
 	{
-		acc := accounts.FindBalance("0x1111111111111111111111111111111111111111")
-		assert.Equal(t, big.NewInt(80), acc.Balance, "UpdateBalancesInternal failed to update 'from' balance correctly")
+		balance := accounts.GetBalance("0x1111111111111111111111111111111111111111")
+		assert.Equal(t, big.NewInt(100-20), balance, "UpdateBalancesInternal failed to update 'from' balance correctly")
 	}
 
 	{
-		acc := accounts.FindBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61")
-		assert.Equal(t, big.NewInt(70), acc.Balance, "UpdateBalancesInternal failed to update 'to' balance correctly")
+		balance := accounts.GetBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61")
+		assert.Equal(t, big.NewInt(50+20), balance, "UpdateBalancesInternal failed to update 'to' balance correctly")
 	}
 }
 
 func TestUpdateBalances(t *testing.T) {
 	// Prepare test data
-	accounts := storage.Accounts([]storage.Account{
-		{
-			Address: "0x1111111111111111111111111111111111111111",
-			Balance: big.NewInt(100),
-		},
-		{
-			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-			Balance: big.NewInt(50),
-		},
-	})
+	accounts := make(storage.AccountsMap)
+	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
+	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
+
 	trx := &chain.Transaction{
 		Logs: []chain.EventLog{{
 			Address:          "0x00000000000000000000000000000000000000fe",
@@ -96,16 +84,16 @@ func TestUpdateBalances(t *testing.T) {
 
 	// Validate the updated balances
 	{
-		acc := accounts.FindBalance("0x1111111111111111111111111111111111111111")
-		if acc == nil || acc.Balance.Cmp(big.NewInt(70)) != 0 {
-			t.Error("UpdateBalances failed to update 'from' balance correctly. Should be 70 but is ", acc.Balance.String())
+		balance := accounts.GetBalance("0x1111111111111111111111111111111111111111")
+		if balance == nil || balance.Cmp(big.NewInt(70)) != 0 {
+			t.Error("UpdateBalances failed to update 'from' balance correctly. Should be 70 but is ", balance.String())
 		}
 	}
 	{
-		acc := accounts.FindBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61")
+		balance := accounts.GetBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61")
 		bigInt, _ := big.NewInt(0).SetString("12079862109893161818", 10)
-		if acc == nil || acc.Balance.Cmp(bigInt) != 0 {
-			t.Error("UpdateBalances failed to update 'to' balance correctly. Should be 12079862109893161818 but is ", acc.Balance.String())
+		if balance == nil || balance.Cmp(bigInt) != 0 {
+			t.Error("UpdateBalances failed to update 'to' balance correctly. Should be 12079862109893161818 but is ", balance.String())
 		}
 	}
 }
