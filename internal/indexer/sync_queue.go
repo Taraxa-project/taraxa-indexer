@@ -61,7 +61,6 @@ func (sq *SyncQueue) Start() {
 		latest := sq.latest.Load()
 		current := sq.current.Load()
 		if latest-current >= sq.queueLimit {
-			log.WithFields(log.Fields{"latest": latest, "current": current}).Debug("Syncing: queue limit reached")
 			time.Sleep(1 * time.Millisecond)
 			continue
 		}
