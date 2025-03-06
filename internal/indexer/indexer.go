@@ -100,19 +100,14 @@ func (i *Indexer) init() {
 
 }
 
-func (i *Indexer) sync() error {
+func (i *Indexer) sync(start, end uint64) error {
 	// start processing blocks from the next one
-	start := i.storage.GetFinalizationData().PbftCount + 1
-	end, p_err := i.client.GetLatestPeriod()
-	if p_err != nil {
-		return p_err
-	}
 	if start >= end {
 		return nil
 	}
 	queue_limit := min(end-start, i.config.SyncQueueLimit)
 	log.WithFields(log.Fields{"start": start, "end": end, "queue_limit": queue_limit}).Info("Syncing: started")
-	sq := MakeSyncQueue(start, queue_limit, i.client)
+	sq := MakeSyncQueue(start, end, queue_limit, i.client)
 
 	go sq.Start()
 	prev := time.Now()
@@ -141,9 +136,20 @@ func (i *Indexer) sync() error {
 }
 
 func (i *Indexer) run() error {
-	err := i.sync()
-	if err != nil {
-		return err
+	for {
+		start := i.storage.GetFinalizationData().PbftCount + 1
+		end, p_err := i.client.GetLatestPeriod()
+		if p_err != nil {
+			return p_err
+		}
+		// if the difference between the latest period and the start is less than 100 than break deep syncing and start subscribing to new blocks
+		if end-start < 100 {
+			break
+		}
+		err := i.sync(start, end)
+		if err != nil {
+			return err
+		}
 	}
 	log.Info("Syncing: finished, subscribing to new blocks")
 	ch, sub, err := i.client.SubscribeNewHeads()
@@ -158,7 +164,7 @@ func (i *Indexer) run() error {
 		case blk := <-ch:
 			finalized_period := i.storage.GetFinalizationData().PbftCount
 			if blk.Number != finalized_period+1 {
-				err := i.sync()
+				err := i.sync(finalized_period+1, blk.Number+1)
 				if err != nil {
 					return err
 				}

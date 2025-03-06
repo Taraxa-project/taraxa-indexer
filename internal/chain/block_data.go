@@ -1,14 +1,11 @@
 package chain
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/spiretechnology/go-pool"
 )
-
-var ErrFutureBlock = errors.New("Block is in the future")
 
 type BlockData struct {
 	Pbft                 *Block
@@ -56,9 +53,6 @@ func GetBlockData(c Client, period uint64) (bd *BlockData, err error) {
 
 	tp.Wait()
 
-	if bd.Pbft == nil {
-		return nil, ErrFutureBlock
-	}
 	if err != nil {
 		return nil, err
 	}
