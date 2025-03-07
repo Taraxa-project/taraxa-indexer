@@ -7,6 +7,7 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+	"github.com/gorilla/websocket"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -23,7 +24,13 @@ type WsClient struct {
 // NewWsClient creates a new instance of the WsClient struct.
 func NewWsClient(url string) (*WsClient, error) {
 	ctx := context.Background()
-	ws, err := rpc.DialOptions(ctx, url, rpc.WithWebsocketMessageSizeLimit(0))
+	options := []rpc.ClientOption{
+		rpc.WithWebsocketMessageSizeLimit(0),
+		rpc.WithWebsocketDialer(websocket.Dialer{
+			EnableCompression: true,
+		}),
+	}
+	ws, err := rpc.DialOptions(ctx, url, options...)
 
 	if err != nil {
 		return nil, err
