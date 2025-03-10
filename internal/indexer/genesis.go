@@ -28,7 +28,8 @@ func MakeGenesis(s storage.Storage, c chain.Client, gen_obj chain.GenesisObject,
 	return &genesis
 }
 
-func (g *Genesis) makeInitBalanceTrx(addr string, value *big.Int) (trx storage.Transaction) {
+func (g *Genesis) makeInitBalanceTrx(addr string, value *big.Int) (trx *storage.Transaction) {
+	trx = &storage.Transaction{}
 	trx.Hash = "GENESIS_" + addr
 	trx.From = "GENESIS"
 	trx.To = addr

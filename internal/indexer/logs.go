@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (bc *blockContext) processTransactionLogs(tx chain.Transaction) (err error) {
+func (bc *blockContext) processTransactionLogs(tx *chain.Transaction) (err error) {
 	logs := tx.ExtractLogs()
 	if len(logs) == 0 {
 		return

@@ -25,7 +25,7 @@ func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
 	return data[:4], data[4:], nil
 }
 
-func decodeTransaction(tx storage.Transaction) (functionSig string, params any, err error) {
+func decodeTransaction(tx *storage.Transaction) (functionSig string, params any, err error) {
 	if tx.Input == "" {
 		return
 	}
@@ -90,7 +90,7 @@ func unpackParams(contractABI abi.ABI, method *abi.Method, data []byte) ([]inter
 }
 
 func DecodeTransaction(trx *storage.Transaction) (err error) {
-	sig, params, err := decodeTransaction(*trx)
+	sig, params, err := decodeTransaction(trx)
 
 	if sig == "" && params != nil {
 		return

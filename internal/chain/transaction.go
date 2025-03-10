@@ -85,7 +85,6 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &rawStruct); err != nil {
 		return err
 	}
-
 	t.Logs = rawStruct.Logs
 	t.Nonce = common.ParseUInt(rawStruct.Nonce)
 	t.GasPrice = common.ParseUInt(rawStruct.GasPrice)
@@ -111,8 +110,8 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (b *Transaction) GetStorage() (trx storage.Transaction) {
-	return b.Transaction
+func (b *Transaction) GetStorage() (trx *storage.Transaction) {
+	return &b.Transaction
 }
 
 func (t *Transaction) GetFee() *big.Int {

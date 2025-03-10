@@ -45,31 +45,32 @@ func (bc *blockContext) processTransactions() (err error) {
 }
 
 func (bc *blockContext) processTransaction(t_idx int) (err error) {
-	start_transaction := time.Now()
-	bc.Block.Transactions[t_idx].SetTimestamp(bc.Block.Pbft.Timestamp)
+	trx := &bc.Block.Transactions[t_idx]
+	trx.SetTimestamp(bc.Block.Pbft.Timestamp)
 
-	bc.SaveTransaction(bc.Block.Transactions[t_idx].GetStorage(), false)
+	start_transaction := time.Now()
+	bc.SaveTransaction(trx.GetStorage(), false)
 	elapsed_transaction := time.Since(start_transaction)
 	log.WithFields(log.Fields{"func": "SaveTransaction", "elapsed": elapsed_transaction}).Debug("Save transaction time")
 
 	start_transaction = time.Now()
 
-	if !bc.Block.Transactions[t_idx].Status {
+	if !trx.Status {
 		return
 	}
 	// remove value from sender and add to receiver
-	receiver := bc.Block.Transactions[t_idx].To
+	receiver := trx.To
 	// handle contract creation
 	if receiver == "" {
-		receiver = bc.Block.Transactions[t_idx].ContractAddress
+		receiver = trx.ContractAddress
 	}
-	bc.accounts.UpdateBalances(bc.Block.Transactions[t_idx].From, receiver, bc.Block.Transactions[t_idx].Value)
+	bc.accounts.UpdateBalances(trx.From, receiver, trx.Value)
 	elapsed_update_balances := time.Since(start_transaction)
 	log.WithFields(log.Fields{"func": "UpdateBalances", "elapsed": elapsed_update_balances}).Debug("Update balances time")
 
 	start_transaction = time.Now()
 	// process logs
-	err = bc.processTransactionLogs(bc.Block.Transactions[t_idx])
+	err = bc.processTransactionLogs(trx)
 	if err != nil {
 		return
 	}
@@ -79,7 +80,7 @@ func (bc *blockContext) processTransaction(t_idx int) (err error) {
 	start_transaction = time.Now()
 	if len(bc.Block.Traces) > 0 {
 		if internal_transactions := bc.processInternalTransactions(t_idx); internal_transactions != nil {
-			bc.Batch.AddSingleKey(internal_transactions, bc.Block.Transactions[t_idx].Hash)
+			bc.Batch.AddSingleKey(internal_transactions, trx.Hash)
 		}
 	}
 	elapsed_process_internal_transactions := time.Since(start_transaction)
@@ -102,7 +103,7 @@ func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transac
 			continue
 		}
 		internal := makeInternal(trx.GetStorage(), entry, trx.GasPrice)
-		internal_transactions.Data = append(internal_transactions.Data, internal)
+		internal_transactions.Data = append(internal_transactions.Data, *internal)
 
 		bc.SaveTransaction(internal, true)
 		if entry.Action.CallType != "delegatecall" {
@@ -112,8 +113,9 @@ func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transac
 	return
 }
 
-func makeInternal(trx storage.Transaction, entry chain.TraceEntry, gasPrice uint64) (internal storage.Transaction) {
-	internal = trx
+func makeInternal(trx *storage.Transaction, entry chain.TraceEntry, gasPrice uint64) (internal *storage.Transaction) {
+	internal = &storage.Transaction{}
+	*internal = *trx
 	internal.From = entry.Action.From
 	internal.To = chain.GetInternalTransactionTarget(entry)
 	internal.Value = common.ParseStringToBigInt(entry.Action.Value)
@@ -123,7 +125,7 @@ func makeInternal(trx storage.Transaction, entry chain.TraceEntry, gasPrice uint
 	return
 }
 
-func (bc *blockContext) SaveTransaction(trx storage.Transaction, internal bool) {
+func (bc *blockContext) SaveTransaction(trx *storage.Transaction, internal bool) {
 	log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Trace("Saving transaction")
 
 	// As the same data is saved with a different keys, it is better to serialize it only once
@@ -137,7 +139,6 @@ func (bc *blockContext) SaveTransaction(trx storage.Transaction, internal bool) 
 		to_index := bc.addressStats.GetAddress(bc.Storage, trx.To).AddTransaction(trx.Timestamp)
 		bc.Batch.AddSerialized(trx, trx_bytes, trx.To, to_index)
 	}
-
 	if !internal {
 		bc.Batch.AddSerializedSingleKey(trx, trx_bytes, trx.Hash)
 	}

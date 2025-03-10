@@ -197,30 +197,6 @@ type Transaction struct {
 	Value       *big.Int               `json:"value"`
 }
 
-// func (t *Transaction) ToModel() models.Transaction {
-// 	return models.Transaction{
-// 		BlockNumber: t.BlockNumber,
-// 		Calldata:    t.Calldata,
-// 		From:        t.From,
-// 		GasCost:     t.GasCost.String(),
-// 		Hash:        t.Hash,
-// 		Input:       t.Input,
-// 		Status:      t.Status,
-// 		Timestamp:   t.Timestamp,
-// 		To:          t.To,
-// 		Type:        t.Type,
-// 		Value:       t.Value.String(),
-// 	}
-// }
-
 type InternalTransactionsResponse struct {
 	Data []Transaction `json:"data"`
 }
-
-// func (i *InternalTransactionsResponse) ToModel() models.InternalTransactionsResponse {
-// 	ret := make([]models.Transaction, 0, len(i.Data))
-// 	for _, it := range i.Data {
-// 		ret = append(ret, it.ToModel())
-// 	}
-// 	return models.InternalTransactionsResponse{Data: ret}
-// }
