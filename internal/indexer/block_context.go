@@ -20,17 +20,17 @@ type blockContext struct {
 	Config       *common.Config
 	Client       chain.Client
 	Block        *chain.BlockData
-	accounts     storage.Accounts
+	accounts     *storage.AccountsMap
 	addressStats *storage.AddressStatsMap
 	finalized    *storage.FinalizationData
 }
 
-func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config) *blockContext {
+func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config, accounts *storage.AccountsMap) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
 	bc.Config = config
-	bc.accounts = bc.Storage.GetAccounts()
+	bc.accounts = accounts
 	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
 	bc.Client = client
@@ -107,13 +107,13 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 }
 
 func (bc *blockContext) checkIndexedBalances() {
-	if len(bc.accounts) == 0 {
+	if bc.accounts.GetLength() == 0 {
 		log.Fatal("checkIndexedBalances: No balances in the storage, something is wrong")
 	}
 	tp := common.MakeThreadPool()
-	for _, account := range bc.accounts {
-		address := account.Address
-		balance := account.Balance
+	for a, b := range bc.accounts.GetAccounts() {
+		address := a
+		balance := b
 		tp.Go(func() {
 			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.Block.Pbft.Number)
 			if get_err != nil {
