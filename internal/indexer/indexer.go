@@ -16,6 +16,7 @@ type Indexer struct {
 	retry_time                  time.Duration
 	consistency_check_available bool
 	stats                       *chain.Stats
+	accounts                    *storage.AccountsMap
 }
 
 func MakeAndRun(url string, s storage.Storage, c *common.Config, stats *chain.Stats) {
@@ -34,6 +35,7 @@ func NewIndexer(url string, s storage.Storage, c *common.Config, stats *chain.St
 	i.storage = s
 	i.config = c
 	i.stats = stats
+	i.accounts = s.GetAccounts().ToMap()
 
 	// connect is retrying to connect every retry_time
 	i.connect(url)
@@ -93,8 +95,9 @@ func (i *Indexer) init() {
 
 	// Process genesis if db is clean
 	if db_clean {
-		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash)
+		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash, i.accounts)
 		// Genesis hash and finalized period(0) is set inside
+		log.Info("Processing genesis")
 		genesis.process()
 	}
 
@@ -119,7 +122,7 @@ func (i *Indexer) sync(start, end uint64) error {
 			}
 			continue
 		}
-		bc := MakeBlockContext(i.storage, i.client, i.config)
+		bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts)
 		dc, tc, err := bc.process(bd, i.stats)
 		if err != nil {
 			return err
@@ -186,7 +189,7 @@ func (i *Indexer) run() error {
 				return err
 			}
 
-			bc := MakeBlockContext(i.storage, i.client, i.config)
+			bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts)
 			dc, tc, err := bc.process(bd, i.stats)
 			if err != nil {
 				return err
