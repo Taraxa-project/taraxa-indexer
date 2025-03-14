@@ -169,17 +169,9 @@ func TestBatch(t *testing.T) {
 func TestAccountsBatch(t *testing.T) {
 	st := NewStorage("")
 	defer st.Close()
-
-	accounts := []storage.Account{
-		{
-			Address: "0x1111111111111111111111111111111111111111",
-			Balance: big.NewInt(100),
-		},
-		{
-			Address: "0x0DC0d841F962759DA25547c686fa440cF6C28C61",
-			Balance: big.NewInt(50),
-		},
-	}
+	accounts := storage.MakeAccountsMap()
+	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
+	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 
 	batch := st.NewBatch()
 	batch.SaveAccounts(accounts)
@@ -187,10 +179,15 @@ func TestAccountsBatch(t *testing.T) {
 
 	ret := st.GetAccounts()
 
-	if len(ret) != len(accounts) {
+	if len(ret) != accounts.GetLength() {
 		t.Error("Broken DB")
 	}
 
+	sorted := accounts.SortedSlice()
+	for i, acc := range sorted {
+		assert.Equal(t, acc.Address, ret[i].Address)
+		assert.Equal(t, acc.Balance, ret[i].Balance)
+	}
 }
 
 func TestTxByHash(t *testing.T) {
