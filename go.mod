@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.7
-	github.com/cockroachdb/pebble v1.1.4
+	github.com/cockroachdb/pebble v1.1.5
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/getkin/kin-openapi v0.127.0
 	github.com/go-playground/assert/v2 v2.2.0
