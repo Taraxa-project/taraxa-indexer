@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/Taraxa-project/taraxa-go-client v0.0.7
 	github.com/cockroachdb/pebble v1.1.4
-	github.com/ethereum/go-ethereum v1.15.5
+	github.com/ethereum/go-ethereum v1.15.7
 	github.com/getkin/kin-openapi v0.127.0
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/labstack/echo/v4 v4.13.3
@@ -44,7 +44,7 @@ require (
 	github.com/speakeasy-api/openapi-overlay v0.9.0 // indirect
 	github.com/supranational/blst v0.3.14 // indirect
 	github.com/vmware-labs/yaml-jsonpath v0.3.2 // indirect
-	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
@@ -91,12 +91,12 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
