@@ -8,6 +8,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/events"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type Account struct {
@@ -79,6 +80,10 @@ func (am *AccountsMap) AddToBalance(address string, value *big.Int) {
 		am.accounts[address] = big.NewInt(0)
 	}
 	am.accounts[address].Add(am.accounts[address], value)
+	if am.accounts[address].Cmp(big.NewInt(0)) < 0 {
+		log.WithField("address", address).WithField("balance", am.accounts[address].String()).Warn("Balance is negative")
+		am.accounts[address] = big.NewInt(0)
+	}
 }
 
 func (am *AccountsMap) UpdateBalances(from, to, valueStr string) {
