@@ -17,6 +17,7 @@ type Indexer struct {
 	consistency_check_available bool
 	stats                       *chain.Stats
 	accounts                    *storage.AccountsMap
+	dayStats                    *storage.DayStatsWithTimestamp
 }
 
 func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) {
@@ -81,12 +82,18 @@ func (i *Indexer) init() {
 
 	// Process genesis if db is clean
 	if db_clean {
-		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash, i.accounts)
+		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash, i.accounts, i.dayStats)
 		// Genesis hash and finalized period(0) is set inside
 		log.Info("Processing genesis")
 		genesis.process()
 	}
+}
 
+func (i *Indexer) initDayStats(block *common.Block) {
+	stats_date := common.DayStart(block.Timestamp)
+	day_stats := i.storage.GetDayStats(stats_date)
+	log.WithFields(log.Fields{"timestamp": stats_date, "day_stats": day_stats}).Info("Init day stats")
+	i.dayStats = &day_stats
 }
 
 func (i *Indexer) sync(start, end uint64) error {
@@ -108,7 +115,10 @@ func (i *Indexer) sync(start, end uint64) error {
 			}
 			continue
 		}
-		bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts)
+		if i.dayStats == nil {
+			i.initDayStats(bd.Pbft)
+		}
+		bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts, i.dayStats)
 		dc, tc, err := bc.process(bd, i.stats)
 		if err != nil {
 			return err
@@ -175,7 +185,10 @@ func (i *Indexer) run() error {
 				return err
 			}
 
-			bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts)
+			if i.dayStats == nil {
+				i.initDayStats(bd.Pbft)
+			}
+			bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts, i.dayStats)
 			dc, tc, err := bc.process(bd, i.stats)
 			if err != nil {
 				return err

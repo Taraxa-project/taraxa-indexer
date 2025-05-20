@@ -17,7 +17,7 @@ func MakeTestBlockContext(mc *chain.ClientMock, blockNumber uint64) *blockContex
 	if err != nil {
 		panic(err)
 	}
-	bc := MakeBlockContext(st, mc, new(common.Config), storage.MakeAccountsMap())
+	bc := MakeBlockContext(st, mc, new(common.Config), storage.MakeAccountsMap(), nil)
 	bc.SetBlockData(bd)
 
 	return bc

@@ -21,6 +21,7 @@ type Storage interface {
 	GetAccounts() Accounts
 	GetWeekStats(year, week int32) WeekStats
 	GetFinalizationData() *common.FinalizationData
+	GetDayStats(timestamp uint64) DayStatsWithTimestamp
 	GetAddressStats(addr string) *AddressStats
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash

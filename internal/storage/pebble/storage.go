@@ -350,6 +350,15 @@ func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
 	return
 }
 
+func (s *Storage) GetDayStats(timestamp uint64) storage.DayStatsWithTimestamp {
+	ret := storage.MakeDayStatsWithTimestamp(timestamp)
+	err := s.GetFromDB(&ret.TrxGasStats, getKey(GetPrefix(&ret.TrxGasStats), "", timestamp))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetDayStats failed")
+	}
+	return *ret
+}
+
 func (s *Storage) GetFromDB(o any, key []byte) error {
 	value, closer, err := s.get(key)
 	if err != nil {

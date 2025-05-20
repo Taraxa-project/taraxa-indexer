@@ -17,13 +17,13 @@ type Genesis struct {
 	accounts *storage.AccountsMap
 }
 
-func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObject, genesisHash storage.GenesisHash, accounts *storage.AccountsMap) *Genesis {
+func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObject, genesisHash storage.GenesisHash, accounts *storage.AccountsMap, dayStats *storage.DayStatsWithTimestamp) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
 	genesis.accounts = accounts
-	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()}, accounts)
+	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()}, accounts, dayStats)
 
 	return &genesis
 }
@@ -59,6 +59,7 @@ func (g *Genesis) process() {
 
 	// Genesis transactions isn't real transactions, so don't count it here
 	g.bc.Batch.SaveAccounts(g.accounts)
+	g.bc.Batch.AddDayStats(g.bc.dayStats)
 	g.bc.finalized.TrxCount = 0
 	g.bc.Batch.SetGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.Batch.SetTotalSupply(genesisSupply)

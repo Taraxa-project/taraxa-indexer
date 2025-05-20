@@ -57,6 +57,13 @@ func (b *Batch) SaveAccounts(a *storage.AccountsMap) {
 	b.AddSingleKey(a.SortedSlice(), "")
 }
 
+func (b *Batch) AddDayStats(d *storage.DayStatsWithTimestamp) {
+	err := b.AddWithKey(d.TrxGasStats, getKey(GetPrefix(d.TrxGasStats), "", d.Timestamp))
+	if err != nil {
+		log.WithError(err).Fatal("AddDayStats failed")
+	}
+}
+
 func (b *Batch) Add(o any, key1 string, key2 uint64) {
 	err := b.AddWithKey(o, getKey(GetPrefix(o), key1, key2))
 	if err != nil {

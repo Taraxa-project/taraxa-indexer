@@ -148,7 +148,7 @@ func (m *TrxStats) Apply(s *pebble.Storage) error {
 	if err != nil {
 		return err
 	}
-	first_day := common.DayStart(current_block.Timestamp) - 32*common.Day
+	first_day := common.DayStart(current_block.Timestamp) - common.Days30
 	day_stats, current_block_num := findStart(current_block, m.client, s)
 	if day_stats.Timestamp <= first_day {
 		return nil
@@ -173,7 +173,7 @@ func (m *TrxStats) Apply(s *pebble.Storage) error {
 			day_stats = storage.MakeDayStatsWithTimestamp(current_day_start)
 		}
 
-		day_stats.TrxGasStats.AddBlock(block)
+		day_stats.AddBlock(block)
 		current_block_num--
 	}
 	return nil

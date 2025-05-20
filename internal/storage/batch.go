@@ -10,6 +10,7 @@ type Batch interface {
 	UpdateWeekStats(w WeekStats)
 	SaveAccounts(a *AccountsMap)
 	Add(o any, key1 string, key2 uint64)
+	AddDayStats(d *DayStatsWithTimestamp)
 	AddSerialized(o any, data []byte, key1 string, key2 uint64)
 	AddSingleKey(o any, key string)
 	AddSerializedSingleKey(o any, data []byte, key string)

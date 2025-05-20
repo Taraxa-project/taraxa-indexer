@@ -23,9 +23,10 @@ type blockContext struct {
 	accounts     *storage.AccountsMap
 	addressStats *storage.AddressStatsMap
 	finalized    *common.FinalizationData
+	dayStats     *storage.DayStatsWithTimestamp
 }
 
-func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, accounts *storage.AccountsMap) *blockContext {
+func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, accounts *storage.AccountsMap, dayStats *storage.DayStatsWithTimestamp) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
@@ -34,6 +35,7 @@ func MakeBlockContext(s storage.Storage, client common.Client, config *common.Co
 	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
 	bc.Client = client
+	bc.dayStats = dayStats
 
 	return &bc
 }
@@ -86,6 +88,8 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 		bc.checkIndexedBalances()
 	}
 
+	bc.dayStats.AddBlock(bc.Block.Pbft)
+	bc.Batch.AddDayStats(bc.dayStats)
 	bc.Batch.SaveAccounts(bc.accounts)
 
 	dags_count = uint64(len(bc.Block.Dags))

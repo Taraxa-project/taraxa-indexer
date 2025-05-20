@@ -301,7 +301,7 @@ func getMonthInterval(date *uint64) (from_date, to_date uint64) {
 	} else {
 		to_date = *date
 	}
-	to_date = common.DayEnd(to_date)
+	to_date = common.DayEnd(to_date - common.Day)
 	from_date = common.DayStart(to_date - common.Days30)
 	return
 }
@@ -354,10 +354,11 @@ func (a *ApiHandler) GetMonthlyStats(ctx echo.Context, params GetMonthlyStatsPar
 
 		totalStats.Add(stats)
 		count++
-		return false
+
+		return count == 30
 	})
 
-	if count != 30 {
+	if count < 30 {
 		return ctx.JSON(http.StatusNotFound, "Not enough stats found for the interval")
 	}
 
