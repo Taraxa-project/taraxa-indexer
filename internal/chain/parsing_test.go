@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/go-playground/assert/v2"
 )
 
@@ -50,7 +51,7 @@ func TestTraceParsing(t *testing.T) {
 			}
 		]
 	}`
-	trace := new(TransactionTrace)
+	trace := new(common.TransactionTrace)
 	err := json.Unmarshal([]byte(json_str), trace)
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +89,7 @@ func TestDagBlockParsing(t *testing.T) {
 		  "sol2": "0x1bf2d94d97dcc676ef07f1e1769bd89e1dfd99d0715114ce70cd5da1ddd4a1e2e2d927e9653d4b2921d5cb9ef0d0a38f51e2993f643a38bdf033cc5f34ee7ac560efbf74d08855e5c6c59091cc69fca8a059eb7920e2c105900e174e715e375b126a767515997837a595dbde078f83e503f9cc2c0ea84265e1c247fe6bd853d6c25696ca50398b70a4ecc7501e9da17dc56fb7a45807db15923dc7b704f09dba5b778e99d371b314bf8dc6f1f9437f8fdddf4c76b528c200cb735883504ab19d422972c987fa1559984a863e20f4ac52c69529cba248c6ef6a8d86db9f26a8ec666d3dd81ad3050d58105f38c2b04eeb134f736875fd3a860e2b2f8b4cc1f94f"
 		}
 	  }`
-	dag := new(DagBlock)
+	dag := new(common.DagBlock)
 	err := json.Unmarshal([]byte(json_str), dag)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, dag.Dag.Hash, "0x5c9442c06330afe9f484a2591165d551f2aa46b7f253f223717e1c90114bbdc1")

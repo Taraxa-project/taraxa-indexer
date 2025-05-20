@@ -10,7 +10,7 @@ import (
 )
 
 type Indexer struct {
-	client                      chain.Client
+	client                      common.Client
 	storage                     storage.Storage
 	config                      *common.Config
 	retry_time                  time.Duration
@@ -19,8 +19,8 @@ type Indexer struct {
 	accounts                    *storage.AccountsMap
 }
 
-func MakeAndRun(url string, s storage.Storage, c *common.Config, stats *chain.Stats) {
-	i := NewIndexer(url, s, c, stats)
+func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) {
+	i := NewIndexer(client, s, c, stats, retry_time)
 	for {
 		err := i.run()
 		f := i.storage.GetFinalizationData()
@@ -29,29 +29,14 @@ func MakeAndRun(url string, s storage.Storage, c *common.Config, stats *chain.St
 	}
 }
 
-func NewIndexer(url string, s storage.Storage, c *common.Config, stats *chain.Stats) (i *Indexer) {
+func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) (i *Indexer) {
 	i = new(Indexer)
-	i.retry_time = 5 * time.Second
 	i.storage = s
 	i.config = c
 	i.stats = stats
 	i.accounts = s.GetAccounts().ToMap()
-
-	// connect is retrying to connect every retry_time
-	i.connect(url)
-	return
-}
-
-func (i *Indexer) connect(url string) {
-	var err error
-	for {
-		i.client, err = chain.NewWsClient(url)
-		if err == nil {
-			break
-		}
-		log.WithError(err).Error("Can't connect to chain")
-		time.Sleep(i.retry_time)
-	}
+	i.client = client
+	i.retry_time = retry_time
 
 	version, err := i.client.GetVersion()
 	if err != nil || !chain.CheckProtocolVersion(version) {
@@ -63,6 +48,7 @@ func (i *Indexer) connect(url string) {
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
 	}
+	return
 }
 
 func (i *Indexer) init() {
@@ -204,7 +190,7 @@ func (i *Indexer) run() error {
 	}
 }
 
-func (i *Indexer) consistencyCheck(finalized *storage.FinalizationData) {
+func (i *Indexer) consistencyCheck(finalized *common.FinalizationData) {
 	remote_stats, stats_err := i.client.GetChainStats()
 	if stats_err == nil {
 		finalized.Check(remote_stats)

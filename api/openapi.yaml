@@ -390,7 +390,50 @@ paths:
         default:
           description: |
             Unexpected error
-
+  /monthlyActiveAddresses:
+    get:
+      tags:
+        - MonthlyActiveAddresses
+      summary: "Returns the number of active addresses for the selected month"
+      description: |
+        Returns the number of active addresses for the selected month
+      operationId: "getMonthlyActiveAddresses"
+      parameters:
+        - $ref: "#/components/parameters/dateParam"
+      responses:
+        "200":
+          description: |
+            A JSON object containing the number of active addresses for the selected month
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/MonthlyActiveAddressesResponse"
+        default:
+          description: |
+            Unexpected error
+  /monthlyStats:
+    get:
+      tags:
+        - MonthlyStats
+      summary: "Returns the number of active addresses for the selected month"
+      description: |
+        Returns the number of active addresses for the selected month
+      operationId: "getMonthlyStats"
+      parameters:
+        - $ref: "#/components/parameters/dateParam"
+      responses:
+        "200":
+          description: |
+            A JSON object containing the number of active addresses for the selected month
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/MonthlyStatsResponse"
+        default:
+          description: |
+            Unexpected error
 components:
   schemas:
     ChainStats:
@@ -778,6 +821,34 @@ components:
           items:
             allOf:
               - $ref: "#/components/schemas/EventLog"
+    MonthlyActiveAddressesResponse:
+      required:
+        - count
+        - fromDate
+        - toDate
+      properties:
+        count:
+          $ref: "#/components/schemas/Counter"
+        fromDate:
+          $ref: "#/components/schemas/Timestamp"
+        toDate:
+          $ref: "#/components/schemas/Timestamp"
+    MonthlyStatsResponse:
+      required:
+        - trxCount
+        - gasUsed
+        - fromDate
+        - toDate
+      properties:
+        trxCount:
+          $ref: "#/components/schemas/Counter"
+        gasUsed:
+          type: string
+          example: "1234567890"
+        fromDate:
+          $ref: "#/components/schemas/Timestamp"
+        toDate:
+          $ref: "#/components/schemas/Timestamp"
     AddressFilter:
       $ref: "#/components/schemas/Address"
     PaginationFilter:
@@ -829,6 +900,14 @@ components:
         Hash of the item(transaction) to get data for
       schema:
         $ref: "#/components/schemas/Hash"
+    dateParam:
+      name: date
+      in: query
+      required: false
+      description: |
+        Date to filter by
+      schema:
+        $ref: "#/components/schemas/Timestamp"
     blockNumParam:
       name: blockNumber
       in: query

@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
@@ -11,15 +12,15 @@ import (
 type Storage interface {
 	Clean() error
 	Close() error
-	ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
-	ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
+	ForEach(o any, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
+	ForEachBackwards(o any, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
 	ForEachFromKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
 	ForEachFromKeyBackwards(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
 	GetAccounts() Accounts
 	GetWeekStats(year, week int32) WeekStats
-	GetFinalizationData() *FinalizationData
+	GetFinalizationData() *common.FinalizationData
 	GetAddressStats(addr string) *AddressStats
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash

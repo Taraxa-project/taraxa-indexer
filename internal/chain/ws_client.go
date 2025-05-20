@@ -9,7 +9,6 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/gorilla/websocket"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
 )
@@ -64,14 +63,29 @@ func (client *WsClient) GetBalanceAtBlock(address string, blockNumber uint64) (b
 	return
 }
 
-func (client *WsClient) GetBlockByNumber(number uint64) (blk *Block, err error) {
+func (client *WsClient) GetBlocks(start, end uint64) (blocks []*common.Block, err error) {
+	blocks = make([]*common.Block, end-start+1)
+	batch := make([]rpc.BatchElem, end-start+1)
+	for i := end; i >= start; i-- {
+		batch[i-start] = rpc.BatchElem{
+			Method: "eth_getBlockByNumber",
+			Args:   []any{fmt.Sprintf("0x%x", i), false},
+			Result: &blocks[end-i],
+		}
+	}
+	err = client.rpc.BatchCall(batch)
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
+func (client *WsClient) GetBlockByNumber(number uint64) (blk *common.Block, err error) {
 	err = client.rpc.Call(&blk, "eth_getBlockByNumber", fmt.Sprintf("0x%x", number), false)
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
 func (client *WsClient) GetLatestPeriod() (uint64, error) {
-	blk := new(Block)
+	blk := new(common.Block)
 	err := client.rpc.Call(blk, "eth_getBlockByNumber", "latest", false)
 	metrics.RpcCallsCounter.Inc()
 	if err != nil {
@@ -80,14 +94,14 @@ func (client *WsClient) GetLatestPeriod() (uint64, error) {
 	return blk.Number, err
 }
 
-func (client *WsClient) TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error) {
+func (client *WsClient) TraceBlockTransactions(number uint64) (traces []common.TransactionTrace, err error) {
 	err = client.rpc.Call(&traces, "trace_replayBlockTransactions", fmt.Sprintf("0x%x", number), []string{"trace"})
 	defer metrics.RpcCallsCounter.Inc()
 	return
 }
 
 // TODO: Optimize this. We are making two requests here, so its pretty slow
-func (client *WsClient) GetTransactionByHash(hash string) (trx Transaction, err error) {
+func (client *WsClient) GetTransactionByHash(hash string) (trx common.Transaction, err error) {
 	err = client.rpc.Call(&trx, "eth_getTransactionByHash", hash)
 	metrics.RpcCallsCounter.Inc()
 	if err != nil {
@@ -98,37 +112,37 @@ func (client *WsClient) GetTransactionByHash(hash string) (trx Transaction, err 
 	return
 }
 
-func (client *WsClient) addTransactionReceiptData(trx *Transaction) (err error) {
+func (client *WsClient) addTransactionReceiptData(trx *common.Transaction) (err error) {
 	err = client.rpc.Call(&trx, "eth_getTransactionReceipt", trx.Hash)
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetPeriodTransactions(number uint64) (trxs []Transaction, err error) {
+func (client *WsClient) GetPeriodTransactions(number uint64) (trxs []common.Transaction, err error) {
 	err = client.rpc.Call(&trxs, "debug_getPeriodTransactionsWithReceipts", fmt.Sprintf("0x%x", number))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags PbftBlockWithDags, err error) {
+func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags common.PbftBlockWithDags, err error) {
 	err = client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetDagBlockByHash(hash string) (dag DagBlock, err error) {
+func (client *WsClient) GetDagBlockByHash(hash string) (dag common.DagBlock, err error) {
 	err = client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error) {
+func (client *WsClient) GetPeriodDagBlocks(period uint64) (dags []common.DagBlock, err error) {
 	err = client.rpc.Call(&dags, "debug_getPeriodDagBlocks", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetGenesis() (genesis GenesisObject, err error) {
+func (client *WsClient) GetGenesis() (genesis common.GenesisObject, err error) {
 	err = client.rpc.Call(&genesis, "taraxa_getConfig")
 	metrics.RpcCallsCounter.Inc()
 	return
@@ -142,20 +156,20 @@ func (client *WsClient) GetVersion() (version string, err error) {
 	return
 }
 
-func (client *WsClient) GetChainStats() (fd storage.FinalizationData, err error) {
+func (client *WsClient) GetChainStats() (fd common.FinalizationData, err error) {
 	err = client.rpc.Call(&fd, "taraxa_getChainStats")
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error) {
+func (client *WsClient) GetPreviousBlockCertVotes(period uint64) (vr common.VotesResponse, err error) {
 	err = client.rpc.Call(&vr, "debug_getPreviousBlockCertVotes", fmt.Sprintf("0x%x", period))
 	metrics.RpcCallsCounter.Inc()
 	return
 }
 
-func (client *WsClient) GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error) {
-	err = client.rpc.Call(&logs, "eth_getLogs", map[string]interface{}{
+func (client *WsClient) GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []common.EventLog, err error) {
+	err = client.rpc.Call(&logs, "eth_getLogs", map[string]any{
 		"fromBlock": fmt.Sprintf("0x%x", fromBlock),
 		"toBlock":   fmt.Sprintf("0x%x", toBlock),
 		"address":   addresses,
@@ -165,7 +179,7 @@ func (client *WsClient) GetLogs(fromBlock, toBlock uint64, addresses []string, t
 	return
 }
 
-func (client *WsClient) GetValidatorsAtBlock(period uint64) (validators []Validator, err error) {
+func (client *WsClient) GetValidatorsAtBlock(period uint64) (validators []common.Validator, err error) {
 	err = client.rpc.Call(&validators, "debug_dposValidatorTotalStakes", fmt.Sprintf("0x%x", period))
 	return
 }
@@ -186,8 +200,8 @@ func (client *WsClient) GetTotalSupply(block_num uint64) (totalSupply *big.Int, 
 	return
 }
 
-func (client *WsClient) SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error) {
-	ch := make(chan Block)
+func (client *WsClient) SubscribeNewHeads() (chan common.Block, *rpc.ClientSubscription, error) {
+	ch := make(chan common.Block)
 	sub, err := client.rpc.Subscribe(client.ctx, "eth", ch, "newHeads")
 	metrics.RpcCallsCounter.Inc()
 	return ch, sub, err

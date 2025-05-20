@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/events"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
@@ -35,6 +36,7 @@ const yieldPrefix = "y"
 const validatorsYieldPrefix = "vy"
 const multipliedYieldPrefix = "my"
 const RewardsStatsPrefix = "rs"
+const dayStatsPrefix = "ds"
 
 type Storage struct {
 	db   *pebble.DB
@@ -97,7 +99,7 @@ func (s *Storage) get(key []byte) ([]byte, io.Closer, error) {
 	return value, closer, nil
 }
 
-func GetPrefix(o interface{}) (ret string) {
+func GetPrefix(o any) (ret string) {
 	switch tt := o.(type) {
 	case *storage.Accounts, storage.Accounts:
 		ret = accountPrefix
@@ -111,7 +113,7 @@ func GetPrefix(o interface{}) (ret string) {
 		ret = dagsPrefix
 	case *storage.AddressStats, storage.AddressStats:
 		ret = statsPrefix
-	case *storage.FinalizationData, storage.FinalizationData:
+	case *common.FinalizationData, common.FinalizationData:
 		ret = finalizationDataPrefix
 	case *storage.GenesisHash, storage.GenesisHash:
 		ret = genesisHashPrefix
@@ -129,9 +131,11 @@ func GetPrefix(o interface{}) (ret string) {
 		ret = multipliedYieldPrefix
 	case *storage.RewardsStats, storage.RewardsStats:
 		ret = RewardsStatsPrefix
-	// hack if we aren't passing original type directly to this function, but passing interface{} from other function
-	case *interface{}:
-		ret = GetPrefix(*o.(*interface{}))
+	case *storage.TrxGasStats, storage.TrxGasStats:
+		ret = dayStatsPrefix
+	// hack if we aren't passing original type directly to this function, but passing any from other function
+	case *any:
+		ret = GetPrefix(*o.(*any))
 		// We don't need to add separator in this case, so return from here
 		return
 	default:
@@ -144,16 +148,16 @@ func GetPrefix(o interface{}) (ret string) {
 
 func getKey(prefix, key1 string, key2 uint64) []byte {
 	key1 = strings.ToLower(key1)
-	return []byte(fmt.Sprintf("%s%s%020d", prefix, key1, key2))
+	return fmt.Appendf(nil, "%s%s%020d", prefix, key1, key2)
 }
 
 func GetPrefixKey(prefix, author string) []byte {
 	author = strings.ToLower(author)
-	return []byte(fmt.Sprintf("%s%s", prefix, author))
+	return fmt.Appendf(nil, "%s%s", prefix, author)
 }
 
 func getWeekKey(prefix string, year, week int32) []byte {
-	return []byte(fmt.Sprintf("%s%d%02d", prefix, year, week))
+	return fmt.Appendf(nil, "%s%d%02d", prefix, year, week)
 }
 
 func (s *Storage) find(prefix []byte) *pebble.Iterator {
@@ -206,7 +210,7 @@ func (s *Storage) ForEachFromKeyBackwards(prefix, start_key []byte, fn func(key,
 	s.forEach(prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Prev() })
 }
 
-func (s *Storage) forEachPrefix(o interface{}, address string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
+func (s *Storage) forEachPrefix(o any, address string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	prefix := GetPrefixKey(GetPrefix(&o), address)
 	start_key := prefix
 	if start != nil {
@@ -215,19 +219,19 @@ func (s *Storage) forEachPrefix(o interface{}, address string, start *uint64, fn
 	s.forEach(prefix, start_key, fn, navigate)
 }
 
-func (s *Storage) ForEach(o interface{}, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
+func (s *Storage) ForEach(o any, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
 	s.forEachPrefix(o, address, start, fn, func(iter *pebble.Iterator) { iter.Next() })
 }
 
-func (s *Storage) ForEachBackwards(o interface{}, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
+func (s *Storage) ForEachBackwards(o any, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
 	s.forEachPrefix(o, address, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
 }
 
-func (s *Storage) addToDBTest(o interface{}, key1 string, key2 uint64) error {
+func (s *Storage) addToDBTest(o any, key1 string, key2 uint64) error {
 	return s.addToDB(getKey(GetPrefix(o), key1, key2), o)
 }
 
-func (s *Storage) addToDB(key []byte, o interface{}) error {
+func (s *Storage) addToDB(key []byte, o any) error {
 	b, err := rlp.EncodeToBytes(o)
 	if err != nil {
 		return err
@@ -265,8 +269,8 @@ func (s *Storage) GetWeekStats(year, week int32) storage.WeekStats {
 	return *ptr
 }
 
-func (s *Storage) GetFinalizationData() *storage.FinalizationData {
-	ptr := new(storage.FinalizationData)
+func (s *Storage) GetFinalizationData() *common.FinalizationData {
+	ptr := new(common.FinalizationData)
 	err := s.GetFromDB(ptr, []byte(GetPrefix(ptr)))
 	if err != nil && err != pebble.ErrNotFound {
 		log.WithError(err).Fatal("GetFinalizationData failed")
@@ -346,7 +350,7 @@ func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
 	return
 }
 
-func (s *Storage) GetFromDB(o interface{}, key []byte) error {
+func (s *Storage) GetFromDB(o any, key []byte) error {
 	value, closer, err := s.get(key)
 	if err != nil {
 		return err

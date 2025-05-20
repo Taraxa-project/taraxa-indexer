@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/spiretechnology/go-pool"
@@ -16,6 +17,8 @@ import (
 )
 
 const DposContractAddress = "0x00000000000000000000000000000000000000fe"
+const Day = 24 * 60 * 60
+const Days30 = 30 * Day
 
 // isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
 func MakeThreadPool() pool.Pool {
@@ -151,4 +154,14 @@ func Min[T Number](a, b T) T {
 		return a
 	}
 	return b
+}
+
+func DayStart(timestamp uint64) uint64 {
+	date := time.Unix(int64(timestamp), 0)
+	return uint64(time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Unix())
+}
+
+func DayEnd(timestamp uint64) uint64 {
+	date := time.Unix(int64(timestamp), 0)
+	return uint64(time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, time.UTC).Unix())
 }

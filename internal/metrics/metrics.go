@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -74,7 +74,7 @@ func RunPrometheusServer(listenAddr string) {
 	}
 }
 
-func Save(start_processing time.Time, dags_count, trx_count uint64, finalized *storage.FinalizationData) {
+func Save(start_processing time.Time, dags_count, trx_count uint64, finalized *common.FinalizationData) {
 	BlockProcessingTimeMilisec.Observe(float64(time.Since(start_processing).Milliseconds()))
 	IndexedBlocksCounter.Inc()
 

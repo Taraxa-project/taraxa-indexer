@@ -70,7 +70,7 @@ func DecodeRewardsTopics(logs []models.EventLog) (decodedEvents []LogReward, err
 		if err != nil {
 			return nil, err
 		}
-		decoded := d.([]interface{})
+		decoded := d.([]any)
 		if rewardTopics[name] {
 			account := ethcommon.HexToAddress(log.Topics[1])
 			validator := ethcommon.HexToAddress(log.Topics[2])

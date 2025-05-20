@@ -3,7 +3,6 @@ package indexer
 import (
 	"math/big"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
@@ -12,13 +11,13 @@ import (
 
 type Genesis struct {
 	storage  storage.Storage
-	genesis  chain.GenesisObject
+	genesis  common.GenesisObject
 	bc       blockContext
 	hash     string
 	accounts *storage.AccountsMap
 }
 
-func MakeGenesis(s storage.Storage, c chain.Client, gen_obj chain.GenesisObject, genesisHash storage.GenesisHash, accounts *storage.AccountsMap) *Genesis {
+func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObject, genesisHash storage.GenesisHash, accounts *storage.AccountsMap) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = gen_obj

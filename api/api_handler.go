@@ -4,6 +4,7 @@ package api
 
 import (
 	"bytes"
+	"time"
 
 	"fmt"
 	"net/http"
@@ -30,7 +31,7 @@ func NewApiHandler(s storage.Storage, c *common.Config, stats *chain.Stats) *Api
 	return &ApiHandler{s, c, stats}
 }
 
-func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilter, pag *PaginationParam) interface{} {
+func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilter, pag *PaginationParam) any {
 	logFields := log.Fields{"type": storage.GetTypeName[T](), "address": address, "pagination": pag}
 	log.WithFields(logFields).Debug("GetAddressDataPage")
 
@@ -47,7 +48,7 @@ func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilte
 	return response
 }
 
-func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) interface{} {
+func GetHoldersDataPage(a *ApiHandler, pag *PaginationParam) any {
 	ret, pagination := storage.GetHoldersPage(a.storage, getPaginationStart(pag.Start), pag.Limit)
 
 	response := struct {
@@ -220,7 +221,7 @@ func (a *ApiHandler) getAddressYield(address AddressParam, block *uint64) (resp 
 	block_num := common.GetYieldIntervalEnd(pbft_count, block, a.config.ValidatorsYieldSavingInterval)
 	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
 	if pbft_count < block_num {
-		err = fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+		err = fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
 		return
 	}
 	return &YieldResponse{
@@ -267,7 +268,7 @@ func (a *ApiHandler) GetAddressYieldForInterval(ctx echo.Context, address Addres
 		return false
 	})
 	if count == 0 {
-		return fmt.Errorf("No yield data found for the %s at interval [%d, %d]", address, from_block, to_block)
+		return fmt.Errorf("no yield data found for the %s at interval [%d, %d]", address, from_block, to_block)
 	}
 	yield /= float64(count)
 
@@ -284,7 +285,7 @@ func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams)
 	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.TotalYieldSavingInterval)
 	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
 	if pbft_count < block_num {
-		return fmt.Errorf("Not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+		return fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
 	}
 	resp := YieldResponse{
 		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
@@ -292,6 +293,80 @@ func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams)
 		Yield:     a.storage.GetTotalYield(block_num).Yield,
 	}
 	return ctx.JSON(http.StatusOK, resp)
+}
+
+func getMonthInterval(date *uint64) (from_date, to_date uint64) {
+	if date == nil {
+		to_date = uint64(time.Now().Unix())
+	} else {
+		to_date = *date
+	}
+	to_date = common.DayEnd(to_date)
+	from_date = common.DayStart(to_date - common.Days30)
+	return
+}
+
+func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonthlyActiveAddressesParams) error {
+	from_date, to_date := getMonthInterval(params.Date)
+
+	count := 0
+	stats := storage.AddressStats{}
+
+	a.storage.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
+		err := rlp.DecodeBytes(res, &stats)
+		if err != nil {
+			log.WithError(err).Fatal("Error decoding data from db")
+			return false
+		}
+
+		if stats.LastTransactionTimestamp != nil && *stats.LastTransactionTimestamp >= from_date && *stats.LastTransactionTimestamp <= to_date {
+			count++
+		}
+
+		return false
+	})
+
+	resp := MonthlyActiveAddressesResponse{
+		Count:    uint64(count),
+		FromDate: uint64(from_date),
+		ToDate:   uint64(to_date),
+	}
+	return ctx.JSON(http.StatusOK, resp)
+}
+
+func (a *ApiHandler) GetMonthlyStats(ctx echo.Context, params GetMonthlyStatsParams) error {
+	from_date, to_date := getMonthInterval(params.Date)
+
+	totalStats := storage.EmptyTrxGasStats()
+	stats := storage.EmptyTrxGasStats()
+	count := int64(0)
+
+	a.storage.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
+		ts := storage.GetTimestampFromKey(key)
+		if ts < from_date || ts > to_date {
+			return false
+		}
+		err := rlp.DecodeBytes(res, &stats)
+		if err != nil {
+			log.WithError(err).Fatal("Error decoding data from db")
+			return false
+		}
+
+		totalStats.Add(stats)
+		count++
+		return false
+	})
+
+	if count != 30 {
+		return ctx.JSON(http.StatusNotFound, "Not enough stats found for the interval")
+	}
+
+	return ctx.JSON(http.StatusOK, MonthlyStatsResponse{
+		FromDate: from_date,
+		ToDate:   to_date,
+		GasUsed:  totalStats.GasUsed.String(),
+		TrxCount: totalStats.TrxCount,
+	})
 }
 
 func getPaginationStart(param *uint64) uint64 {

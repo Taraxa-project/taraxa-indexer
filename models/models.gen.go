@@ -82,6 +82,21 @@ type InternalTransactionsResponse struct {
 	Data []Transaction `json:"data"`
 }
 
+// MonthlyActiveAddressesResponse defines model for MonthlyActiveAddressesResponse.
+type MonthlyActiveAddressesResponse struct {
+	Count    Counter   `json:"count"`
+	FromDate Timestamp `json:"fromDate"`
+	ToDate   Timestamp `json:"toDate"`
+}
+
+// MonthlyStatsResponse defines model for MonthlyStatsResponse.
+type MonthlyStatsResponse struct {
+	FromDate Timestamp `json:"fromDate"`
+	GasUsed  string    `json:"gasUsed"`
+	ToDate   Timestamp `json:"toDate"`
+	TrxCount Counter   `json:"trxCount"`
+}
+
 // NilableUint64 defines model for NilableUint64.
 type NilableUint64 = uint64
 
@@ -198,6 +213,9 @@ type AddressParam = AddressFilter
 // BlockNumParam defines model for blockNumParam.
 type BlockNumParam = Counter
 
+// DateParam defines model for dateParam.
+type DateParam = Timestamp
+
 // HashParam defines model for hashParam.
 type HashParam = Hash
 
@@ -244,6 +262,18 @@ type GetAddressYieldForIntervalParams struct {
 type GetHoldersParams struct {
 	// Pagination Pagination
 	Pagination PaginationParam `form:"pagination" json:"pagination"`
+}
+
+// GetMonthlyActiveAddressesParams defines parameters for GetMonthlyActiveAddresses.
+type GetMonthlyActiveAddressesParams struct {
+	// Date Date to filter by
+	Date *DateParam `form:"date,omitempty" json:"date,omitempty"`
+}
+
+// GetMonthlyStatsParams defines parameters for GetMonthlyStats.
+type GetMonthlyStatsParams struct {
+	// Date Date to filter by
+	Date *DateParam `form:"date,omitempty" json:"date,omitempty"`
 }
 
 // GetTotalYieldParams defines parameters for GetTotalYield.

@@ -1,108 +1,136 @@
 package common
 
 import (
-	"encoding/hex"
-	"fmt"
-	"strings"
+	"encoding/json"
+	"math/big"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/contracts"
 	"github.com/Taraxa-project/taraxa-indexer/models"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	log "github.com/sirupsen/logrus"
 )
 
-type CallData struct {
-	Name   string `json:"name"`
-	Params any    `json:"params"`
+const emptyInput = "0x"
+const emptyReceiver = ""
+
+func GetInternalTransactionTarget(trace TraceEntry) string {
+	if trace.Action.To != "" {
+		return trace.Action.To
+	}
+	return trace.Result.Address
 }
 
-func splitFunctionIDFromData(data []byte) ([]byte, []byte, error) {
-	if len(data) < 4 {
-		return nil, nil, fmt.Errorf("transaction data is too short")
-	}
-	return data[:4], data[4:], nil
-}
-
-func DecodeTransaction(tx models.Transaction) (functionSig string, params any, err error) {
-	if tx.Input == "" {
-		return
-	}
-	relevantAbi := contracts.ContractABIs[strings.ToLower(tx.To)]
-	if relevantAbi == "" {
-		return
-	}
-	contractABI, err := abi.JSON(strings.NewReader(relevantAbi))
-	if err != nil {
-		return
-	}
-
-	trimmed := strings.TrimPrefix(tx.Input, "0x")
-	bytes, err := hex.DecodeString(trimmed)
-
-	if err != nil {
-		return
-	}
-
-	funcId, data, err := splitFunctionIDFromData(bytes)
-	if err != nil {
-		return
-	}
-	// Decode the transaction
-	method, err := contractABI.MethodById(funcId)
-
-	if method == nil {
-		fmt.Println(method, err)
-	}
-
-	functionSig = method.Sig
-
-	if err != nil || method == nil {
-		return
-	}
-
-	unpacked, err := unpackParams(contractABI, method, data)
-
-	if err != nil {
-		return
-	}
-
-	params, err = ParseToString(unpacked)
-
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func unpackParams(contractABI abi.ABI, method *abi.Method, data []byte) ([]interface{}, error) {
-	var args abi.Arguments
-	if method, ok := contractABI.Methods[method.Name]; ok {
-		if len(data)%32 != 0 {
-			return nil, fmt.Errorf("abi: improperly formatted output: %x", data)
+func GetTransactionType(to, input, txType string, internal bool) models.TransactionType {
+	if internal {
+		if txType == "create" {
+			return models.InternalContractCreation
+		} else if txType == "call" && input != emptyInput {
+			return models.InternalContractCall
 		}
-		args = method.Inputs
+		return models.InternalTransfer
+	} else {
+		if to == emptyReceiver {
+			return models.ContractCreation
+		} else if input != emptyInput {
+			return models.ContractCall
+		}
+		return models.Transfer
 	}
-	unpacked, err := args.Unpack(data)
-	return unpacked, err
 }
 
-func ProcessTransaction(trx *models.Transaction) (err error) {
-	sig, params, err := DecodeTransaction(*trx)
+type EventLog struct {
+	Address          string   `json:"address"`
+	Data             string   `json:"data"`
+	LogIndex         string   `json:"logIndex"`
+	Removed          bool     `json:"removed"`
+	Topics           []string `json:"topics"`
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"`
+	BlockNumber      string   `json:"blockNumber"`
+}
 
-	if sig == "" && params != nil {
-		return
+type Transaction struct {
+	models.Transaction
+	Logs             []EventLog     `json:"logs"`
+	Nonce            models.Counter `json:"nonce"`
+	GasPrice         models.Counter `json:"gasPrice"`
+	GasUsed          models.Counter `json:"gasUsed"`
+	TransactionIndex models.Counter `json:"transactionIndex"`
+	ContractAddress  string         `json:"contractAddress"`
+}
+
+func (t *Transaction) SetTimestamp(timestamp uint64) {
+	t.Transaction.Timestamp = timestamp
+}
+
+func (t *Transaction) UnmarshalJSON(data []byte) error {
+	var rawStruct struct {
+		BlockNumber string `json:"blockNumber"`
+		From        string `json:"from"`
+		Hash        string `json:"hash"`
+		Input       string `json:"input"`
+		Status      string `json:"status"`
+		Timestamp   string `json:"timestamp"`
+		To          string `json:"to"`
+		Type        string `json:"type"`
+		Value       string `json:"value"`
+
+		Logs             []EventLog `json:"logs"`
+		Nonce            string     `json:"nonce"`
+		GasPrice         string     `json:"gasPrice"`
+		GasUsed          string     `json:"gasUsed"`
+		TransactionIndex string     `json:"transactionIndex"`
+
+		ContractAddress string `json:"contractAddress"`
+	}
+	if err := json.Unmarshal(data, &rawStruct); err != nil {
+		return err
 	}
 
-	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"hash": trx.Hash}).Debug("DecodeTransaction error")
-		return
+	t.Logs = rawStruct.Logs
+	t.Nonce = ParseUInt(rawStruct.Nonce)
+	t.GasPrice = ParseUInt(rawStruct.GasPrice)
+	t.GasUsed = ParseUInt(rawStruct.GasUsed)
+	t.TransactionIndex = ParseUInt(rawStruct.TransactionIndex)
+	t.ContractAddress = rawStruct.ContractAddress
+
+	t.Hash = rawStruct.Hash
+	t.BlockNumber = ParseUInt(rawStruct.BlockNumber)
+	t.From = rawStruct.From
+	t.GasCost = t.GetFee().Uint64()
+	t.Input = rawStruct.Input
+	t.Status = ParseBool(rawStruct.Status)
+	t.Timestamp = ParseUInt(rawStruct.Timestamp)
+	t.To = rawStruct.To
+	t.Value = rawStruct.Value
+
+	t.Type = GetTransactionType(t.Transaction.To, t.Input, "", false)
+	if t.Type == models.ContractCreation {
+		t.To = t.ContractAddress
 	}
 
-	trx.Calldata = &models.CallData{
-		Name:   sig,
-		Params: params,
-	}
+	return nil
+}
 
-	return
+func (b *Transaction) GetModel() (trx *models.Transaction) {
+	return &b.Transaction
+}
+
+func (t *Transaction) GetFee() *big.Int {
+	return big.NewInt(0).Mul(big.NewInt(0).SetUint64(t.GasUsed), big.NewInt(0).SetUint64(t.GasPrice))
+}
+
+func (t *Transaction) ExtractLogs() (logs []models.EventLog) {
+	for _, log := range t.Logs {
+		eLog := models.EventLog{
+			Address:          log.Address,
+			Data:             log.Data,
+			LogIndex:         ParseUInt(log.LogIndex),
+			Name:             "",
+			Params:           []string{},
+			Removed:          log.Removed,
+			Topics:           log.Topics,
+			TransactionHash:  log.TransactionHash,
+			TransactionIndex: ParseUInt(log.TransactionIndex),
+		}
+		logs = append(logs, eLog)
+	}
+	return logs
 }

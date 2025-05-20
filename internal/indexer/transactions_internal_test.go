@@ -251,7 +251,7 @@ func TestTraceParsing(t *testing.T) {
 	assert.Equal(t, uint64(0x5487c), trx.BlockNumber)
 	assert.Equal(t, models.ContractCall, trx.Type)
 
-	pbft := &chain.Block{}
+	pbft := &common.Block{}
 	pbft.Number = trx.BlockNumber
 	pbft.Transactions = []string{trx.Hash}
 	pbft.TransactionCount = 1

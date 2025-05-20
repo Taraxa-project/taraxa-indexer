@@ -1,13 +1,13 @@
-package chain
+package common
 
 import (
 	"math/big"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 type Client interface {
+	GetBlocks(start, end uint64) (blocks []*Block, err error)
 	GetBlockByNumber(number uint64) (blk *Block, err error)
 	GetLatestPeriod() (uint64, error)
 	TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error)
@@ -22,7 +22,7 @@ type Client interface {
 	GetTotalSupply(block_num uint64) (totalAmountDelegated *big.Int, err error)
 	GetVersion() (version string, err error)
 	GetGenesis() (genesis GenesisObject, err error)
-	GetChainStats() (ns storage.FinalizationData, err error)
+	GetChainStats() (ns FinalizationData, err error)
 	SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error)
 	GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error)
 	GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error)

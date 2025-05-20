@@ -3,6 +3,7 @@ package pebble
 import (
 	"sync"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/cockroachdb/pebble"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -31,7 +32,7 @@ func (b *Batch) SetTotalSupply(s *storage.TotalSupply) {
 	}
 }
 
-func (b *Batch) SetFinalizationData(f *storage.FinalizationData) {
+func (b *Batch) SetFinalizationData(f *common.FinalizationData) {
 	err := b.AddWithKey(f, []byte(GetPrefix(f)))
 	if err != nil {
 		log.WithError(err).Fatal("SetFinalizationData failed")
@@ -56,42 +57,42 @@ func (b *Batch) SaveAccounts(a *storage.AccountsMap) {
 	b.AddSingleKey(a.SortedSlice(), "")
 }
 
-func (b *Batch) Add(o interface{}, key1 string, key2 uint64) {
+func (b *Batch) Add(o any, key1 string, key2 uint64) {
 	err := b.AddWithKey(o, getKey(GetPrefix(o), key1, key2))
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"prefix": GetPrefix(o), "key1": key1, "key2": key2}).Fatal("Batch.Add failed")
 	}
 }
 
-func (b *Batch) AddSerialized(o interface{}, data []byte, key1 string, key2 uint64) {
+func (b *Batch) AddSerialized(o any, data []byte, key1 string, key2 uint64) {
 	err := b.AddSerializedWithKey(o, data, getKey(GetPrefix(o), key1, key2))
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"object": o, "prefix": GetPrefix(o), "key1": key1, "key2": key2}).Fatal("Batch.AddSerialized failed")
 	}
 }
 
-func (b *Batch) AddSerializedSingleKey(o interface{}, data []byte, key string) {
+func (b *Batch) AddSerializedSingleKey(o any, data []byte, key string) {
 	err := b.AddSerializedWithKey(o, data, GetPrefixKey(GetPrefix(o), key))
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"object": o, "prefix": GetPrefix(o), "key": GetPrefixKey(GetPrefix(o), key)}).Fatal("Batch.AddSerializedSingleKey failed")
 	}
 }
 
-func (b *Batch) AddSingleKey(o interface{}, key string) {
+func (b *Batch) AddSingleKey(o any, key string) {
 	err := b.AddWithKey(o, GetPrefixKey(GetPrefix(o), key))
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"object": o, "prefix": GetPrefix(o), "key": GetPrefixKey(GetPrefix(o), key)}).Fatal("Batch.AddSingleKey failed")
 	}
 }
 
-func (b *Batch) AddSerializedWithKey(o interface{}, data, key []byte) error {
+func (b *Batch) AddSerializedWithKey(o any, data, key []byte) error {
 	b.Mutex.Lock()
 	defer b.Mutex.Unlock()
 
 	return b.Set(key, data, nil)
 }
 
-func (b *Batch) AddWithKey(o interface{}, key []byte) error {
+func (b *Batch) AddWithKey(o any, key []byte) error {
 	data, err := rlp.EncodeToBytes(o)
 	if err != nil {
 		return err

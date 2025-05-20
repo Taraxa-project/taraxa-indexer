@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -112,13 +111,13 @@ func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transac
 	return
 }
 
-func makeInternal(trx models.Transaction, entry chain.TraceEntry, gasCost uint64) (internal models.Transaction) {
+func makeInternal(trx models.Transaction, entry common.TraceEntry, gasCost uint64) (internal models.Transaction) {
 	internal = trx
 	internal.From = entry.Action.From
-	internal.To = chain.GetInternalTransactionTarget(entry)
+	internal.To = common.GetInternalTransactionTarget(entry)
 	internal.Value = entry.Action.Value
 	internal.GasCost = common.ParseUInt(entry.Result.GasUsed) * gasCost
-	internal.Type = chain.GetTransactionType(trx.To, entry.Action.Input, entry.Type, true)
+	internal.Type = common.GetTransactionType(trx.To, entry.Action.Input, entry.Type, true)
 	internal.BlockNumber = trx.BlockNumber
 	return
 }
