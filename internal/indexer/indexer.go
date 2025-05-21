@@ -163,7 +163,7 @@ func (i *Indexer) run() error {
 		case blk := <-ch:
 			finalized_period := i.storage.GetFinalizationData().PbftCount
 			if blk.Number != finalized_period+1 {
-				err := i.sync(finalized_period+1, blk.Number+1)
+				err := i.sync(finalized_period+1, blk.Number)
 				if err != nil {
 					return err
 				}

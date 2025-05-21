@@ -180,6 +180,14 @@ type DayStatsWithTimestamp struct {
 	Timestamp uint64 `json:"timestamp"`
 }
 
+func (d *DayStatsWithTimestamp) AddBlock(blk *common.Block) {
+	day_start := common.DayStart(blk.Timestamp)
+	if day_start > d.Timestamp {
+		*d = *MakeDayStatsWithTimestamp(day_start)
+	}
+	d.TrxCount += blk.TransactionCount
+	d.GasUsed.Add(d.GasUsed, blk.GasUsed)
+}
 func MakeDayStatsWithTimestamp(ts uint64) *DayStatsWithTimestamp {
 	return &DayStatsWithTimestamp{
 		TrxGasStats: EmptyTrxGasStats(),
@@ -189,12 +197,7 @@ func MakeDayStatsWithTimestamp(ts uint64) *DayStatsWithTimestamp {
 
 func GetTimestampFromKey(key []byte) uint64 {
 	ts := strings.Split(string(key), "|")
-	return common.ParseUInt(ts[1])
-}
-
-func (d *TrxGasStats) AddBlock(blk *common.Block) {
-	d.TrxCount += blk.TransactionCount
-	d.GasUsed.Add(d.GasUsed, blk.GasUsed)
+	return common.ParseUInt(strings.TrimLeft(ts[1], "0"))
 }
 
 func (d *TrxGasStats) Add(other TrxGasStats) {
