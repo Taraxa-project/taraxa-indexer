@@ -14,6 +14,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
+	"github.com/Taraxa-project/taraxa-indexer/models"
 	. "github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/labstack/echo/v4"
@@ -306,6 +307,37 @@ func getMonthInterval(date *uint64) (from_date, to_date uint64) {
 	return
 }
 
+func (a *ApiHandler) wasAccountActive(address AddressParam, from_date, to_date uint64) (found bool) {
+	trx := models.Transaction{}
+	log.WithFields(log.Fields{"address": address, "from_date": from_date, "to_date": to_date, "found": found}).Debug("wasAccountActive")
+	// check for transaction from address in the interval. start from most recent
+	a.storage.ForEachBackwards(&trx, "", nil, func(key []byte, res []byte) (stop bool) {
+		err := rlp.DecodeBytes(res, &trx)
+		if err != nil {
+			log.WithError(err).Fatal("Error decoding data from db")
+			return false
+		}
+
+		// we should only count transactions from the account
+		if trx.From != address {
+			return false
+		}
+
+		if trx.Timestamp > to_date {
+			return false
+		}
+
+		if trx.Timestamp < from_date {
+			return true
+		}
+
+		found = true
+		return true
+	})
+
+	return
+}
+
 func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonthlyActiveAddressesParams) error {
 	from_date, to_date := getMonthInterval(params.Date)
 
@@ -319,7 +351,12 @@ func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonth
 			return false
 		}
 
-		if stats.LastTransactionTimestamp != nil && *stats.LastTransactionTimestamp >= from_date && *stats.LastTransactionTimestamp <= to_date {
+		// skip accounts with last transaction timestamp before from_date
+		if stats.LastTransactionTimestamp != nil && *stats.LastTransactionTimestamp < from_date {
+			return false
+		}
+
+		if a.wasAccountActive(stats.Address, from_date, to_date) {
 			count++
 		}
 
