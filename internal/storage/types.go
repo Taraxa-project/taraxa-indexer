@@ -41,11 +41,16 @@ func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) {
 	a.ValidatorRegisteredBlock = &blockHeight
 }
 
-func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
+func (a *AddressStats) AddTransaction(trx *models.Transaction) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.TransactionsCount++
-	a.LastTransactionTimestamp = &timestamp
+	if a.Address == trx.From {
+		a.LastTransactionTimestamp = &trx.Timestamp
+	}
+	if a.Address == trx.To && (trx.Type == models.ContractCreation || trx.Type == models.InternalContractCreation) {
+		a.ContractRegisteredTimestamp = &trx.Timestamp
+	}
 	return a.TransactionsCount
 }
 

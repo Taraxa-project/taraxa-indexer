@@ -35,6 +35,10 @@ func GetTransactionType(to, input, txType string, internal bool) models.Transact
 	}
 }
 
+func IsInternalTransaction(trx_type models.TransactionType) bool {
+	return trx_type >= models.InternalTransfer
+}
+
 type EventLog struct {
 	Address          string   `json:"address"`
 	Data             string   `json:"data"`

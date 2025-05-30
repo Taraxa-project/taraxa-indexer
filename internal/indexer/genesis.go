@@ -59,7 +59,6 @@ func (g *Genesis) process() {
 
 	// Genesis transactions isn't real transactions, so don't count it here
 	g.bc.Batch.SaveAccounts(g.accounts)
-	g.bc.Batch.AddDayStats(g.bc.dayStats)
 	g.bc.finalized.TrxCount = 0
 	g.bc.Batch.SetGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.Batch.SetTotalSupply(genesisSupply)

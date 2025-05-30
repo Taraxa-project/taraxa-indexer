@@ -39,6 +39,13 @@ type ChainStats struct {
 	Tps           float32 `json:"tps"`
 }
 
+// ContractStatsResponse defines model for ContractStatsResponse.
+type ContractStatsResponse struct {
+	Address           Address   `json:"address"`
+	CreationDate      Timestamp `json:"creationDate"`
+	TransactionsCount Counter   `json:"transactionsCount"`
+}
+
 // CountResponse defines model for CountResponse.
 type CountResponse struct {
 	Total Counter `json:"total"`
@@ -91,14 +98,15 @@ type MonthlyActiveAddressesResponse struct {
 
 // MonthlyStatsResponse defines model for MonthlyStatsResponse.
 type MonthlyStatsResponse struct {
+	Date     Timestamp `json:"date"`
 	FromDate Timestamp `json:"fromDate"`
 	GasUsed  string    `json:"gasUsed"`
 	ToDate   Timestamp `json:"toDate"`
 	TrxCount Counter   `json:"trxCount"`
 }
 
-// NilableUint64 defines model for NilableUint64.
-type NilableUint64 = uint64
+// NillableUint64 defines model for NillableUint64.
+type NillableUint64 = uint64
 
 // PaginatedResponse defines model for PaginatedResponse.
 type PaginatedResponse struct {
@@ -135,13 +143,14 @@ type Period struct {
 
 // StatsResponse defines model for StatsResponse.
 type StatsResponse struct {
-	DagsCount                Counter        `json:"dagsCount"`
-	LastDagTimestamp         *NilableUint64 `json:"lastDagTimestamp" rlp:"nil"`
-	LastPbftTimestamp        *NilableUint64 `json:"lastPbftTimestamp" rlp:"nil"`
-	LastTransactionTimestamp *NilableUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
-	PbftCount                Counter        `json:"pbftCount"`
-	TransactionsCount        Counter        `json:"transactionsCount"`
-	ValidatorRegisteredBlock *NilableUint64 `json:"validatorRegisteredBlock" rlp:"nil"`
+	ContractRegisteredTimestamp *NillableUint64 `json:"contractRegisteredTimestamp" rlp:"nil"`
+	DagsCount                   Counter         `json:"dagsCount"`
+	LastDagTimestamp            *NillableUint64 `json:"lastDagTimestamp" rlp:"nil"`
+	LastPbftTimestamp           *NillableUint64 `json:"lastPbftTimestamp" rlp:"nil"`
+	LastTransactionTimestamp    *NillableUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
+	PbftCount                   Counter         `json:"pbftCount"`
+	TransactionsCount           Counter         `json:"transactionsCount"`
+	ValidatorRegisteredBlock    *NillableUint64 `json:"validatorRegisteredBlock" rlp:"nil"`
 }
 
 // Timestamp defines model for Timestamp.
@@ -216,11 +225,17 @@ type BlockNumParam = Counter
 // DateParam defines model for dateParam.
 type DateParam = Timestamp
 
+// FromDateParam defines model for fromDateParam.
+type FromDateParam = Timestamp
+
 // HashParam defines model for hashParam.
 type HashParam = Hash
 
 // PaginationParam defines model for paginationParam.
 type PaginationParam = PaginationFilter
+
+// ToDateParam defines model for toDateParam.
+type ToDateParam = Timestamp
 
 // WeekParam defines model for weekParam.
 type WeekParam = Week
@@ -256,6 +271,15 @@ type GetAddressYieldForIntervalParams struct {
 
 	// ToBlock To block number
 	ToBlock Counter `form:"toBlock" json:"toBlock"`
+}
+
+// GetContractStatsParams defines parameters for GetContractStats.
+type GetContractStatsParams struct {
+	// FromDate Date to filter from
+	FromDate *FromDateParam `form:"fromDate,omitempty" json:"fromDate,omitempty"`
+
+	// ToDate Date to filter to
+	ToDate *ToDateParam `form:"toDate,omitempty" json:"toDate,omitempty"`
 }
 
 // GetHoldersParams defines parameters for GetHolders.

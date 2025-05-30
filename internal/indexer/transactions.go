@@ -130,10 +130,10 @@ func (bc *blockContext) SaveTransaction(trx models.Transaction, internal bool) {
 	if err != nil {
 		log.WithFields(log.Fields{"from": trx.From, "to": trx.To, "hash": trx.Hash}).Error("Failed to encode transaction")
 	}
-	from_index := bc.addressStats.GetAddress(bc.Storage, trx.From).AddTransaction(trx.Timestamp)
+	from_index := bc.addressStats.GetAddress(bc.Storage, trx.From).AddTransaction(&trx)
 	bc.Batch.AddSerialized(trx, trx_bytes, trx.From, from_index)
 	if trx.To != "" {
-		to_index := bc.addressStats.GetAddress(bc.Storage, trx.To).AddTransaction(trx.Timestamp)
+		to_index := bc.addressStats.GetAddress(bc.Storage, trx.To).AddTransaction(&trx)
 		bc.Batch.AddSerialized(trx, trx_bytes, trx.To, to_index)
 	}
 

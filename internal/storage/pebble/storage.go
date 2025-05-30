@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const prefixSeparator = "|"
+const PrefixSeparator = "|"
 const accountPrefix = "b"
 const logsPrefix = "e"
 const transactionPrefix = "t"
@@ -142,7 +142,7 @@ func GetPrefix(o any) (ret string) {
 		debug.PrintStack()
 		log.WithFields(log.Fields{"type": tt, "value": o}).Fatalf("getPrefix: Unexpected type %T", tt)
 	}
-	ret += prefixSeparator
+	ret += PrefixSeparator
 	return
 }
 
