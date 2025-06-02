@@ -953,7 +953,7 @@ components:
     fromDateParam:
       name: fromDate
       in: query
-      required: false
+      required: true
       description: |
         Date to filter from
       schema:
@@ -961,7 +961,7 @@ components:
     toDateParam:
       name: toDate
       in: query
-      required: false
+      required: true
       description: |
         Date to filter to
       schema:

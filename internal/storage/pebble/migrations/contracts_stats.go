@@ -132,9 +132,10 @@ func (m *ContractStats) Apply(s *pebble.Storage) error {
 		total_addresses++
 		return false
 	})
+	tp.Wait()
+
 	batch.CommitBatch()
 	batch = s.NewBatch()
-	tp.Wait()
 
 	log.WithFields(log.Fields{
 		"contracts_found": len(m.contracts),
