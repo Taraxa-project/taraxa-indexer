@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
+	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -153,4 +154,8 @@ func (c *ClientMock) AddTracesFromJson(hash, traces_json string) {
 
 func (c *ClientMock) AddPbftBlock(period uint64, block *common.Block) {
 	c.Blocks[period] = block
+}
+
+func (c *ClientMock) FilterContracts([]models.Address) ([]models.Address, error) {
+	return []models.Address{}, ErrNotImplemented
 }
