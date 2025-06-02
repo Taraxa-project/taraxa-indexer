@@ -3,6 +3,7 @@ package common
 import (
 	"math/big"
 
+	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -26,6 +27,7 @@ type Client interface {
 	SubscribeNewHeads() (chan Block, *rpc.ClientSubscription, error)
 	GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error)
 	GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error)
+	FilterContracts(addresses []models.Address) (contracts []models.Address, err error)
 	// Close disconnects from the node
 	Close()
 }

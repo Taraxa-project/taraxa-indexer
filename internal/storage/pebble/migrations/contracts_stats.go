@@ -1,6 +1,8 @@
 package migration
 
 import (
+	"sync"
+
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
@@ -24,7 +26,7 @@ type OldAddressStats struct {
 	Address string `json:"address"`
 }
 
-func (o *OldAddressStats) toStatsResponse(timestamp models.Timestamp) storage.AddressStats {
+func (o *OldAddressStats) toStatsResponse(timestamp *models.NillableUint64) storage.AddressStats {
 	return storage.AddressStats{StatsResponse: models.StatsResponse{
 		DagsCount:                   o.DagsCount,
 		LastDagTimestamp:            o.LastDagTimestamp,
@@ -33,18 +35,33 @@ func (o *OldAddressStats) toStatsResponse(timestamp models.Timestamp) storage.Ad
 		PbftCount:                   o.PbftCount,
 		TransactionsCount:           o.TransactionsCount,
 		ValidatorRegisteredBlock:    o.ValidatorRegisteredBlock,
-		ContractRegisteredTimestamp: &timestamp,
+		ContractRegisteredTimestamp: timestamp,
 	}}
 }
 
+type Contracts struct {
+}
+
 type ContractStats struct {
+	client           common.Client
+	contracts        []models.Address
+	genesisTimestamp models.Timestamp
+	mutex            sync.Mutex
 }
 
 func (m *ContractStats) GetId() string {
 	return "contract_stats"
 }
 
-func (m *ContractStats) Init(common.Client) {
+func (m *ContractStats) Init(client common.Client) {
+	block, err := client.GetBlockByNumber(0)
+	if err != nil {
+		log.WithField("error", err).Fatal("Error getting genesis block")
+	}
+	m.genesisTimestamp = block.Timestamp
+	log.WithField("genesis_timestamp", m.genesisTimestamp).Info("Genesis timestamp")
+	m.client = client
+	m.contracts = make([]models.Address, 0)
 }
 
 func (m *ContractStats) contractCreationTimestamp(s *pebble.Storage, address models.Address) (timestamp models.Timestamp) {
@@ -62,11 +79,6 @@ func (m *ContractStats) contractCreationTimestamp(s *pebble.Storage, address mod
 			return false
 		}
 
-		log.WithFields(log.Fields{
-			"trx":     trx,
-			"address": address,
-		}).Info("Found creation transaction")
-
 		timestamp = trx.Timestamp
 		return true
 	})
@@ -74,10 +86,25 @@ func (m *ContractStats) contractCreationTimestamp(s *pebble.Storage, address mod
 	return
 }
 
+func (m *ContractStats) saveContracts(addresses []models.Address) {
+	res, err := m.client.FilterContracts(addresses)
+	if err != nil {
+		log.WithField("error", err).Fatal("Error filtering contracts")
+	}
+
+	m.mutex.Lock()
+	m.contracts = append(m.contracts, res...)
+	m.mutex.Unlock()
+}
+
 func (m *ContractStats) Apply(s *pebble.Storage) error {
 	old_stats := OldAddressStats{}
 	stats := storage.AddressStats{}
+	total_addresses := 0
+
+	tp := common.MakeThreadPool()
 	batch := s.NewBatch()
+	addresses := make([]models.Address, 0, 100)
 	s.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &old_stats)
 		if err != nil {
@@ -87,13 +114,52 @@ func (m *ContractStats) Apply(s *pebble.Storage) error {
 			}
 			return true
 		}
-		stats = old_stats.toStatsResponse(m.contractCreationTimestamp(s, old_stats.Address))
+		addresses = append(addresses, old_stats.Address)
+		if len(addresses) == 100 {
+			// make addresses copy and save only contract addresses
+			addressesCopy := make([]models.Address, len(addresses))
+			copy(addressesCopy, addresses)
+			tp.Go(func() {
+				m.saveContracts(addressesCopy)
+			})
+			addresses = make([]models.Address, 0, 100)
+		}
+		stats = old_stats.toStatsResponse(nil)
 		err = batch.AddWithKey(&stats, key)
 		if err != nil {
 			log.WithField("error", err).Fatal("Error adding stats to batch")
 		}
+		total_addresses++
 		return false
 	})
+	batch.CommitBatch()
+	batch = s.NewBatch()
+	tp.Wait()
+
+	log.WithFields(log.Fields{
+		"contracts_found": len(m.contracts),
+		"total_addresses": total_addresses,
+	}).Info("Found contracts")
+
+	processed := 0
+	for _, contract := range m.contracts {
+		timestamp := m.contractCreationTimestamp(s, contract)
+		if timestamp == 0 {
+			log.WithField("contract", contract).Info("No creation timestamp found, using genesis timestamp")
+			timestamp = m.genesisTimestamp
+			continue
+		}
+		stats := s.GetAddressStats(contract)
+		stats.ContractRegisteredTimestamp = &timestamp
+		batch.AddSingleKey(stats, contract)
+		processed++
+		if processed%100 == 0 {
+			log.WithFields(log.Fields{
+				"processed": processed,
+				"contracts": len(m.contracts),
+			}).Info("Processed contracts")
+		}
+	}
 
 	batch.CommitBatch()
 	return nil

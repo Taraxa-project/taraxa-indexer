@@ -7,6 +7,7 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
+	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/gorilla/websocket"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -196,6 +197,30 @@ func (client *WsClient) GetTotalSupply(block_num uint64) (totalSupply *big.Int, 
 	supplyStr := ""
 	err = client.rpc.Call(&supplyStr, "taraxa_totalSupply", fmt.Sprintf("0x%x", block_num))
 	totalSupply = common.ParseStringToBigInt(supplyStr)
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
+func (client *WsClient) FilterContracts(addresses []models.Address) (contracts []models.Address, err error) {
+	contracts = make([]models.Address, 0, len(addresses))
+	batch := make([]rpc.BatchElem, len(addresses))
+	results := make([]string, len(addresses))
+	for i, address := range addresses {
+		batch[i] = rpc.BatchElem{
+			Method: "eth_getCode",
+			Args:   []any{address, "latest"},
+			Result: &results[i],
+		}
+	}
+	err = client.rpc.BatchCall(batch)
+	if err != nil {
+		return
+	}
+	for i, result := range results {
+		if result != "0x" {
+			contracts = append(contracts, addresses[i])
+		}
+	}
 	metrics.RpcCallsCounter.Inc()
 	return
 }
