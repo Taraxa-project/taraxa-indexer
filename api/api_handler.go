@@ -320,9 +320,9 @@ func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonth
 		}
 
 		// skip accounts with last transaction timestamp before from_date
-		if stats.LastTransactionTimestamp != nil && *stats.LastTransactionTimestamp < from_date {
-			return false
-		}
+		// if stats.LastTransactionTimestamp != nil && *stats.LastTransactionTimestamp < from_date {
+		// 	return false
+		// }
 
 		if wasAccountActive(a.storage, stats.Address, from_date, to_date) {
 			count++
@@ -390,7 +390,7 @@ func (a *ApiHandler) GetContractStats(ctx echo.Context, params GetContractStatsP
 			return false
 		}
 
-		count := receivedTransactionsCount(a.storage, stats.Address, *params.FromDate, *params.ToDate)
+		count := receivedTransactionsCount(a.storage, stats.Address, params.FromDate, params.ToDate)
 
 		contracts = append(contracts, ContractStatsResponse{
 			Address:           stats.Address,

@@ -276,10 +276,10 @@ type GetAddressYieldForIntervalParams struct {
 // GetContractStatsParams defines parameters for GetContractStats.
 type GetContractStatsParams struct {
 	// FromDate Date to filter from
-	FromDate *FromDateParam `form:"fromDate,omitempty" json:"fromDate,omitempty"`
+	FromDate FromDateParam `form:"fromDate" json:"fromDate"`
 
 	// ToDate Date to filter to
-	ToDate *ToDateParam `form:"toDate,omitempty" json:"toDate,omitempty"`
+	ToDate ToDateParam `form:"toDate" json:"toDate"`
 }
 
 // GetHoldersParams defines parameters for GetHolders.
