@@ -308,23 +308,28 @@ func getMonthInterval(date *uint64) (from_date, to_date uint64) {
 
 func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonthlyActiveAddressesParams) error {
 	from_date, to_date := getMonthInterval(params.Date)
-
-	count := 0
+	log.WithField("from_date", from_date).WithField("to_date", to_date).Debug("GetMonthlyActiveAddresses")
+	count := uint64(0)
 	stats := storage.AddressStats{}
 
 	a.storage.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
-		err := rlp.DecodeBytes(res, &stats)
-		if err != nil {
-			log.WithError(err).Fatal("Error decoding data from db")
-			return false
-		}
+		// err := rlp.DecodeBytes(res, &stats)
+		// if err != nil {
+		// 	log.WithError(err).Fatal("Error decoding data from db")
+		// 	return false
+		// }
+		address := addressFromKey(key)
+		log.WithFields(log.Fields{
+			"key":     string(key),
+			"address": address,
+		}).Debug("Address")
 
 		// skip accounts with last transaction timestamp before from_date
 		// if stats.LastTransactionTimestamp != nil && *stats.LastTransactionTimestamp < from_date {
 		// 	return false
 		// }
 
-		if wasAccountActive(a.storage, stats.Address, from_date, to_date) {
+		if wasAccountActive(a.storage, address, from_date, to_date) {
 			count++
 		}
 
@@ -332,9 +337,9 @@ func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonth
 	})
 
 	resp := MonthlyActiveAddressesResponse{
-		Count:    uint64(count),
-		FromDate: uint64(from_date),
-		ToDate:   uint64(to_date),
+		Count:    count,
+		FromDate: from_date,
+		ToDate:   to_date,
 	}
 	return ctx.JSON(http.StatusOK, resp)
 }
@@ -391,6 +396,10 @@ func (a *ApiHandler) GetContractStats(ctx echo.Context, params GetContractStatsP
 		}
 
 		count := receivedTransactionsCount(a.storage, stats.Address, params.FromDate, params.ToDate)
+
+		if count == 0 {
+			return false
+		}
 
 		contracts = append(contracts, ContractStatsResponse{
 			Address:           stats.Address,

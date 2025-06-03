@@ -866,7 +866,6 @@ components:
         - gasUsed
         - fromDate
         - toDate
-        - date
       properties:
         trxCount:
           $ref: "#/components/schemas/Counter"
@@ -876,8 +875,6 @@ components:
         fromDate:
           $ref: "#/components/schemas/Timestamp"
         toDate:
-          $ref: "#/components/schemas/Timestamp"
-        date:
           $ref: "#/components/schemas/Timestamp"
     ContractStatsResponse:
       required:

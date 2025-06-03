@@ -98,7 +98,6 @@ type MonthlyActiveAddressesResponse struct {
 
 // MonthlyStatsResponse defines model for MonthlyStatsResponse.
 type MonthlyStatsResponse struct {
-	Date     Timestamp `json:"date"`
 	FromDate Timestamp `json:"fromDate"`
 	GasUsed  string    `json:"gasUsed"`
 	ToDate   Timestamp `json:"toDate"`

@@ -27,7 +27,7 @@ type OldAddressStats struct {
 }
 
 func (o *OldAddressStats) toStatsResponse(timestamp *models.NillableUint64) storage.AddressStats {
-	return storage.AddressStats{StatsResponse: models.StatsResponse{
+	return storage.AddressStats{Address: o.Address, StatsResponse: models.StatsResponse{
 		DagsCount:                   o.DagsCount,
 		LastDagTimestamp:            o.LastDagTimestamp,
 		LastPbftTimestamp:           o.LastPbftTimestamp,
