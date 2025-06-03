@@ -31,8 +31,9 @@ func ParseUInt(s string) (v uint64) {
 	}
 	v, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
-		debug.PrintStack()
-		log.Fatal(s, "ParseUInt ", err)
+		// debug.PrintStack()
+		// log.Fatal(s, "ParseUInt ", err)
+		return 0
 	}
 	return v
 }
