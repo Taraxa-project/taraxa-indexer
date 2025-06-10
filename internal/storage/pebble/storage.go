@@ -43,6 +43,18 @@ type Storage struct {
 	path string
 }
 
+func navigate(direction storage.Direction) func(iter *pebble.Iterator) {
+	if direction == storage.Backward {
+		return func(iter *pebble.Iterator) {
+			iter.Prev()
+		}
+	}
+
+	return func(iter *pebble.Iterator) {
+		iter.Next()
+	}
+}
+
 func (s *Storage) NewBatch() storage.Batch {
 	return &Batch{Batch: s.db.NewBatch(), Mutex: new(sync.RWMutex)}
 }
@@ -185,7 +197,7 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 	return iter
 }
 
-func (s *Storage) forEach(prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
+func (s *Storage) forEachKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	iter := s.find(prefix)
 	defer iter.Close()
 	if len(start_key) == 0 {
@@ -193,6 +205,10 @@ func (s *Storage) forEach(prefix, start_key []byte, fn func(key, res []byte) (st
 	}
 	iter.SeekGE(start_key)
 
+	s.forEach(iter, fn, navigate)
+}
+
+func (s *Storage) forEach(iter *pebble.Iterator, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	for ; iter.Valid(); navigate(iter) {
 		if fn(iter.Key(), iter.Value()) {
 			break
@@ -200,31 +216,29 @@ func (s *Storage) forEach(prefix, start_key []byte, fn func(key, res []byte) (st
 	}
 }
 
-func (s *Storage) ForEachFromKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool)) {
+func (s *Storage) ForEachFromKey(prefix, start_key []byte, direction storage.Direction, fn func(key, res []byte) (stop bool)) {
 	start_key = bytes.Join([][]byte{prefix, start_key}, []byte(""))
-	s.forEach(prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Next() })
+	s.forEachKey(prefix, start_key, fn, navigate(direction))
 }
 
-func (s *Storage) ForEachFromKeyBackwards(prefix, start_key []byte, fn func(key, res []byte) (stop bool)) {
-	start_key = bytes.Join([][]byte{prefix, start_key}, []byte(""))
-	s.forEach(prefix, start_key, fn, func(iter *pebble.Iterator) { iter.Prev() })
-}
-
-func (s *Storage) forEachPrefix(o any, address string, start *uint64, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
+func (s *Storage) ForEach(o any, address string, start *uint64, direction storage.Direction, fn func(key, res []byte) (stop bool)) {
 	prefix := GetPrefixKey(GetPrefix(&o), address)
-	start_key := prefix
-	if start != nil {
-		start_key = getKey(GetPrefix(&o), address, *start)
+
+	iter := s.find(prefix)
+	defer iter.Close()
+
+	if start == nil {
+		if direction == storage.Backward {
+			iter.Last()
+		} else {
+			iter.First()
+		}
+	} else {
+		start_key := getKey(GetPrefix(&o), address, *start)
+		iter.SeekGE(start_key)
 	}
-	s.forEach(prefix, start_key, fn, navigate)
-}
 
-func (s *Storage) ForEach(o any, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
-	s.forEachPrefix(o, address, start, fn, func(iter *pebble.Iterator) { iter.Next() })
-}
-
-func (s *Storage) ForEachBackwards(o any, address string, start *uint64, fn func(key, res []byte) (stop bool)) {
-	s.forEachPrefix(o, address, start, fn, func(iter *pebble.Iterator) { iter.Prev() })
+	s.forEach(iter, fn, navigate(direction))
 }
 
 func (s *Storage) addToDBTest(o any, key1 string, key2 uint64) error {

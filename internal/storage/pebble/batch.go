@@ -19,7 +19,7 @@ func (b *Batch) CommitBatch() {
 	b.Mutex.Lock()
 	defer b.Mutex.Unlock()
 
-	err := b.Commit(pebble.NoSync)
+	err := b.Commit(pebble.Sync)
 	if err != nil {
 		log.WithError(err).Fatal("CommitBatch failed")
 	}

@@ -4,6 +4,7 @@ package api
 
 import (
 	"bytes"
+	"sync/atomic"
 	"time"
 
 	"fmt"
@@ -248,7 +249,7 @@ func (a *ApiHandler) GetAddressYieldForInterval(ctx echo.Context, address Addres
 	prefix := []byte(pebble.GetPrefixKey(pebble.GetPrefix(storage.Yield{}), address))
 	yield := float64(0)
 	count := int64(0)
-	a.storage.ForEachFromKey(prefix, []byte(storage.FormatIntToKey(from_block)), func(key, res []byte) (stop bool) {
+	a.storage.ForEachFromKey(prefix, []byte(storage.FormatIntToKey(from_block)), storage.Forward, func(key, res []byte) (stop bool) {
 		if bytes.Equal(key, bytes.Join([][]byte{prefix, []byte(storage.FormatIntToKey(to_block))}, []byte(""))) {
 			return true
 		}
@@ -309,35 +310,38 @@ func getMonthInterval(date *uint64) (from_date, to_date uint64) {
 func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonthlyActiveAddressesParams) error {
 	from_date, to_date := getMonthInterval(params.Date)
 	log.WithField("from_date", from_date).WithField("to_date", to_date).Debug("GetMonthlyActiveAddresses")
-	count := uint64(0)
+	count := atomic.Uint64{}
 	stats := storage.AddressStats{}
+	tp := common.MakeThreadPool()
 
-	a.storage.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
-		// err := rlp.DecodeBytes(res, &stats)
-		// if err != nil {
-		// 	log.WithError(err).Fatal("Error decoding data from db")
-		// 	return false
-		// }
-		address := addressFromKey(key)
-		log.WithFields(log.Fields{
-			"key":     string(key),
-			"address": address,
-		}).Debug("Address")
+	a.storage.ForEach(&stats, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
+		tp.Go(func() {
+			err := rlp.DecodeBytes(res, &stats)
+			if err != nil {
+				log.WithError(err).Fatal("Error decoding data from db")
+				return
+			}
 
-		// skip accounts with last transaction timestamp before from_date
-		// if stats.LastTransactionTimestamp != nil && *stats.LastTransactionTimestamp < from_date {
-		// 	return false
-		// }
+			// skip accounts with last transaction timestamp before from_date
+			if stats.LastTransactionTimestamp == nil || *stats.LastTransactionTimestamp < from_date {
+				return
+			}
+			// skip contracts
+			if stats.ContractRegisteredTimestamp != nil {
+				return
+			}
 
-		if wasAccountActive(a.storage, address, from_date, to_date) {
-			count++
-		}
-
+			if wasAccountActive(a.storage, stats.Address, from_date, to_date) {
+				count.Add(1)
+			}
+		})
 		return false
 	})
 
+	tp.Wait()
+
 	resp := MonthlyActiveAddressesResponse{
-		Count:    count,
+		Count:    count.Load(),
 		FromDate: from_date,
 		ToDate:   to_date,
 	}
@@ -351,7 +355,7 @@ func (a *ApiHandler) GetMonthlyStats(ctx echo.Context, params GetMonthlyStatsPar
 	stats := storage.EmptyTrxGasStats()
 	count := int64(0)
 
-	a.storage.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
+	a.storage.ForEach(&stats, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
 		ts := storage.GetTimestampFromKey(key)
 		if ts < from_date || ts > to_date {
 			return false
@@ -384,7 +388,7 @@ func (a *ApiHandler) GetContractStats(ctx echo.Context, params GetContractStatsP
 	contracts := []ContractStatsResponse{}
 	stats := storage.AddressStats{}
 	start := time.Now()
-	a.storage.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
+	a.storage.ForEach(&stats, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &stats)
 		if err != nil {
 			log.WithError(err).Fatal("Error decoding data from db")

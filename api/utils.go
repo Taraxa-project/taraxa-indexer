@@ -1,10 +1,7 @@
 package api
 
 import (
-	"strings"
-
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
-	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
@@ -13,11 +10,15 @@ import (
 func wasAccountActive(s storage.Storage, address models.AddressParam, from_date, to_date uint64) (found bool) {
 	trx := models.Transaction{}
 	// check for transaction from address in the interval. start from most recent
-	s.ForEachBackwards(&trx, address, nil, func(key []byte, res []byte) (stop bool) {
+	s.ForEach(&trx, address, nil, storage.Backward, func(key []byte, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &trx)
 		if err != nil {
 			log.WithError(err).Fatal("Error decoding data from db")
 			return false
+		}
+
+		if trx.Timestamp < from_date {
+			return true
 		}
 
 		// we should only count transactions from the account
@@ -27,10 +28,6 @@ func wasAccountActive(s storage.Storage, address models.AddressParam, from_date,
 
 		if trx.Timestamp > to_date {
 			return false
-		}
-
-		if trx.Timestamp < from_date {
-			return true
 		}
 
 		found = true
@@ -44,7 +41,7 @@ func receivedTransactionsCount(s storage.Storage, address models.AddressParam, f
 	trx := models.Transaction{}
 
 	// check for transaction from address in the interval. start from most recent
-	s.ForEach(&trx, address, nil, func(key []byte, res []byte) (stop bool) {
+	s.ForEach(&trx, address, nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &trx)
 		if err != nil {
 			log.WithError(err).Fatal("Error decoding data from db")
@@ -67,14 +64,4 @@ func receivedTransactionsCount(s storage.Storage, address models.AddressParam, f
 		return false
 	})
 	return count
-}
-
-const address_len = 42
-
-func addressFromKey(key []byte) models.Address {
-	strs := strings.Split(string(key), pebble.PrefixSeparator)
-	if len(strs[1]) > address_len {
-		return strs[1][:address_len]
-	}
-	return strs[1]
 }

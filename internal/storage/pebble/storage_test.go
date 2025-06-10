@@ -9,6 +9,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/nleeper/goment"
 	"github.com/stretchr/testify/assert"
 )
@@ -213,4 +214,56 @@ func TestTxByHash(t *testing.T) {
 	assert.Equal(t, tx.Hash, ret.Hash)
 	assert.Equal(t, tx.Input, ret.Input)
 	assert.Equal(t, []any{"0xed4d5f4f3641cbc056e466d15dbe2403e38056f8"}, ret.Calldata.Params)
+}
+
+func fillTransactions(st *Storage, address string, count uint64) {
+	for i := uint64(0); i < count; i++ {
+		tx := models.Transaction{
+			Hash:  "0x111111",
+			From:  address,
+			Value: "100",
+			To:    "0x00000000000000000000000000000000000000fe",
+			Input: strconv.FormatUint(i, 10),
+		}
+		batch := st.NewBatch()
+		batch.Add(tx, tx.From, i)
+		batch.CommitBatch()
+	}
+}
+
+func TestForEach(t *testing.T) {
+	st := NewStorage("")
+	defer st.Close()
+
+	fillTransactions(st, "test", 100)
+
+	var tx models.Transaction
+	i := uint64(0)
+	st.ForEach(&tx, "test", nil, storage.Forward, func(key, res []byte) (stop bool) {
+		err := rlp.DecodeBytes(res, &tx)
+		assert.NoError(t, err)
+		assert.Equal(t, tx.Input, strconv.FormatUint(i, 10))
+		i++
+		return false
+	})
+	assert.Equal(t, uint64(100), i)
+}
+
+func TestForEachBackwards(t *testing.T) {
+	st := NewStorage("")
+	defer st.Close()
+	count := uint64(100)
+	fillTransactions(st, "test", count)
+
+	var tx models.Transaction
+	st.ForEach(&tx, "test", nil, storage.Backward, func(key, res []byte) (stop bool) {
+		var tx models.Transaction
+		err := rlp.DecodeBytes(res, &tx)
+		assert.NoError(t, err)
+
+		count--
+		assert.Equal(t, tx.Input, strconv.FormatUint(count, 10))
+		return false
+	})
+	assert.Equal(t, uint64(0), count)
 }

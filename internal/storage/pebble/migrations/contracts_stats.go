@@ -66,7 +66,7 @@ func (m *ContractStats) Init(client common.Client) {
 
 func (m *ContractStats) contractCreationTimestamp(s *pebble.Storage, address models.Address) (timestamp models.Timestamp) {
 	trx := models.Transaction{}
-	s.ForEach(&trx, address, nil, func(_, res []byte) (stop bool) {
+	s.ForEach(&trx, address, nil, storage.Forward, func(_, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &trx)
 		if err != nil {
 			log.WithFields(log.Fields{"type": storage.GetTypeName[models.Transaction](), "error": err}).Fatal("Error decoding data from db")
@@ -105,7 +105,7 @@ func (m *ContractStats) Apply(s *pebble.Storage) error {
 	tp := common.MakeThreadPool()
 	batch := s.NewBatch()
 	addresses := make([]models.Address, 0, 100)
-	s.ForEach(&stats, "", nil, func(key []byte, res []byte) (stop bool) {
+	s.ForEach(&stats, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &old_stats)
 		if err != nil {
 			err_new := rlp.DecodeBytes(res, &stats)
