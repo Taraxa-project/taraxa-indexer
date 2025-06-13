@@ -11,49 +11,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// StatsResponse defines model for StatsResponse.
-type OldStatsResponse struct {
-	DagsCount                models.Counter         `json:"dagsCount"`
-	LastDagTimestamp         *models.NillableUint64 `json:"lastDagTimestamp" rlp:"nil"`
-	LastPbftTimestamp        *models.NillableUint64 `json:"lastPbftTimestamp" rlp:"nil"`
-	LastTransactionTimestamp *models.NillableUint64 `json:"lastTransactionTimestamp" rlp:"nil"`
-	PbftCount                models.Counter         `json:"pbftCount"`
-	TransactionsCount        models.Counter         `json:"transactionsCount"`
-	ValidatorRegisteredBlock *models.NillableUint64 `json:"validatorRegisteredBlock" rlp:"nil"`
-}
-type OldAddressStats struct {
-	OldStatsResponse
-	Address string `json:"address"`
-}
-
-func (o *OldAddressStats) toStatsResponse(timestamp *models.NillableUint64) storage.AddressStats {
-	return storage.AddressStats{Address: o.Address, StatsResponse: models.StatsResponse{
-		DagsCount:                   o.DagsCount,
-		LastDagTimestamp:            o.LastDagTimestamp,
-		LastPbftTimestamp:           o.LastPbftTimestamp,
-		LastTransactionTimestamp:    o.LastTransactionTimestamp,
-		PbftCount:                   o.PbftCount,
-		TransactionsCount:           o.TransactionsCount,
-		ValidatorRegisteredBlock:    o.ValidatorRegisteredBlock,
-		ContractRegisteredTimestamp: timestamp,
-	}}
-}
-
-type Contracts struct {
-}
-
-type ContractStats struct {
+type CheckContracts struct {
 	client           common.Client
 	contracts        []models.Address
 	genesisTimestamp models.Timestamp
 	mutex            sync.Mutex
 }
 
-func (m *ContractStats) GetId() string {
-	return "contract_stats"
+func (m *CheckContracts) GetId() string {
+	return "check_contracts"
 }
 
-func (m *ContractStats) Init(client common.Client) {
+func (m *CheckContracts) Init(client common.Client) {
 	block, err := client.GetBlockByNumber(0)
 	if err != nil {
 		log.WithField("error", err).Fatal("Error getting genesis block")
@@ -64,12 +33,18 @@ func (m *ContractStats) Init(client common.Client) {
 	m.contracts = make([]models.Address, 0)
 }
 
-func (m *ContractStats) contractCreationTimestamp(s *pebble.Storage, address models.Address) (timestamp models.Timestamp) {
+func (m *CheckContracts) contractCreationTimestamp(s *pebble.Storage, address models.Address) (timestamp models.Timestamp) {
 	trx := models.Transaction{}
+	first_assigned := false
 	s.ForEach(&trx, address, nil, storage.Forward, func(_, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &trx)
 		if err != nil {
 			log.WithFields(log.Fields{"type": storage.GetTypeName[models.Transaction](), "error": err}).Fatal("Error decoding data from db")
+		}
+		// set first trx timestamp as contract creation timestamp if creation trx wasn't found
+		if !first_assigned {
+			first_assigned = true
+			timestamp = trx.Timestamp
 		}
 
 		if trx.Type != models.ContractCreation && trx.Type != models.InternalContractCreation {
@@ -86,7 +61,7 @@ func (m *ContractStats) contractCreationTimestamp(s *pebble.Storage, address mod
 	return
 }
 
-func (m *ContractStats) saveContracts(addresses []models.Address) {
+func (m *CheckContracts) saveContracts(addresses []models.Address) {
 	res, err := m.client.FilterContracts(addresses)
 	if err != nil {
 		log.WithField("error", err).Fatal("Error filtering contracts")
@@ -97,16 +72,14 @@ func (m *ContractStats) saveContracts(addresses []models.Address) {
 	m.mutex.Unlock()
 }
 
-func (m *ContractStats) Apply(s *pebble.Storage) error {
-	old_stats := OldAddressStats{}
+func (m *CheckContracts) Apply(s *pebble.Storage) error {
 	stats := storage.AddressStats{}
 	total_addresses := 0
 
 	tp := common.MakeThreadPool()
-	batch := s.NewBatch()
 	addresses := make([]models.Address, 0, 100)
 	s.ForEach(&stats, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
-		err := rlp.DecodeBytes(res, &old_stats)
+		err := rlp.DecodeBytes(res, &stats)
 		if err != nil {
 			err_new := rlp.DecodeBytes(res, &stats)
 			if err_new != nil {
@@ -114,7 +87,10 @@ func (m *ContractStats) Apply(s *pebble.Storage) error {
 			}
 			return true
 		}
-		addresses = append(addresses, old_stats.Address)
+		if stats.ContractRegisteredTimestamp != nil {
+			return false
+		}
+		addresses = append(addresses, stats.Address)
 		if len(addresses) == 100 {
 			// make addresses copy and save only contract addresses
 			addressesCopy := make([]models.Address, len(addresses))
@@ -124,35 +100,27 @@ func (m *ContractStats) Apply(s *pebble.Storage) error {
 			})
 			addresses = make([]models.Address, 0, 100)
 		}
-		stats = old_stats.toStatsResponse(nil)
-		err = batch.AddWithKey(&stats, key)
-		if err != nil {
-			log.WithField("error", err).Fatal("Error adding stats to batch")
-		}
 		total_addresses++
 		return false
 	})
 	tp.Wait()
 
-	batch.CommitBatch()
-	batch = s.NewBatch()
-
 	log.WithFields(log.Fields{
-		"contracts_found": len(m.contracts),
-		"total_addresses": total_addresses,
-	}).Info("Found contracts")
+		"count":     len(m.contracts),
+		"contracts": m.contracts,
+	}).Info("Found contracts without registered timestamp")
 
+	batch := s.NewBatch()
 	processed := 0
 	for _, contract := range m.contracts {
 		timestamp := m.contractCreationTimestamp(s, contract)
 		if timestamp == 0 {
 			log.WithField("contract", contract).Info("No creation timestamp found, using genesis timestamp")
 			timestamp = m.genesisTimestamp
-			continue
 		}
 		stats := s.GetAddressStats(contract)
 		stats.ContractRegisteredTimestamp = &timestamp
-		batch.AddSingleKey(stats, contract)
+		batch.Add(stats, contract, 0)
 		processed++
 		if processed%100 == 0 {
 			log.WithFields(log.Fields{

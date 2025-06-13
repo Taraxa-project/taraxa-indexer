@@ -311,11 +311,12 @@ func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonth
 	from_date, to_date := getMonthInterval(params.Date)
 	log.WithField("from_date", from_date).WithField("to_date", to_date).Debug("GetMonthlyActiveAddresses")
 	count := atomic.Uint64{}
-	stats := storage.AddressStats{}
 	tp := common.MakeThreadPool()
 
-	a.storage.ForEach(&stats, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
+	a.storage.ForEach(storage.AddressStats{}, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
 		tp.Go(func() {
+			stats := storage.AddressStats{}
+
 			err := rlp.DecodeBytes(res, &stats)
 			if err != nil {
 				log.WithError(err).Fatal("Error decoding data from db")
