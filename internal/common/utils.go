@@ -166,3 +166,14 @@ func DayEnd(timestamp uint64) uint64 {
 	date := time.Unix(int64(timestamp), 0)
 	return uint64(time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, time.UTC).Unix())
 }
+
+func MonthInterval(date *uint64) (from_date, to_date uint64) {
+	if date == nil {
+		to_date = uint64(time.Now().Unix())
+	} else {
+		to_date = *date
+	}
+	to_date = DayEnd(to_date - Day)
+	from_date = DayStart(to_date - Days30)
+	return
+}

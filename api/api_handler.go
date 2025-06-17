@@ -31,6 +31,18 @@ func NewApiHandler(s storage.Storage, c *common.Config, stats *chain.Stats) *Api
 	return &ApiHandler{s, c, stats}
 }
 
+func formatAddress(address AddressParam) (formatted string, err error) {
+	// starts with 0x
+	if !strings.HasPrefix(address, "0x") {
+		address = "0x" + address
+	}
+	if len(address) != 42 {
+		err = fmt.Errorf("invalid address length")
+	}
+	formatted = strings.ToLower(address)
+	return
+}
+
 func GetAddressDataPage[T storage.Paginated](a *ApiHandler, address AddressFilter, pag *PaginationParam) any {
 	logFields := log.Fields{"type": storage.GetTypeName[T](), "address": address, "pagination": pag}
 	log.WithFields(logFields).Debug("GetAddressDataPage")
@@ -88,21 +100,37 @@ func (a *ApiHandler) GetTransaction(ctx echo.Context, hash string) error {
 
 // GetAddressDags returns all DAG blocks sent by the selected address
 func (a *ApiHandler) GetAddressDags(ctx echo.Context, address AddressFilter, params GetAddressDagsParams) error {
+	address, err := formatAddress(address)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
 	return ctx.JSON(http.StatusOK, GetAddressDataPage[Dag](a, address, &params.Pagination))
 }
 
 // GetAddressPbfts returns all PBFT blocks produced by the selected address
 func (a *ApiHandler) GetAddressPbfts(ctx echo.Context, address AddressFilter, params GetAddressPbftsParams) error {
+	address, err := formatAddress(address)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
 	return ctx.JSON(http.StatusOK, GetAddressDataPage[Pbft](a, address, &params.Pagination))
 }
 
 // GetAddressTransactions returns all transactions from and to the selected address
 func (a *ApiHandler) GetAddressTransactions(ctx echo.Context, address AddressFilter, params GetAddressTransactionsParams) error {
+	address, err := formatAddress(address)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
 	return ctx.JSON(http.StatusOK, GetAddressDataPage[Transaction](a, address, &params.Pagination))
 }
 
 // GetAddressPbftTotal returns total number of PBFT blocks produced for the selected address
 func (a *ApiHandler) GetAddressStats(ctx echo.Context, address AddressFilter) error {
+	address, err := formatAddress(address)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
 	log.WithField("address", address).Debug("GetAddressStats")
 
 	addr := a.storage.GetAddressStats(address)
@@ -173,7 +201,10 @@ func (a *ApiHandler) GetHolders(ctx echo.Context, params GetHoldersParams) error
 
 // GetValidator returns info about the validator for the selected week
 func (a *ApiHandler) GetValidator(ctx echo.Context, address AddressParam, params GetValidatorParams) error {
-	address = strings.ToLower(address)
+	address, err := formatAddress(address)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
 	log.WithField("address", address).WithField("params", params).Debug("GetValidator")
 
 	year, week := getYearWeek(params.Week)
@@ -232,6 +263,10 @@ func (a *ApiHandler) getAddressYield(address AddressParam, block *uint64) (resp 
 }
 
 func (a *ApiHandler) GetAddressYield(ctx echo.Context, address AddressParam, params GetAddressYieldParams) error {
+	address, err := formatAddress(address)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
 	resp, err := a.getAddressYield(address, params.BlockNumber)
 	if err != nil {
 		return err
@@ -295,19 +330,8 @@ func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams)
 	return ctx.JSON(http.StatusOK, resp)
 }
 
-func getMonthInterval(date *uint64) (from_date, to_date uint64) {
-	if date == nil {
-		to_date = uint64(time.Now().Unix())
-	} else {
-		to_date = *date
-	}
-	to_date = common.DayEnd(to_date - common.Day)
-	from_date = common.DayStart(to_date - common.Days30)
-	return
-}
-
 func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonthlyActiveAddressesParams) error {
-	from_date, to_date := getMonthInterval(params.Date)
+	from_date, to_date := common.MonthInterval(params.Date)
 
 	log.WithField("from_date", from_date).WithField("to_date", to_date).Debug("GetMonthlyActiveAddresses")
 
@@ -325,7 +349,7 @@ func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonth
 }
 
 func (a *ApiHandler) GetMonthlyStats(ctx echo.Context, params GetMonthlyStatsParams) error {
-	from_date, to_date := getMonthInterval(params.Date)
+	from_date, to_date := common.MonthInterval(params.Date)
 
 	totalStats := storage.EmptyTrxGasStats()
 	stats := storage.EmptyTrxGasStats()

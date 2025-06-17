@@ -18,6 +18,7 @@ type Indexer struct {
 	stats                       *chain.Stats
 	accounts                    *storage.AccountsMap
 	dayStats                    *storage.DayStatsWithTimestamp
+	lastBlockTimestamp          uint64
 }
 
 func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) {
@@ -96,6 +97,27 @@ func (i *Indexer) initDayStats(block *common.Block) {
 	i.dayStats = &day_stats
 }
 
+func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint64, error) {
+	if i.dayStats == nil {
+		i.initDayStats(bd.Pbft)
+	}
+	bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts, i.dayStats)
+	dc, tc, err := bc.process(bd, i.stats)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	from_date, to_date := common.MonthInterval(nil)
+	// if the last block timestamp is the same as the to_date(end of the prev day)
+	if to_date == common.DayEnd(i.lastBlockTimestamp) {
+		// cache monthly active addresses
+		go storage.CacheMonthlyActiveAddresses(i.storage, from_date, to_date)
+	}
+	i.lastBlockTimestamp = bd.Pbft.Timestamp
+
+	return bc, dc, tc, nil
+}
+
 func (i *Indexer) sync(start, end uint64) error {
 	// start processing blocks from the next one
 	if start >= end {
@@ -115,11 +137,7 @@ func (i *Indexer) sync(start, end uint64) error {
 			}
 			continue
 		}
-		if i.dayStats == nil {
-			i.initDayStats(bd.Pbft)
-		}
-		bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts, i.dayStats)
-		dc, tc, err := bc.process(bd, i.stats)
+		_, dc, tc, err := i.processBlock(bd)
 		if err != nil {
 			return err
 		}
@@ -185,14 +203,11 @@ func (i *Indexer) run() error {
 				return err
 			}
 
-			if i.dayStats == nil {
-				i.initDayStats(bd.Pbft)
-			}
-			bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts, i.dayStats)
-			dc, tc, err := bc.process(bd, i.stats)
+			bc, dc, tc, err := i.processBlock(bd)
 			if err != nil {
 				return err
 			}
+
 			// perform consistency check on blocks from subscription
 			if i.consistency_check_available {
 				i.consistencyCheck(bc.finalized)

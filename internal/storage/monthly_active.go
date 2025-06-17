@@ -17,23 +17,25 @@ var (
 	queried *uint64
 )
 
+func CacheMonthlyActiveAddresses(s Storage, from_date, to_date uint64) {
+	count := countMonthlyActiveAddresses(s, from_date, to_date)
+	batch := s.NewBatch()
+	batch.Add(&MonthlyActiveAddresses{Count: count}, "", to_date)
+	batch.CommitBatch()
+	log.WithFields(log.Fields{
+		"count":     count,
+		"from_date": from_date,
+		"to_date":   to_date,
+	}).Info("MonthlyActiveAddresses cached")
+	queried = nil
+}
+
 func GetMonthlyActiveAddresses(s Storage, from_date, to_date uint64) (c uint64, err error) {
 	count := s.GetMonthlyActiveAddresses(to_date)
 	if count == nil {
 		if queried == nil {
 			queried = &to_date
-			go func() {
-				count := countMonthlyActiveAddresses(s, from_date, to_date)
-				batch := s.NewBatch()
-				batch.Add(&MonthlyActiveAddresses{Count: count}, "", to_date)
-				batch.CommitBatch()
-				log.WithFields(log.Fields{
-					"count":     count,
-					"from_date": from_date,
-					"to_date":   to_date,
-				}).Info("MonthlyActiveAddresses finished")
-				queried = nil
-			}()
+			go CacheMonthlyActiveAddresses(s, from_date, to_date)
 		} else {
 			if *queried != to_date {
 				return 0, fmt.Errorf("stats are being calculated for another history period, please try again later")
