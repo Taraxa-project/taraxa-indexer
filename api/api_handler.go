@@ -4,7 +4,6 @@ package api
 
 import (
 	"bytes"
-	"sync/atomic"
 	"time"
 
 	"fmt"
@@ -309,40 +308,16 @@ func getMonthInterval(date *uint64) (from_date, to_date uint64) {
 
 func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonthlyActiveAddressesParams) error {
 	from_date, to_date := getMonthInterval(params.Date)
+
 	log.WithField("from_date", from_date).WithField("to_date", to_date).Debug("GetMonthlyActiveAddresses")
-	count := atomic.Uint64{}
-	tp := common.MakeThreadPool()
 
-	a.storage.ForEach(storage.AddressStats{}, "", nil, storage.Forward, func(key []byte, res []byte) (stop bool) {
-		tp.Go(func() {
-			stats := storage.AddressStats{}
-
-			err := rlp.DecodeBytes(res, &stats)
-			if err != nil {
-				log.WithError(err).Fatal("Error decoding data from db")
-				return
-			}
-
-			// skip accounts with last transaction timestamp before from_date
-			if stats.LastTransactionTimestamp == nil || *stats.LastTransactionTimestamp < from_date {
-				return
-			}
-			// skip contracts
-			if stats.ContractRegisteredTimestamp != nil {
-				return
-			}
-
-			if wasAccountActive(a.storage, stats.Address, from_date, to_date) {
-				count.Add(1)
-			}
-		})
-		return false
-	})
-
-	tp.Wait()
+	count, err := storage.GetMonthlyActiveAddresses(a.storage, from_date, to_date)
+	if err != nil {
+		return ctx.JSON(http.StatusRequestTimeout, err.Error())
+	}
 
 	resp := MonthlyActiveAddressesResponse{
-		Count:    count.Load(),
+		Count:    count,
 		FromDate: from_date,
 		ToDate:   to_date,
 	}
@@ -400,7 +375,7 @@ func (a *ApiHandler) GetContractStats(ctx echo.Context, params GetContractStatsP
 			return false
 		}
 
-		count := receivedTransactionsCount(a.storage, stats.Address, params.FromDate, params.ToDate)
+		count := storage.ReceivedTransactionsCount(a.storage, stats.Address, params.FromDate, params.ToDate)
 
 		if count == 0 {
 			return false

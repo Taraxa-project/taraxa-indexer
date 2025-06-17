@@ -37,6 +37,7 @@ const validatorsYieldPrefix = "vy"
 const multipliedYieldPrefix = "my"
 const RewardsStatsPrefix = "rs"
 const dayStatsPrefix = "ds"
+const monthlyActiveAddressesPrefix = "ma"
 
 type Storage struct {
 	db   *pebble.DB
@@ -145,6 +146,8 @@ func GetPrefix(o any) (ret string) {
 		ret = RewardsStatsPrefix
 	case *storage.TrxGasStats, storage.TrxGasStats:
 		ret = dayStatsPrefix
+	case *storage.MonthlyActiveAddresses, storage.MonthlyActiveAddresses:
+		ret = monthlyActiveAddressesPrefix
 	// hack if we aren't passing original type directly to this function, but passing any from other function
 	case *any:
 		ret = GetPrefix(*o.(*any))
@@ -371,6 +374,18 @@ func (s *Storage) GetDayStats(timestamp uint64) storage.DayStatsWithTimestamp {
 		log.WithError(err).Fatal("GetDayStats failed")
 	}
 	return *ret
+}
+
+func (s *Storage) GetMonthlyActiveAddresses(to_date uint64) *uint64 {
+	res := storage.MonthlyActiveAddresses{}
+	err := s.GetFromDB(&res, getKey(GetPrefix(&res), "", to_date))
+	if err == pebble.ErrNotFound {
+		return nil
+	}
+	if err != nil {
+		log.WithError(err).Fatal("GetMonthlyActiveAddresses failed")
+	}
+	return &res.Count
 }
 
 func (s *Storage) GetFromDB(o any, key []byte) error {
