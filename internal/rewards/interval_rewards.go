@@ -41,7 +41,7 @@ func (r *Rewards) GetIntervalRewards(periodStats *storage.RewardsStats, distribu
 	intervalRewards = makeIntervalRewards()
 	// Get stats for the previous intervals and accumulate rewards
 	fromKey := storage.FormatIntToKey(r.blockNum - uint64(distributionFrequency))
-	r.storage.ForEachFromKey([]byte(pebble.GetPrefix(storage.RewardsStats{})), []byte(fromKey), func(key, res []byte) (stop bool) {
+	r.storage.ForEachFromKey([]byte(pebble.GetPrefix(storage.RewardsStats{})), []byte(fromKey), storage.Forward, func(key, res []byte) (stop bool) {
 		rs := new(storage.RewardsStats)
 		err := rlp.DecodeBytes(res, rs)
 		if err != nil {

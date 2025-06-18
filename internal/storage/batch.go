@@ -1,17 +1,20 @@
 package storage
 
+import "github.com/Taraxa-project/taraxa-indexer/internal/common"
+
 type Batch interface {
 	CommitBatch()
 	SetTotalSupply(s *TotalSupply)
-	SetFinalizationData(f *FinalizationData)
+	SetFinalizationData(f *common.FinalizationData)
 	SetGenesisHash(h GenesisHash)
 	UpdateWeekStats(w WeekStats)
 	SaveAccounts(a *AccountsMap)
-	Add(o interface{}, key1 string, key2 uint64)
-	AddSerialized(o interface{}, data []byte, key1 string, key2 uint64)
-	AddSingleKey(o interface{}, key string)
-	AddSerializedSingleKey(o interface{}, data []byte, key string)
-	AddWithKey(o interface{}, key []byte) error
-	AddSerializedWithKey(o interface{}, data, key []byte) error
+	Add(o any, key1 string, key2 uint64)
+	AddDayStats(d *DayStatsWithTimestamp)
+	AddSerialized(o any, data []byte, key1 string, key2 uint64)
+	AddSingleKey(o any, key string)
+	AddSerializedSingleKey(o any, data []byte, key string)
+	AddWithKey(o any, key []byte) error
+	AddSerializedWithKey(o any, data, key []byte) error
 	Remove(key []byte)
 }

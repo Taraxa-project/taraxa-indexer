@@ -3,17 +3,16 @@ package rewards
 import (
 	"strings"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 )
 
 type Validators struct {
 	config     *common.Config
-	validators map[string]chain.Validator
+	validators map[string]common.Validator
 }
 
-func MakeValidators(config *common.Config, validators []chain.Validator) *Validators {
-	v := Validators{config, make(map[string]chain.Validator)}
+func MakeValidators(config *common.Config, validators []common.Validator) *Validators {
+	v := Validators{config, make(map[string]common.Validator)}
 	for _, val := range validators {
 		v.validators[strings.ToLower(val.Address)] = val
 	}

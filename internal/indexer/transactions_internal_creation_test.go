@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +84,7 @@ func TestTraceInternalCreationParsing(t *testing.T) {
 	assert.Equal(t, models.ContractCall, trx.Type)
 
 	mc.AddTracesFromJson(transaction_hash, traces_json)
-	mc.AddPbftBlock(trx.BlockNumber, &chain.Block{Pbft: models.Pbft{Number: trx.BlockNumber}, Transactions: []string{trx.Hash}})
+	mc.AddPbftBlock(trx.BlockNumber, &common.Block{Pbft: models.Pbft{Number: trx.BlockNumber}, Transactions: []string{trx.Hash}})
 	bc := MakeTestBlockContext(mc, trx.BlockNumber)
 
 	// bc.Block.Transactions, _ = bc.Client.GetPeriodTransactions(trx.BlockNumber)

@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"time"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/spiretechnology/go-pool"
@@ -16,6 +17,8 @@ import (
 )
 
 const DposContractAddress = "0x00000000000000000000000000000000000000fe"
+const Day = 24 * 60 * 60
+const Days30 = 30 * Day
 
 // isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
 func MakeThreadPool() pool.Pool {
@@ -28,8 +31,9 @@ func ParseUInt(s string) (v uint64) {
 	}
 	v, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
-		debug.PrintStack()
-		log.Fatal(s, "ParseUInt ", err)
+		// debug.PrintStack()
+		// log.Fatal(s, "ParseUInt ", err)
+		return 0
 	}
 	return v
 }
@@ -151,4 +155,25 @@ func Min[T Number](a, b T) T {
 		return a
 	}
 	return b
+}
+
+func DayStart(timestamp uint64) uint64 {
+	date := time.Unix(int64(timestamp), 0)
+	return uint64(time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Unix())
+}
+
+func DayEnd(timestamp uint64) uint64 {
+	date := time.Unix(int64(timestamp), 0)
+	return uint64(time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 0, time.UTC).Unix())
+}
+
+func MonthInterval(date *uint64) (from_date, to_date uint64) {
+	if date == nil {
+		to_date = uint64(time.Now().Unix())
+	} else {
+		to_date = *date
+	}
+	to_date = DayEnd(to_date - Day)
+	from_date = DayStart(to_date - Days30)
+	return
 }

@@ -3,23 +3,30 @@ package storage
 import (
 	"fmt"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/ethereum/go-ethereum/rlp"
 	log "github.com/sirupsen/logrus"
 )
 
+type Direction int
+
+const (
+	Forward Direction = iota
+	Backward
+)
+
 type Storage interface {
 	Clean() error
 	Close() error
-	ForEach(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
-	ForEachBackwards(o interface{}, key_prefix string, start *uint64, fn func(key, res []byte) (stop bool))
-	ForEachFromKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
-	ForEachFromKeyBackwards(prefix, start_key []byte, fn func(key, res []byte) (stop bool))
+	ForEach(o any, key_prefix string, start *uint64, direction Direction, fn func(key, res []byte) (stop bool))
+	ForEachFromKey(prefix, start_key []byte, direction Direction, fn func(key, res []byte) (stop bool))
 	NewBatch() Batch
 	GetTotalSupply() *TotalSupply
 	GetAccounts() Accounts
 	GetWeekStats(year, week int32) WeekStats
-	GetFinalizationData() *FinalizationData
+	GetFinalizationData() *common.FinalizationData
+	GetDayStats(timestamp uint64) DayStatsWithTimestamp
 	GetAddressStats(addr string) *AddressStats
 	GenesisHashExist() bool
 	GetGenesisHash() GenesisHash
@@ -28,6 +35,7 @@ type Storage interface {
 	GetTransactionLogs(hash string) models.TransactionLogsResponse
 	GetValidatorYield(validator string, block uint64) (res Yield)
 	GetTotalYield(block uint64) (res Yield)
+	GetMonthlyActiveAddresses(to_date uint64) *uint64
 }
 
 func GetTotal[T Paginated](s Storage, address string) (r uint64) {
@@ -62,7 +70,7 @@ func GetObjectsPage[T Paginated](s Storage, address string, from, count uint64) 
 
 	ret = make([]T, 0, count)
 	start := pagination.Total - from
-	s.ForEachBackwards(&o, address, &start, func(_, res []byte) (stop bool) {
+	s.ForEach(&o, address, &start, Backward, func(_, res []byte) (stop bool) {
 		err := rlp.DecodeBytes(res, &o)
 		if err != nil {
 			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")
@@ -97,7 +105,7 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagina
 
 func ProcessIntervalData[T Yields](s Storage, start uint64, fn func([]byte, T) (stop bool)) {
 	var o T
-	s.ForEach(&o, "", &start, func(key, res []byte) bool {
+	s.ForEach(&o, "", &start, Forward, func(key, res []byte) bool {
 		err := rlp.DecodeBytes(res, &o)
 		if err != nil {
 			log.WithFields(log.Fields{"type": GetTypeName[T](), "error": err}).Fatal("Error decoding data from db")

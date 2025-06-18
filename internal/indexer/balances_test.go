@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
@@ -43,8 +43,8 @@ func TestUpdateBalances(t *testing.T) {
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 
-	trx := &chain.Transaction{
-		Logs: []chain.EventLog{{
+	trx := &common.Transaction{
+		Logs: []common.EventLog{{
 			Address:          "0x00000000000000000000000000000000000000fe",
 			Data:             "0x000000000000000000000000000000000000000000000005d9da3b556bb3aa86",
 			LogIndex:         "0",

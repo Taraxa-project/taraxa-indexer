@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	log "github.com/sirupsen/logrus"
 )
@@ -9,23 +10,30 @@ const migration_prefix = "mm"
 
 type Migration interface {
 	GetId() string
+	Init(ws common.Client)
 	Apply(s *pebble.Storage) error
 }
 
 type Manager struct {
 	storage    *pebble.Storage
 	migrations []Migration
+	client     common.Client
 }
 
-func NewManager(s *pebble.Storage, blockchain_ws string) *Manager {
+func NewManager(s *pebble.Storage, client common.Client) *Manager {
 	m := Manager{
-		storage: s,
+		storage:    s,
+		migrations: make([]Migration, 0),
+		client:     client,
 	}
+	m.RegisterMigration(&CheckContracts{})
+	m.RegisterMigration(&LastTrxTimestamp{})
 	return &m
 }
 
 func (m *Manager) RegisterMigration(migration Migration) {
 	m.migrations = append(m.migrations, migration)
+	migration.Init(m.client)
 }
 
 func (m *Manager) IsApplied(migration Migration) bool {

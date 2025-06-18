@@ -13,7 +13,7 @@ import (
 )
 
 type SyncQueue struct {
-	client     chain.Client
+	client     common.Client
 	blocks     sync.Map
 	current    atomic.Uint64
 	latest     atomic.Uint64
@@ -22,7 +22,7 @@ type SyncQueue struct {
 	tp         pool.Pool
 }
 
-func MakeSyncQueue(start, end, queueLimit uint64, client chain.Client) *SyncQueue {
+func MakeSyncQueue(start, end, queueLimit uint64, client common.Client) *SyncQueue {
 	sq := new(SyncQueue)
 	sq.client = client
 	sq.blocks = sync.Map{}

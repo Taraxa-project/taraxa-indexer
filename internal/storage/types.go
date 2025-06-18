@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
-	log "github.com/sirupsen/logrus"
 )
 
 type TotalSupply = big.Int
@@ -41,11 +41,16 @@ func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) {
 	a.ValidatorRegisteredBlock = &blockHeight
 }
 
-func (a *AddressStats) AddTransaction(timestamp models.Timestamp) uint64 {
+func (a *AddressStats) AddTransaction(trx *models.Transaction) uint64 {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	a.TransactionsCount++
-	a.LastTransactionTimestamp = &timestamp
+	if a.Address == trx.From {
+		a.LastTransactionTimestamp = &trx.Timestamp
+	}
+	if a.Address == trx.To && (trx.Type == models.ContractCreation || trx.Type == models.InternalContractCreation) {
+		a.ContractRegisteredTimestamp = &trx.Timestamp
+	}
 	return a.TransactionsCount
 }
 
@@ -113,26 +118,6 @@ func MakeAddressStatsMap() *AddressStatsMap {
 	}
 }
 
-type FinalizationData struct {
-	DagCount  uint64 `json:"dag_blocks_executed"`
-	TrxCount  uint64 `json:"transactions_executed"`
-	PbftCount uint64 `json:"pbft_period"`
-}
-
-func (local *FinalizationData) Check(remote FinalizationData) {
-	// Perform this check only if we are getting data for the same block from node
-	if local.PbftCount != remote.PbftCount {
-		return
-	}
-	if local.DagCount != remote.DagCount {
-		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Dag consistency check failed")
-	}
-
-	if local.TrxCount != remote.TrxCount {
-		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Transactions consistency check failed ")
-	}
-}
-
 type GenesisHash string
 
 type ValidatorYield struct {
@@ -181,4 +166,46 @@ type RewardsStats struct {
 
 func FormatIntToKey(i uint64) string {
 	return fmt.Sprintf("%020d", i)
+}
+
+type TrxGasStats struct {
+	TrxCount uint64   `json:"trxCount"`
+	GasUsed  *big.Int `json:"gasUsed"`
+}
+
+func EmptyTrxGasStats() TrxGasStats {
+	return TrxGasStats{
+		TrxCount: 0,
+		GasUsed:  big.NewInt(0),
+	}
+}
+
+type DayStatsWithTimestamp struct {
+	TrxGasStats
+	Timestamp uint64 `json:"timestamp"`
+}
+
+func (d *DayStatsWithTimestamp) AddBlock(blk *common.Block) {
+	day_start := common.DayStart(blk.Timestamp)
+	if day_start > d.Timestamp {
+		*d = *MakeDayStatsWithTimestamp(day_start)
+	}
+	d.TrxCount += blk.TransactionCount
+	d.GasUsed.Add(d.GasUsed, blk.GasUsed)
+}
+func MakeDayStatsWithTimestamp(ts uint64) *DayStatsWithTimestamp {
+	return &DayStatsWithTimestamp{
+		TrxGasStats: EmptyTrxGasStats(),
+		Timestamp:   ts,
+	}
+}
+
+func GetTimestampFromKey(key []byte) uint64 {
+	ts := strings.Split(string(key), "|")
+	return common.ParseUInt(strings.TrimLeft(ts[1], "0"))
+}
+
+func (d *TrxGasStats) Add(other TrxGasStats) {
+	d.TrxCount += other.TrxCount
+	d.GasUsed.Add(d.GasUsed, other.GasUsed)
 }

@@ -17,29 +17,29 @@ import (
 
 type AddressCount map[string]int
 
-func makeTransactions(count int) (trxs []chain.Transaction) {
+func makeTransactions(count int) (trxs []common.Transaction) {
 	for i := 0; i < count; i++ {
-		trxs = append(trxs, chain.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}, GasPrice: 1, GasUsed: 21000})
+		trxs = append(trxs, common.Transaction{Transaction: models.Transaction{Hash: fmt.Sprintf("0x%x", i)}, GasPrice: 1, GasUsed: 21000})
 	}
 	return
 }
 
-func makeDags(ac AddressCount) (dags []chain.DagBlock) {
+func makeDags(ac AddressCount) (dags []common.DagBlock) {
 	total_count := 0
 	for addr, c := range ac {
 		for i := 0; i < c; i++ {
-			dags = append(dags, chain.DagBlock{Dag: models.Dag{Hash: fmt.Sprintf("0x%x", total_count)}, Sender: addr, Transactions: []string{fmt.Sprintf("0x%x", total_count)}})
+			dags = append(dags, common.DagBlock{Dag: models.Dag{Hash: fmt.Sprintf("0x%x", total_count)}, Sender: addr, Transactions: []string{fmt.Sprintf("0x%x", total_count)}})
 			total_count++
 		}
 	}
 	return
 }
 
-func makeVotes(ac AddressCount) (votes chain.VotesResponse) {
-	votes.Votes = make([]chain.Vote, 0)
+func makeVotes(ac AddressCount) (votes common.VotesResponse) {
+	votes.Votes = make([]common.Vote, 0)
 	total_weight := uint64(0)
 	for addr, weight := range ac {
-		votes.Votes = append(votes.Votes, chain.Vote{Voter: addr, Weight: fmt.Sprintf("0x%x", weight)})
+		votes.Votes = append(votes.Votes, common.Vote{Voter: addr, Weight: fmt.Sprintf("0x%x", weight)})
 		total_weight += uint64(weight)
 	}
 	votes.PeriodTotalVotesCount = total_weight
@@ -118,7 +118,7 @@ func TestRewards(t *testing.T) {
 	validator3_addr := strings.ToLower(ce.HexToAddress("0x3").Hex())
 	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
 
-	validators_list := []chain.Validator{
+	validators_list := []common.Validator{
 		{Address: validator1_addr, TotalStake: big.NewInt(5000000)},
 		{Address: validator2_addr, TotalStake: big.NewInt(5000000)},
 		{Address: validator3_addr, TotalStake: big.NewInt(5000000)},
@@ -126,7 +126,7 @@ func TestRewards(t *testing.T) {
 	}
 
 	st := pebble.NewStorage("")
-	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
+	block := common.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(5000000 * 4), TotalSupply: big.NewInt(1), Validators: validators_list}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 
@@ -170,7 +170,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 	validator3_addr := strings.ToLower(ce.HexToAddress("0x3").Hex())
 	validator4_addr := strings.ToLower(ce.HexToAddress("0x4").Hex())
 	validator5_addr := strings.ToLower(ce.HexToAddress("0x5").Hex())
-	validators_list := []chain.Validator{
+	validators_list := []common.Validator{
 		{Address: validator1_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
 		{Address: validator2_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
 		{Address: validator3_addr, TotalStake: config.Chain.EligibilityBalanceThreshold},
@@ -179,7 +179,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 	}
 
 	// Simulated rewards statistics
-	block := chain.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
+	block := common.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8)), TotalSupply: big.NewInt(1), Validators: validators_list}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 	{
@@ -306,7 +306,7 @@ func TestYieldsCalculation(t *testing.T) {
 	config.Chain.BlocksPerYear = big.NewInt(10)
 
 	total_minted := int64(15000000)
-	validators_list := []chain.Validator{
+	validators_list := []common.Validator{
 		{Address: "0x1", TotalStake: big.NewInt(5000000)},
 		{Address: "0x2", TotalStake: big.NewInt(10000000)},
 		{Address: "0x3", TotalStake: big.NewInt(15000000)},
@@ -350,7 +350,7 @@ func TestTotalYieldSaving(t *testing.T) {
 
 	totalStake := big.NewInt(0)
 
-	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
+	block := common.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 	b := st.NewBatch()
@@ -395,7 +395,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	batch.CommitBatch()
 	totalStake := big.NewInt(0)
 
-	block := chain.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
+	block := common.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
 	r := MakeRewards(st, st.NewBatch(), config, bd)
 	b := st.NewBatch()

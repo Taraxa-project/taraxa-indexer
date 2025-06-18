@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"strconv"
 
@@ -35,6 +36,7 @@ var (
 	validators_yield_saving_interval *int
 	sync_queue_limit                 *int
 	chain_stats_interval             *int
+	retry_time                       time.Duration = 5 * time.Second
 )
 
 func init() {
@@ -70,6 +72,18 @@ func setupCloseHandler(fn func()) {
 	}()
 }
 
+func connectToChain() (client common.Client, err error) {
+	for {
+		client, err = chain.NewWsClient(*blockchain_ws)
+		if err == nil {
+			break
+		}
+		log.WithError(err).Error("Can't connect to chain")
+		time.Sleep(retry_time)
+	}
+	return
+}
+
 func main() {
 	log.Info("Starting Taraxa Indexer")
 	st := pebble.NewStorage(filepath.Join(*data_dir, "db"))
@@ -80,8 +94,11 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("Error loading swagger spec")
 	}
-
-	manager := migration.NewManager(st, *blockchain_ws)
+	client, err := connectToChain()
+	if err != nil {
+		log.WithError(err).Fatal("Error connecting to chain")
+	}
+	manager := migration.NewManager(st, client)
 	err = manager.ApplyAll()
 	if err != nil {
 		log.WithError(err).Fatal("Error applying migrations")
@@ -108,7 +125,7 @@ func main() {
 	apiHandler := api.NewApiHandler(st, c, chainStats)
 	api.RegisterHandlers(e, apiHandler)
 
-	go indexer.MakeAndRun(*blockchain_ws, st, c, chainStats)
+	go indexer.MakeAndRun(client, st, c, chainStats, retry_time)
 
 	// start a http server for prometheus on a separate go routine
 	go metrics.RunPrometheusServer(":" + strconv.FormatInt(int64(*metrics_port), 10))

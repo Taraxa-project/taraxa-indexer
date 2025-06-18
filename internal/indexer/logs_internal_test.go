@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
+	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -85,7 +85,7 @@ func TestLogsParsing(t *testing.T) {
 		},
 	}
 
-	var trx chain.Transaction
+	var trx common.Transaction
 	_ = json.Unmarshal([]byte(transaction_json), &trx)
 
 	parsedLogs := trx.ExtractLogs()

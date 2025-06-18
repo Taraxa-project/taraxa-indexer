@@ -18,14 +18,15 @@ type blockContext struct {
 	Storage      storage.Storage
 	Batch        storage.Batch
 	Config       *common.Config
-	Client       chain.Client
+	Client       common.Client
 	Block        *chain.BlockData
 	accounts     *storage.AccountsMap
 	addressStats *storage.AddressStatsMap
-	finalized    *storage.FinalizationData
+	finalized    *common.FinalizationData
+	dayStats     *storage.DayStatsWithTimestamp
 }
 
-func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Config, accounts *storage.AccountsMap) *blockContext {
+func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, accounts *storage.AccountsMap, dayStats *storage.DayStatsWithTimestamp) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
@@ -34,6 +35,7 @@ func MakeBlockContext(s storage.Storage, client chain.Client, config *common.Con
 	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
 	bc.Client = client
+	bc.dayStats = dayStats
 
 	return &bc
 }
@@ -86,6 +88,8 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 		bc.checkIndexedBalances()
 	}
 
+	bc.dayStats.AddBlock(bc.Block.Pbft)
+	bc.Batch.AddDayStats(bc.dayStats)
 	bc.Batch.SaveAccounts(bc.accounts)
 
 	dags_count = uint64(len(bc.Block.Dags))
@@ -129,7 +133,7 @@ func (bc *blockContext) checkIndexedBalances() {
 	tp.Wait()
 }
 
-func (bc *blockContext) updateValidatorStats(block *chain.Block) {
+func (bc *blockContext) updateValidatorStats(block *common.Block) {
 	tn, _ := goment.Unix(int64(block.Timestamp))
 	weekStats := bc.Storage.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
 	weekStats.AddPbftBlock(block.GetModel())
@@ -143,7 +147,7 @@ func (bc *blockContext) processDags() (err error) {
 	return
 }
 
-func (bc *blockContext) saveDag(dag *chain.DagBlock) {
+func (bc *blockContext) saveDag(dag *common.DagBlock) {
 	log.WithFields(log.Fields{"sender": dag.Sender, "hash": dag.Hash}).Trace("Saving DAG block")
 	dag_index := bc.addressStats.GetAddress(bc.Storage, dag.Sender).AddDag(dag.GetModel().Timestamp)
 	bc.Batch.Add(dag.GetModel(), dag.Sender, dag_index)

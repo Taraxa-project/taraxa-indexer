@@ -17,7 +17,7 @@ func MakeTestBlockContext(mc *chain.ClientMock, blockNumber uint64) *blockContex
 	if err != nil {
 		panic(err)
 	}
-	bc := MakeBlockContext(st, mc, new(common.Config), storage.MakeAccountsMap())
+	bc := MakeBlockContext(st, mc, new(common.Config), storage.MakeAccountsMap(), nil)
 	bc.SetBlockData(bd)
 
 	return bc
@@ -251,7 +251,7 @@ func TestTraceParsing(t *testing.T) {
 	assert.Equal(t, uint64(0x5487c), trx.BlockNumber)
 	assert.Equal(t, models.ContractCall, trx.Type)
 
-	pbft := &chain.Block{}
+	pbft := &common.Block{}
 	pbft.Number = trx.BlockNumber
 	pbft.Transactions = []string{trx.Hash}
 	pbft.TransactionCount = 1

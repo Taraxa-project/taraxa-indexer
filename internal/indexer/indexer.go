@@ -10,17 +10,19 @@ import (
 )
 
 type Indexer struct {
-	client                      chain.Client
+	client                      common.Client
 	storage                     storage.Storage
 	config                      *common.Config
 	retry_time                  time.Duration
 	consistency_check_available bool
 	stats                       *chain.Stats
 	accounts                    *storage.AccountsMap
+	dayStats                    *storage.DayStatsWithTimestamp
+	lastBlockTimestamp          uint64
 }
 
-func MakeAndRun(url string, s storage.Storage, c *common.Config, stats *chain.Stats) {
-	i := NewIndexer(url, s, c, stats)
+func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) {
+	i := NewIndexer(client, s, c, stats, retry_time)
 	for {
 		err := i.run()
 		f := i.storage.GetFinalizationData()
@@ -29,29 +31,14 @@ func MakeAndRun(url string, s storage.Storage, c *common.Config, stats *chain.St
 	}
 }
 
-func NewIndexer(url string, s storage.Storage, c *common.Config, stats *chain.Stats) (i *Indexer) {
+func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) (i *Indexer) {
 	i = new(Indexer)
-	i.retry_time = 5 * time.Second
 	i.storage = s
 	i.config = c
 	i.stats = stats
 	i.accounts = s.GetAccounts().ToMap()
-
-	// connect is retrying to connect every retry_time
-	i.connect(url)
-	return
-}
-
-func (i *Indexer) connect(url string) {
-	var err error
-	for {
-		i.client, err = chain.NewWsClient(url)
-		if err == nil {
-			break
-		}
-		log.WithError(err).Error("Can't connect to chain")
-		time.Sleep(i.retry_time)
-	}
+	i.client = client
+	i.retry_time = retry_time
 
 	version, err := i.client.GetVersion()
 	if err != nil || !chain.CheckProtocolVersion(version) {
@@ -63,6 +50,7 @@ func (i *Indexer) connect(url string) {
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
 	}
+	return
 }
 
 func (i *Indexer) init() {
@@ -95,12 +83,39 @@ func (i *Indexer) init() {
 
 	// Process genesis if db is clean
 	if db_clean {
-		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash, i.accounts)
+		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash, i.accounts, i.dayStats)
 		// Genesis hash and finalized period(0) is set inside
 		log.Info("Processing genesis")
 		genesis.process()
 	}
+}
 
+func (i *Indexer) initDayStats(block *common.Block) {
+	stats_date := common.DayStart(block.Timestamp)
+	day_stats := i.storage.GetDayStats(stats_date)
+	log.WithFields(log.Fields{"timestamp": stats_date, "day_stats": day_stats}).Info("Init day stats")
+	i.dayStats = &day_stats
+}
+
+func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint64, error) {
+	if i.dayStats == nil {
+		i.initDayStats(bd.Pbft)
+	}
+	bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts, i.dayStats)
+	dc, tc, err := bc.process(bd, i.stats)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	from_date, to_date := common.MonthInterval(nil)
+	// if the last block timestamp is the same as the to_date(end of the prev day)
+	if to_date == common.DayEnd(i.lastBlockTimestamp) {
+		// cache monthly active addresses
+		go storage.CacheMonthlyActiveAddresses(i.storage, from_date, to_date)
+	}
+	i.lastBlockTimestamp = bd.Pbft.Timestamp
+
+	return bc, dc, tc, nil
 }
 
 func (i *Indexer) sync(start, end uint64) error {
@@ -122,8 +137,7 @@ func (i *Indexer) sync(start, end uint64) error {
 			}
 			continue
 		}
-		bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts)
-		dc, tc, err := bc.process(bd, i.stats)
+		_, dc, tc, err := i.processBlock(bd)
 		if err != nil {
 			return err
 		}
@@ -167,7 +181,7 @@ func (i *Indexer) run() error {
 		case blk := <-ch:
 			finalized_period := i.storage.GetFinalizationData().PbftCount
 			if blk.Number != finalized_period+1 {
-				err := i.sync(finalized_period+1, blk.Number+1)
+				err := i.sync(finalized_period+1, blk.Number)
 				if err != nil {
 					return err
 				}
@@ -189,11 +203,11 @@ func (i *Indexer) run() error {
 				return err
 			}
 
-			bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts)
-			dc, tc, err := bc.process(bd, i.stats)
+			bc, dc, tc, err := i.processBlock(bd)
 			if err != nil {
 				return err
 			}
+
 			// perform consistency check on blocks from subscription
 			if i.consistency_check_available {
 				i.consistencyCheck(bc.finalized)
@@ -204,7 +218,7 @@ func (i *Indexer) run() error {
 	}
 }
 
-func (i *Indexer) consistencyCheck(finalized *storage.FinalizationData) {
+func (i *Indexer) consistencyCheck(finalized *common.FinalizationData) {
 	remote_stats, stats_err := i.client.GetChainStats()
 	if stats_err == nil {
 		finalized.Check(remote_stats)

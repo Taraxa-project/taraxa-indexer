@@ -1,17 +1,18 @@
-package chain
+package common
 
 import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
+	log "github.com/sirupsen/logrus"
 )
 
 type Block struct {
 	models.Pbft
 	Transactions []string `json:"transactions"`
 	TotalReward  string   `json:"totalReward"`
+	GasUsed      *big.Int `json:"gasUsed"`
 }
 
 func (b *Block) UnmarshalJSON(data []byte) error {
@@ -23,17 +24,19 @@ func (b *Block) UnmarshalJSON(data []byte) error {
 
 		Transactions []string `json:"transactions"`
 		TotalReward  string   `json:"totalReward"`
+		GasUsed      string   `json:"gasUsed"`
 	}
 	if err := json.Unmarshal(data, &rawStruct); err != nil {
 		panic(err)
 	}
 	b.Transactions = rawStruct.Transactions
 	b.TotalReward = rawStruct.TotalReward
+	b.GasUsed = ParseStringToBigInt(rawStruct.GasUsed)
 
 	b.Author = rawStruct.Author
 	b.Hash = rawStruct.Hash
-	b.Number = common.ParseUInt(rawStruct.Number)
-	b.Timestamp = common.ParseUInt(rawStruct.Timestamp)
+	b.Number = ParseUInt(rawStruct.Number)
+	b.Timestamp = ParseUInt(rawStruct.Timestamp)
 
 	b.TransactionCount = uint64(len(b.Transactions))
 	return nil
@@ -72,10 +75,10 @@ func (b *DagBlock) UnmarshalJSON(data []byte) error {
 	b.Transactions = rawStruct.Transactions
 
 	b.Dag.Hash = rawStruct.Hash
-	b.Dag.Level = common.ParseUInt(rawStruct.Level)
-	b.Dag.Timestamp = common.ParseUInt(rawStruct.Timestamp)
+	b.Dag.Level = ParseUInt(rawStruct.Level)
+	b.Dag.Timestamp = ParseUInt(rawStruct.Timestamp)
 	b.Dag.TransactionCount = uint64(len(b.Transactions))
-	b.Vdf.Difficulty = uint16(common.ParseUInt(rawStruct.Vdf.Difficulty))
+	b.Vdf.Difficulty = uint16(ParseUInt(rawStruct.Vdf.Difficulty))
 
 	return nil
 }
@@ -146,4 +149,24 @@ func (v *Validator) UnmarshalJSON(data []byte) error {
 	v.TotalStake.SetString(res["total_stake"], 10)
 
 	return nil
+}
+
+type FinalizationData struct {
+	DagCount  uint64 `json:"dag_blocks_executed"`
+	TrxCount  uint64 `json:"transactions_executed"`
+	PbftCount uint64 `json:"pbft_period"`
+}
+
+func (local *FinalizationData) Check(remote FinalizationData) {
+	// Perform this check only if we are getting data for the same block from node
+	if local.PbftCount != remote.PbftCount {
+		return
+	}
+	if local.DagCount != remote.DagCount {
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Dag consistency check failed")
+	}
+
+	if local.TrxCount != remote.TrxCount {
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Transactions consistency check failed ")
+	}
 }

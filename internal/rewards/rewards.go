@@ -37,7 +37,7 @@ func (r *Rewards) addTotalMinted(amount *big.Int) {
 	r.batch.SetTotalSupply(current)
 }
 
-func (r *Rewards) Process(totalMinted *big.Int, dags []chain.DagBlock, trxs []chain.Transaction, votes chain.VotesResponse, blockAuthor string) (currentBlockFee *big.Int) {
+func (r *Rewards) Process(totalMinted *big.Int, dags []common.DagBlock, trxs []common.Transaction, votes common.VotesResponse, blockAuthor string) (currentBlockFee *big.Int) {
 	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
 		log.WithFields(log.Fields{"total_stake": r.totalStake}).Info("totalStake")
 	}
@@ -77,8 +77,8 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, totalMinted *b
 }
 
 func (r *Rewards) makeRewardsStats(
-	dags []chain.DagBlock, votes chain.VotesResponse,
-	trxs []chain.Transaction, block_author string) *storage.RewardsStats {
+	dags []common.DagBlock, votes common.VotesResponse,
+	trxs []common.Transaction, block_author string) *storage.RewardsStats {
 	return makeRewardsStats(r.config.Chain.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.Chain.CommitteeSize.Uint64(), block_author).ToStorage()
 }
 

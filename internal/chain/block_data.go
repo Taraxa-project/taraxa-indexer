@@ -8,29 +8,29 @@ import (
 )
 
 type BlockData struct {
-	Pbft                 *Block
-	Dags                 []DagBlock
-	Transactions         []Transaction
-	Traces               []TransactionTrace
-	Votes                VotesResponse
-	Validators           []Validator
+	Pbft                 *common.Block
+	Dags                 []common.DagBlock
+	Transactions         []common.Transaction
+	Traces               []common.TransactionTrace
+	Votes                common.VotesResponse
+	Validators           []common.Validator
 	TotalAmountDelegated *big.Int
 	TotalSupply          *big.Int
 }
 
 func MakeEmptyBlockData() *BlockData {
 	bd := new(BlockData)
-	bd.Pbft = new(Block)
-	bd.Dags = make([]DagBlock, 0)
-	bd.Transactions = make([]Transaction, 0)
-	bd.Traces = make([]TransactionTrace, 0)
-	bd.Votes = VotesResponse{Votes: make([]Vote, 0)}
-	bd.Validators = make([]Validator, 0)
+	bd.Pbft = new(common.Block)
+	bd.Dags = make([]common.DagBlock, 0)
+	bd.Transactions = make([]common.Transaction, 0)
+	bd.Traces = make([]common.TransactionTrace, 0)
+	bd.Votes = common.VotesResponse{Votes: make([]common.Vote, 0)}
+	bd.Validators = make([]common.Validator, 0)
 	return bd
 }
 
 // Move common parts to the function, so we won't need change this it in two places
-func scheduleBlockDataTasks(tp pool.Pool, c Client, period uint64, bd *BlockData, err *error) {
+func scheduleBlockDataTasks(tp pool.Pool, c common.Client, period uint64, bd *BlockData, err *error) {
 	tp.Go(common.MakeTaskWithResult(c.GetPeriodDagBlocks, period, &bd.Dags, err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetPeriodTransactions, period, &bd.Transactions, err).Run)
 	tp.Go(common.MakeTaskWithResult(c.TraceBlockTransactions, period, &bd.Traces, err).Run)
@@ -44,7 +44,7 @@ func scheduleBlockDataTasks(tp pool.Pool, c Client, period uint64, bd *BlockData
 	tp.Go(common.MakeTaskWithResult(c.GetTotalSupply, supplyPeriod, &bd.TotalSupply, err).Run)
 }
 
-func GetBlockData(c Client, period uint64) (bd *BlockData, err error) {
+func GetBlockData(c common.Client, period uint64) (bd *BlockData, err error) {
 	bd = MakeEmptyBlockData()
 	bd.Pbft.Number = period
 	tp := common.MakeThreadPool()
@@ -59,7 +59,7 @@ func GetBlockData(c Client, period uint64) (bd *BlockData, err error) {
 	return
 }
 
-func GetBlockDataFromPbft(c Client, pbft *Block) (bd *BlockData, err error) {
+func GetBlockDataFromPbft(c common.Client, pbft *common.Block) (bd *BlockData, err error) {
 	bd = MakeEmptyBlockData()
 	bd.Pbft = pbft
 
