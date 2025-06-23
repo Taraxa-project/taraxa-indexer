@@ -4,6 +4,7 @@ package api
 
 import (
 	"bytes"
+	"strconv"
 	"time"
 
 	"fmt"
@@ -330,6 +331,31 @@ func (a *ApiHandler) GetTotalYield(ctx echo.Context, params GetTotalYieldParams)
 	return ctx.JSON(http.StatusOK, resp)
 }
 
+func (a *ApiHandler) GetLatestMonthlyActiveAddresses() (resp MonthlyActiveAddressesResponse) {
+	ma := storage.MonthlyActiveAddresses{}
+	a.storage.ForEach(&ma, "", nil, storage.Backward, func(key []byte, res []byte) (stop bool) {
+		err := rlp.DecodeBytes(res, &ma)
+		if err != nil {
+			log.WithError(err).Fatal("Error decoding data from db")
+			return
+		}
+
+		parts := strings.Split(string(res), "|")
+
+		to_date, err := strconv.ParseUint(parts[1], 10, 64)
+		if err != nil {
+			log.WithField("to_date_raw", parts[1]).Fatal("LatestMonthlyActiveAddresses: error parsing uint")
+		}
+
+		resp.Count = ma.Count
+		resp.FromDate = to_date
+		resp.ToDate = to_date - common.Days30
+
+		return true
+	})
+	return
+}
+
 func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonthlyActiveAddressesParams) error {
 	from_date, to_date := common.MonthInterval(params.Date)
 
@@ -337,6 +363,9 @@ func (a *ApiHandler) GetMonthlyActiveAddresses(ctx echo.Context, params GetMonth
 
 	count, err := storage.GetMonthlyActiveAddresses(a.storage, from_date, to_date)
 	if err != nil {
+		if params.Date == nil {
+			return ctx.JSON(http.StatusOK, a.GetLatestMonthlyActiveAddresses())
+		}
 		return ctx.JSON(http.StatusRequestTimeout, err.Error())
 	}
 
