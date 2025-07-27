@@ -14,10 +14,10 @@ type Genesis struct {
 	genesis  common.GenesisObject
 	bc       blockContext
 	hash     string
-	accounts *storage.AccountsMap
+	accounts *storage.AccountBalancesMap
 }
 
-func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObject, genesisHash storage.GenesisHash, accounts *storage.AccountsMap, dayStats *storage.DayStatsWithTimestamp) *Genesis {
+func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObject, genesisHash storage.GenesisHash, accounts *storage.AccountBalancesMap, dayStats *storage.DayStatsWithTimestamp) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = gen_obj

@@ -53,7 +53,7 @@ func (b *Batch) UpdateWeekStats(w storage.WeekStats) {
 	}
 }
 
-func (b *Batch) SaveAccounts(a *storage.AccountsMap) {
+func (b *Batch) SaveAccounts(a *storage.AccountBalancesMap) {
 	b.AddSingleKey(a.SortedSlice(), "")
 }
 

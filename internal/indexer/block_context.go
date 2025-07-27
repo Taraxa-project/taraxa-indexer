@@ -20,13 +20,13 @@ type blockContext struct {
 	Config       *common.Config
 	Client       common.Client
 	Block        *chain.BlockData
-	accounts     *storage.AccountsMap
+	accounts     *storage.AccountBalancesMap
 	addressStats *storage.AddressStatsMap
 	finalized    *common.FinalizationData
 	dayStats     *storage.DayStatsWithTimestamp
 }
 
-func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, accounts *storage.AccountsMap, dayStats *storage.DayStatsWithTimestamp) *blockContext {
+func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, accounts *storage.AccountBalancesMap, dayStats *storage.DayStatsWithTimestamp) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()

@@ -25,8 +25,8 @@ func (a *Account) ToModel() models.Account {
 
 type Accounts []Account
 
-func (a Accounts) ToMap() *AccountsMap {
-	am := &AccountsMap{
+func (a Accounts) ToMap() *AccountBalancesMap {
+	am := &AccountBalancesMap{
 		accounts: make(map[string]*big.Int),
 	}
 	for _, account := range a {
@@ -35,25 +35,25 @@ func (a Accounts) ToMap() *AccountsMap {
 	return am
 }
 
-type AccountsMap struct {
+type AccountBalancesMap struct {
 	accounts map[string]*big.Int
 }
 
-func MakeAccountsMap() *AccountsMap {
-	return &AccountsMap{
+func MakeAccountBalancesMap() *AccountBalancesMap {
+	return &AccountBalancesMap{
 		accounts: make(map[string]*big.Int),
 	}
 }
 
-func (am *AccountsMap) GetAccounts() map[string]*big.Int {
+func (am *AccountBalancesMap) GetAccounts() map[string]*big.Int {
 	return am.accounts
 }
 
-func (am *AccountsMap) GetLength() int {
+func (am *AccountBalancesMap) GetLength() int {
 	return len(am.accounts)
 }
 
-func (am *AccountsMap) toSlice() Accounts {
+func (am *AccountBalancesMap) toSlice() Accounts {
 	slice := make(Accounts, 0, len(am.accounts))
 	for address, balance := range am.accounts {
 		slice = append(slice, Account{Address: address, Balance: balance})
@@ -61,7 +61,7 @@ func (am *AccountsMap) toSlice() Accounts {
 	return slice
 }
 
-func (am *AccountsMap) SortedSlice() Accounts {
+func (am *AccountBalancesMap) SortedSlice() Accounts {
 	sl := am.toSlice()
 	sort.Slice(sl, func(i, j int) bool {
 		return sl[i].Balance.Cmp(sl[j].Balance) == 1
@@ -69,12 +69,12 @@ func (am *AccountsMap) SortedSlice() Accounts {
 	return sl
 }
 
-func (am *AccountsMap) GetBalance(address string) *big.Int {
+func (am *AccountBalancesMap) GetBalance(address string) *big.Int {
 	address = strings.ToLower(address)
 	return am.accounts[address]
 }
 
-func (am *AccountsMap) AddToBalance(address string, value *big.Int) {
+func (am *AccountBalancesMap) AddToBalance(address string, value *big.Int) {
 	address = strings.ToLower(address)
 	if _, ok := am.accounts[address]; !ok {
 		am.accounts[address] = big.NewInt(0)
@@ -86,7 +86,7 @@ func (am *AccountsMap) AddToBalance(address string, value *big.Int) {
 	}
 }
 
-func (am *AccountsMap) UpdateBalances(from, to, valueStr string) {
+func (am *AccountBalancesMap) UpdateBalances(from, to, valueStr string) {
 	value, ok := big.NewInt(0).SetString(valueStr, 0)
 
 	if ok && value.Cmp(big.NewInt(0)) > 0 {
@@ -95,7 +95,7 @@ func (am *AccountsMap) UpdateBalances(from, to, valueStr string) {
 	}
 }
 
-func (am *AccountsMap) UpdateEvents(logs []models.EventLog) error {
+func (am *AccountBalancesMap) UpdateEvents(logs []models.EventLog) error {
 	if len(logs) > 0 {
 		rewardsEvents, err := events.DecodeRewardsTopics(logs)
 		if err != nil {

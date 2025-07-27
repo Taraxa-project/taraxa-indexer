@@ -8,7 +8,7 @@ type Batch interface {
 	SetFinalizationData(f *common.FinalizationData)
 	SetGenesisHash(h GenesisHash)
 	UpdateWeekStats(w WeekStats)
-	SaveAccounts(a *AccountsMap)
+	SaveAccounts(a *AccountBalancesMap)
 	Add(o any, key1 string, key2 uint64)
 	AddDayStats(d *DayStatsWithTimestamp)
 	AddSerialized(o any, data []byte, key1 string, key2 uint64)

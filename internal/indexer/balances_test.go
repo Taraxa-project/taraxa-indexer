@@ -12,7 +12,7 @@ import (
 
 func TestUpdateBalancesInternal(t *testing.T) {
 	// Prepare test data
-	accounts := storage.MakeAccountsMap()
+	accounts := storage.MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 
@@ -39,7 +39,7 @@ func TestUpdateBalancesInternal(t *testing.T) {
 
 func TestUpdateBalances(t *testing.T) {
 	// Prepare test data
-	accounts := storage.MakeAccountsMap()
+	accounts := storage.MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 
