@@ -327,3 +327,11 @@ func TestReceivedTransactionsCount(t *testing.T) {
 	assert.Equal(t, storage.ReceivedTransactionsCount(db, address, 90, 100), uint64(2))
 	assert.Equal(t, storage.ReceivedTransactionsCount(db, address, 200, 202), uint64(1))
 }
+
+func TestParsePrefixUint(t *testing.T) {
+	timestamp := uint64(1750667269)
+	str := "0000000000" + strconv.FormatUint(timestamp, 10)
+	to_date, err := strconv.ParseUint(str, 10, 64)
+	assert.NoError(t, err)
+	assert.Equal(t, timestamp, to_date)
+}
