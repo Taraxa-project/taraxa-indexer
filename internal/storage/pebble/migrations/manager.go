@@ -28,6 +28,7 @@ func NewManager(s *pebble.Storage, client common.Client) *Manager {
 	}
 	m.RegisterMigration(&CheckContracts{})
 	m.RegisterMigration(&LastTrxTimestamp{})
+	m.RegisterMigration(&DailyContractUsers{})
 	return &m
 }
 

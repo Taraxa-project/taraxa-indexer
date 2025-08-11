@@ -96,6 +96,11 @@ type MonthlyActiveAddressesResponse struct {
 	ToDate   Timestamp `json:"toDate"`
 }
 
+// MonthlyAverageDailyActiveWalletsResponse defines model for MonthlyAverageDailyActiveWalletsResponse.
+type MonthlyAverageDailyActiveWalletsResponse struct {
+	Count float32 `json:"count"`
+}
+
 // MonthlyStatsResponse defines model for MonthlyStatsResponse.
 type MonthlyStatsResponse struct {
 	FromDate Timestamp `json:"fromDate"`
@@ -289,6 +294,12 @@ type GetHoldersParams struct {
 
 // GetMonthlyActiveAddressesParams defines parameters for GetMonthlyActiveAddresses.
 type GetMonthlyActiveAddressesParams struct {
+	// Date Date to filter by
+	Date *DateParam `form:"date,omitempty" json:"date,omitempty"`
+}
+
+// GetMonthlyAverageDailyActiveWalletsParams defines parameters for GetMonthlyAverageDailyActiveWallets.
+type GetMonthlyAverageDailyActiveWalletsParams struct {
 	// Date Date to filter by
 	Date *DateParam `form:"date,omitempty" json:"date,omitempty"`
 }

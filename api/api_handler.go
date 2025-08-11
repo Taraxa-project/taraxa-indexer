@@ -461,3 +461,39 @@ func getYearWeek(w *WeekParam) (int32, int32) {
 
 	return int32(*w.Year), int32(*w.Week)
 }
+
+func (a *ApiHandler) GetMonthlyAverageDailyActiveWallets(ctx echo.Context, address AddressParam, params GetMonthlyAverageDailyActiveWalletsParams) error {
+	address, err := formatAddress(address)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	lastDayStart := common.DayStart(uint64(time.Now().Unix()))
+	if params.Date != nil {
+		lastDayStart = common.DayStart(*params.Date)
+	}
+	average := a.calculateContract30DayAverage(address, lastDayStart)
+
+	return ctx.JSON(http.StatusOK, average)
+}
+
+func (a *ApiHandler) calculateContract30DayAverage(contractAddress string, lastDayStart uint64) MonthlyAverageDailyActiveWalletsResponse {
+	startDay := lastDayStart - common.Days30
+
+	var totalUsers uint64 = 0
+	const totalDays = 30
+
+	// Iterate through the last 30 days
+	for day := startDay; day <= lastDayStart; day += common.Day {
+		users := a.storage.GetDailyContractUsers(contractAddress, day)
+		// Count users for this day (0 if no data)
+		totalUsers += uint64(len(users.Users))
+	}
+
+	// Calculate average including days with no data (divide by 30)
+	var average float32 = float32(totalUsers) / float32(totalDays)
+
+	return MonthlyAverageDailyActiveWalletsResponse{
+		Count: average,
+	}
+}

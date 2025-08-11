@@ -15,15 +15,16 @@ import (
 )
 
 type blockContext struct {
-	Storage      storage.Storage
-	Batch        storage.Batch
-	Config       *common.Config
-	Client       common.Client
-	Block        *chain.BlockData
-	accounts     *storage.AccountBalancesMap
-	addressStats *storage.AddressStatsMap
-	finalized    *common.FinalizationData
-	dayStats     *storage.DayStatsWithTimestamp
+	Storage            storage.Storage
+	Batch              storage.Batch
+	Config             *common.Config
+	Client             common.Client
+	Block              *chain.BlockData
+	accounts           *storage.AccountBalancesMap
+	addressStats       *storage.AddressStatsMap
+	finalized          *common.FinalizationData
+	dayStats           *storage.DayStatsWithTimestamp
+	dailyContractUsers map[string]*storage.DailyContractUsers // key: contract_address
 }
 
 func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, accounts *storage.AccountBalancesMap, dayStats *storage.DayStatsWithTimestamp) *blockContext {
@@ -36,6 +37,7 @@ func MakeBlockContext(s storage.Storage, client common.Client, config *common.Co
 	bc.finalized = s.GetFinalizationData()
 	bc.Client = client
 	bc.dayStats = dayStats
+	bc.dailyContractUsers = make(map[string]*storage.DailyContractUsers)
 
 	return &bc
 }
@@ -47,9 +49,46 @@ func (bc *blockContext) SetBlockData(bd *chain.BlockData) {
 func (bc *blockContext) commit() {
 	bc.Batch.SetFinalizationData(bc.finalized)
 	bc.addressStats.AddToBatch(bc.Batch)
+	// Save daily contract users before committing
+	bc.saveDailyContractUsers()
 	bc.Batch.CommitBatch()
 
 	metrics.StorageCommitCounter.Inc()
+}
+
+// getDailyContractUsers gets or creates DailyContractUsers for a contract address
+func (bc *blockContext) getDailyContractUsers(contractAddress string) *storage.DailyContractUsers {
+	if _, exists := bc.dailyContractUsers[contractAddress]; !exists {
+		// Load existing data from storage or create new
+		dayStart := common.DayStart(bc.Block.Pbft.Timestamp)
+		existingUsers := bc.Storage.GetDailyContractUsers(contractAddress, dayStart)
+
+		bc.dailyContractUsers[contractAddress] = storage.MakeDailyContractUsers()
+
+		if len(existingUsers.Users) > 0 {
+			bc.dailyContractUsers[contractAddress] = storage.MakeDailyContractUsersFromList(existingUsers)
+		}
+	}
+	return bc.dailyContractUsers[contractAddress]
+}
+
+// addContractUser adds a user to the daily contract users tracking
+func (bc *blockContext) addContractUser(sender, receiver string) {
+	// check if receiver is a contract address
+	if !bc.addressStats.GetAddress(bc.Storage, receiver).IsContract() {
+		return
+	}
+
+	users := bc.getDailyContractUsers(receiver)
+	users.Add(sender)
+}
+
+// saveDailyContractUsers saves all tracked daily contract users to storage
+func (bc *blockContext) saveDailyContractUsers() {
+	dayStart := common.DayStart(bc.Block.Pbft.Timestamp)
+	for contractAddress, users := range bc.dailyContractUsers {
+		bc.Batch.AddDailyContractUsers(contractAddress, dayStart, users)
+	}
 }
 
 func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_count, trx_count uint64, err error) {

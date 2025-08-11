@@ -9,6 +9,7 @@ type Batch interface {
 	SetGenesisHash(h GenesisHash)
 	UpdateWeekStats(w WeekStats)
 	SaveAccounts(a *AccountBalancesMap)
+	AddDailyContractUsers(address string, timestamp uint64, users *DailyContractUsers)
 	Add(o any, key1 string, key2 uint64)
 	AddDayStats(d *DayStatsWithTimestamp)
 	AddSerialized(o any, data []byte, key1 string, key2 uint64)
