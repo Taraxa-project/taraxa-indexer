@@ -24,7 +24,7 @@ func TestApiHandler_calculateContract30DayAverage(t *testing.T) {
 
 	// Test with no data - should return 0 count
 	average := handler.calculateContract30DayAverage(contractAddress, timestamp)
-	assert.Equal(t, uint64(0), average.Count)
+	assert.InDelta(t, 0.0, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_WithData(t *testing.T) {
@@ -62,7 +62,7 @@ func TestApiHandler_calculateContract30DayAverage_WithData(t *testing.T) {
 	average := handler.calculateContract30DayAverage(contractAddress, endDay)
 
 	// Should be (10 users/day * 30 days) / 30 = 10
-	assert.Equal(t, uint64(10), average.Count)
+	assert.InDelta(t, 10.0, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_NoDataDays(t *testing.T) {
@@ -100,8 +100,8 @@ func TestApiHandler_calculateContract30DayAverage_NoDataDays(t *testing.T) {
 	// Calculate average
 	average := handler.calculateContract30DayAverage(contractAddress, endDay)
 
-	// Should be (2 + 4) / 30 = 0.2 (rounded to uint64 = 0)
-	assert.Equal(t, uint64(0), average.Count)
+	// Should be (2 + 4) / 30 = 0.2
+	assert.InDelta(t, 0.2, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_EmptyDays(t *testing.T) {
@@ -135,8 +135,8 @@ func TestApiHandler_calculateContract30DayAverage_EmptyDays(t *testing.T) {
 	// Calculate average
 	average := handler.calculateContract30DayAverage(contractAddress, endDay)
 
-	// Should be 2 / 30 = 0.067 (rounded to uint64 = 0)
-	assert.Equal(t, uint64(0), average.Count)
+	// Should be 2 / 30 = 0.0666667
+	assert.InDelta(t, 2.0/30.0, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_MixedData(t *testing.T) {
@@ -213,8 +213,8 @@ func TestApiHandler_calculateContract30DayAverage_MixedData(t *testing.T) {
 
 	// Should be totalUsers / 30 days
 	// totalUsers = (7*20) + (7*5) + (7*1) + (0*7) + (2*3) = 140 + 35 + 7 + 0 + 6 = 188
-	expectedAverage := uint64(188 / 30) // 188/30 = 6.26, rounds to 6
-	assert.Equal(t, expectedAverage, average.Count)
+	expectedAverage := float64(188) / 30.0 // 188/30 = 6.2666667
+	assert.InDelta(t, expectedAverage, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_RecentActivity(t *testing.T) {
@@ -251,7 +251,7 @@ func TestApiHandler_calculateContract30DayAverage_RecentActivity(t *testing.T) {
 	average := handler.calculateContract30DayAverage(contractAddress, endDay)
 
 	// Should be (5*30) / 30 = 150/30 = 5
-	assert.Equal(t, uint64(5), average.Count)
+	assert.InDelta(t, 5.0, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_OldActivity(t *testing.T) {
@@ -288,7 +288,7 @@ func TestApiHandler_calculateContract30DayAverage_OldActivity(t *testing.T) {
 	average := handler.calculateContract30DayAverage(contractAddress, endDay)
 
 	// Should be (6*15) / 30 = 90/30 = 3
-	assert.Equal(t, uint64(3), average.Count)
+	assert.InDelta(t, 3.0, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_SingleDayHigh(t *testing.T) {
@@ -321,7 +321,7 @@ func TestApiHandler_calculateContract30DayAverage_SingleDayHigh(t *testing.T) {
 	average := handler.calculateContract30DayAverage(contractAddress, endDay)
 
 	// Should be 300 / 30 = 10
-	assert.Equal(t, uint64(10), average.Count)
+	assert.InDelta(t, 10.0, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_GradualIncrease(t *testing.T) {
@@ -359,8 +359,8 @@ func TestApiHandler_calculateContract30DayAverage_GradualIncrease(t *testing.T) 
 	average := handler.calculateContract30DayAverage(contractAddress, endDay)
 
 	// totalUsers = 1+2+3+...+30 = 30*31/2 = 465
-	// Average = 465/30 = 15.5, rounds to 15
-	assert.Equal(t, uint64(15), average.Count)
+	// Average = 465/30 = 15.5
+	assert.InDelta(t, 15.5, float64(average.Count), 1e-5)
 }
 
 func TestApiHandler_calculateContract30DayAverage_MultipleContracts(t *testing.T) {
@@ -407,10 +407,10 @@ func TestApiHandler_calculateContract30DayAverage_MultipleContracts(t *testing.T
 	avg2 := handler.calculateContract30DayAverage(contract2, endDay)
 
 	// Contract 1: (5*30)/30 = 5
-	assert.Equal(t, uint64(5), avg1.Count)
+	assert.InDelta(t, 5.0, float64(avg1.Count), 1e-5)
 
 	// Contract 2: (10*30)/30 = 10
-	assert.Equal(t, uint64(10), avg2.Count)
+	assert.InDelta(t, 10.0, float64(avg2.Count), 1e-5)
 }
 
 // Helper function to create test addresses
