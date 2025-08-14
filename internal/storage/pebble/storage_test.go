@@ -170,7 +170,7 @@ func TestBatch(t *testing.T) {
 func TestAccountsBatch(t *testing.T) {
 	st := NewStorage("")
 	defer st.Close()
-	accounts := storage.MakeAccountsMap()
+	accounts := storage.MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 

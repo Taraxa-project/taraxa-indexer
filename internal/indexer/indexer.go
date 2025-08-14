@@ -16,7 +16,7 @@ type Indexer struct {
 	retry_time                  time.Duration
 	consistency_check_available bool
 	stats                       *chain.Stats
-	accounts                    *storage.AccountsMap
+	accounts                    *storage.AccountBalancesMap
 	dayStats                    *storage.DayStatsWithTimestamp
 	lastBlockTimestamp          uint64
 }

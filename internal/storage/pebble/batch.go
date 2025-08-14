@@ -53,8 +53,17 @@ func (b *Batch) UpdateWeekStats(w storage.WeekStats) {
 	}
 }
 
-func (b *Batch) SaveAccounts(a *storage.AccountsMap) {
+func (b *Batch) SaveAccounts(a *storage.AccountBalancesMap) {
 	b.AddSingleKey(a.SortedSlice(), "")
+}
+
+func (b *Batch) AddDailyContractUsers(address string, timestamp uint64, users *storage.DailyContractUsers) {
+	dayStart := common.DayStart(timestamp)
+	usersList := users.GetList()
+	err := b.AddWithKey(&usersList, getKey(GetPrefix(&usersList), address, dayStart))
+	if err != nil {
+		log.WithError(err).Fatal("AddDailyContractUsers failed")
+	}
 }
 
 func (b *Batch) AddDayStats(d *storage.DayStatsWithTimestamp) {

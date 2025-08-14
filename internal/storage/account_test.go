@@ -10,7 +10,7 @@ import (
 
 func TestSortByBalanceDescending(t *testing.T) {
 	// Create test data
-	accounts := MakeAccountsMap()
+	accounts := MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x2222222222222222222222222222222222222222", big.NewInt(50))
 	accounts.AddToBalance("0x3333333333333333333333333333333333333333", big.NewInt(200))
@@ -37,7 +37,7 @@ func TestSortByBalanceDescending(t *testing.T) {
 
 func TestModifyBalance(t *testing.T) {
 	// Create test data
-	accounts := MakeAccountsMap()
+	accounts := MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x2222222222222222222222222222222222222222", big.NewInt(50))
 	accounts.AddToBalance("0x3333333333333333333333333333333333333333", big.NewInt(200))
@@ -53,7 +53,7 @@ func TestModifyBalance(t *testing.T) {
 
 func TestUpdateBalances(t *testing.T) {
 	// Create test data
-	accounts := MakeAccountsMap()
+	accounts := MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x2222222222222222222222222222222222222222", big.NewInt(50))
 	accounts.AddToBalance("0x3333333333333333333333333333333333333333", big.NewInt(200))
@@ -71,7 +71,7 @@ func TestUpdateBalances(t *testing.T) {
 
 func TestUpdateBalancesInternal(t *testing.T) {
 	// Prepare test data
-	accounts := MakeAccountsMap()
+	accounts := MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 	trx := models.Transaction{

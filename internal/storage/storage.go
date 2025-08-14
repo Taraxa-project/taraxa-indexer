@@ -36,6 +36,7 @@ type Storage interface {
 	GetValidatorYield(validator string, block uint64) (res Yield)
 	GetTotalYield(block uint64) (res Yield)
 	GetMonthlyActiveAddresses(to_date uint64) *uint64
+	GetDailyContractUsers(address string, timestamp uint64) DailyContractUsersList
 }
 
 func GetTotal[T Paginated](s Storage, address string) (r uint64) {

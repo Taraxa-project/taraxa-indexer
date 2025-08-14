@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
 
@@ -33,6 +32,12 @@ type AddressStats struct {
 	models.StatsResponse
 	Address string       `json:"address"`
 	mutex   sync.RWMutex `rlp:"-"`
+}
+
+func MakeEmptyAddressStats(addr string) *AddressStats {
+	data := new(AddressStats)
+	data.Address = addr
+	return data
 }
 
 func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) {
@@ -70,12 +75,6 @@ func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
 	return a.DagsCount
 }
 
-func MakeEmptyAddressStats(addr string) *AddressStats {
-	data := new(AddressStats)
-	data.Address = addr
-	return data
-}
-
 func (a *AddressStats) IsEqual(b *AddressStats) bool {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
@@ -85,6 +84,10 @@ func (a *AddressStats) IsEqual(b *AddressStats) bool {
 		return true
 	}
 	return false
+}
+
+func (a *AddressStats) IsContract() bool {
+	return a.ContractRegisteredTimestamp != nil
 }
 
 type AddressStatsMap struct {
@@ -166,46 +169,4 @@ type RewardsStats struct {
 
 func FormatIntToKey(i uint64) string {
 	return fmt.Sprintf("%020d", i)
-}
-
-type TrxGasStats struct {
-	TrxCount uint64   `json:"trxCount"`
-	GasUsed  *big.Int `json:"gasUsed"`
-}
-
-func EmptyTrxGasStats() TrxGasStats {
-	return TrxGasStats{
-		TrxCount: 0,
-		GasUsed:  big.NewInt(0),
-	}
-}
-
-type DayStatsWithTimestamp struct {
-	TrxGasStats
-	Timestamp uint64 `json:"timestamp"`
-}
-
-func (d *DayStatsWithTimestamp) AddBlock(blk *common.Block) {
-	day_start := common.DayStart(blk.Timestamp)
-	if day_start > d.Timestamp {
-		*d = *MakeDayStatsWithTimestamp(day_start)
-	}
-	d.TrxCount += blk.TransactionCount
-	d.GasUsed.Add(d.GasUsed, blk.GasUsed)
-}
-func MakeDayStatsWithTimestamp(ts uint64) *DayStatsWithTimestamp {
-	return &DayStatsWithTimestamp{
-		TrxGasStats: EmptyTrxGasStats(),
-		Timestamp:   ts,
-	}
-}
-
-func GetTimestampFromKey(key []byte) uint64 {
-	ts := strings.Split(string(key), "|")
-	return common.ParseUInt(strings.TrimLeft(ts[1], "0"))
-}
-
-func (d *TrxGasStats) Add(other TrxGasStats) {
-	d.TrxCount += other.TrxCount
-	d.GasUsed.Add(d.GasUsed, other.GasUsed)
 }

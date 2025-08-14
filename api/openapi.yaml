@@ -457,7 +457,29 @@ paths:
         default:
           description: |
             Unexpected error
-
+  /monthlyAverageDailyActiveWallets/{address}:
+    get:
+      tags:
+        - MonthlyAverageDailyActiveWallets
+      summary: "Returns the average daily active wallets for the 30 days from the specified end date"
+      description: |
+        Returns the average daily active wallets for the selected month
+      operationId: "getMonthlyAverageDailyActiveWallets"
+      parameters:
+        - $ref: "#/components/parameters/addressParam"
+        - $ref: "#/components/parameters/dateParam"
+      responses:
+        "200":
+          description: |
+            A JSON object containing the average daily active wallets for the 30 days from the specified end date
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/MonthlyAverageDailyActiveWalletsResponse"
+        default:
+          description: |
+            Unexpected error
 components:
   schemas:
     ChainStats:
@@ -888,6 +910,13 @@ components:
           $ref: "#/components/schemas/Timestamp"
         transactionsCount:
           $ref: "#/components/schemas/Counter"
+    MonthlyAverageDailyActiveWalletsResponse:
+      required:
+        - count
+      properties:
+        count:
+          type: number
+          example: 100.00
     AddressFilter:
       $ref: "#/components/schemas/Address"
     PaginationFilter:
