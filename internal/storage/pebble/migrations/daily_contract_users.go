@@ -28,7 +28,7 @@ func (m *DailyContractUsers) Apply(s *pebble.Storage) error {
 
 	// Calculate the date range for the last month
 	now := time.Now()
-	startTimestamp := common.DayStart(uint64(now.AddDate(0, -1, 0).Unix())) // 1 month ago
+	startTimestamp := common.DayStart(uint64(now.Add(-30 * 24 * time.Hour).Unix())) // 30 days ago
 
 	log.WithFields(log.Fields{
 		"start_timestamp": startTimestamp,
@@ -47,7 +47,6 @@ func (m *DailyContractUsers) Apply(s *pebble.Storage) error {
 			return false
 		}
 
-		// Only include addresses that are contracts
 		if stats.IsContract() {
 			contractAddresses = append(contractAddresses, stats.Address)
 		}
@@ -88,12 +87,10 @@ func (m *DailyContractUsers) Apply(s *pebble.Storage) error {
 
 			totalProcessed++
 
-			// If too old, stop processing this contract
 			if trx.Timestamp < startTimestamp {
 				return true
 			}
 
-			// Only track contract calls to the contract
 			if trx.Type == models.ContractCall && trx.To == contractAddress {
 				contractInteractions++
 

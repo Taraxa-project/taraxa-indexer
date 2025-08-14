@@ -484,7 +484,7 @@ func (a *ApiHandler) calculateContract30DayAverage(contractAddress string, lastD
 	const totalDays = 30
 
 	// Iterate through the last 30 days
-	for day := startDay; day <= lastDayStart; day += common.Day {
+	for day := startDay; day < lastDayStart; day += common.Day {
 		users := a.storage.GetDailyContractUsers(contractAddress, day)
 		// Count users for this day (0 if no data)
 		totalUsers += uint64(len(users.Users))
