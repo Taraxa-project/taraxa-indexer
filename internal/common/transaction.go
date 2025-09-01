@@ -61,7 +61,7 @@ type Transaction struct {
 }
 
 func (t *Transaction) SetTimestamp(timestamp uint64) {
-	t.Transaction.Timestamp = timestamp
+	t.Timestamp = timestamp
 }
 
 func (t *Transaction) UnmarshalJSON(data []byte) error {
@@ -105,7 +105,7 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	t.To = rawStruct.To
 	t.Value = rawStruct.Value
 
-	t.Type = GetTransactionType(t.Transaction.To, t.Input, "", false)
+	t.Type = GetTransactionType(t.To, t.Input, "", false)
 	if t.Type == models.ContractCreation {
 		t.To = t.ContractAddress
 	}

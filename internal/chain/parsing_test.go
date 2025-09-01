@@ -92,9 +92,9 @@ func TestDagBlockParsing(t *testing.T) {
 	dag := new(common.DagBlock)
 	err := json.Unmarshal([]byte(json_str), dag)
 	assert.Equal(t, err, nil)
-	assert.Equal(t, dag.Dag.Hash, "0x5c9442c06330afe9f484a2591165d551f2aa46b7f253f223717e1c90114bbdc1")
-	assert.Equal(t, dag.Dag.Level, uint64(0x186a20d))
-	assert.Equal(t, dag.Dag.Timestamp, uint64(0x65fe340e))
+	assert.Equal(t, dag.Hash, "0x5c9442c06330afe9f484a2591165d551f2aa46b7f253f223717e1c90114bbdc1")
+	assert.Equal(t, dag.Level, uint64(0x186a20d))
+	assert.Equal(t, dag.Timestamp, uint64(0x65fe340e))
 	assert.Equal(t, dag.Sender, "0xe90958a7e4a95ee0c3e2b36dcf6344835755fcfd")
 	assert.Equal(t, dag.Vdf.Difficulty, uint16(0x10))
 }

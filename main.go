@@ -4,16 +4,15 @@ package main
 
 import (
 	"flag"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
-	"strconv"
-
 	"github.com/Taraxa-project/taraxa-indexer/api"
+	"github.com/Taraxa-project/taraxa-indexer/internal/auth"
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/indexer"
@@ -22,7 +21,6 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
 	"github.com/labstack/echo/v4"
-	echomiddleware "github.com/oapi-codegen/echo-middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -36,6 +34,8 @@ var (
 	validators_yield_saving_interval *int
 	sync_queue_limit                 *int
 	chain_stats_interval             *int
+	auth_username                    *string
+	auth_password                    *string
 	retry_time                       time.Duration = 5 * time.Second
 )
 
@@ -49,6 +49,8 @@ func init() {
 	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 150000, "interval for saving validators yield")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
 	chain_stats_interval = flag.Int("chain_stats_interval", 100, "interval for saving chain stats")
+	auth_username = flag.String("auth_username", "taraxa", "username for protected endpoints (required if auth_password is set)")
+	auth_password = flag.String("auth_password", "taraxa", "password for protected endpoints (required if auth_username is set)")
 
 	flag.Parse()
 
@@ -87,7 +89,7 @@ func connectToChain() (client common.Client, err error) {
 func main() {
 	log.Info("Starting Taraxa Indexer")
 	st := pebble.NewStorage(filepath.Join(*data_dir, "db"))
-	setupCloseHandler(func() { st.Close() })
+	setupCloseHandler(func() { _ = st.Close() })
 	fin := st.GetFinalizationData()
 
 	swagger, err := api.GetSwagger()
@@ -108,17 +110,19 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(echomiddleware.OapiRequestValidator(swagger))
-	// Add http error handler to return a proper error JSON on request error
-	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
-		_ = ctx.JSON(http.StatusInternalServerError, map[string]any{"message": err.Error()})
-	}
-
 	c := common.DefaultConfig()
 	c.TotalYieldSavingInterval = uint64(*yield_saving_interval)
 	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
 	c.SyncQueueLimit = uint64(*sync_queue_limit)
 	c.ChainStatsInterval = *chain_stats_interval
+	c.AuthUsername = *auth_username
+	c.AuthPassword = *auth_password
+
+	// Setup OpenAPI authentication
+	auth.SetupOpenAPIAuth(e, swagger, auth.Config{
+		Username: c.AuthUsername,
+		Password: c.AuthPassword,
+	})
 
 	log.WithFields(log.Fields{"pbft_count": fin.PbftCount, "dag_count": fin.DagCount, "trx_count": fin.TrxCount}).Info("Loaded db with")
 	chainStats := chain.MakeStats(c.ChainStatsInterval)

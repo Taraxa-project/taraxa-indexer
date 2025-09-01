@@ -16,7 +16,7 @@ import (
 
 func TestGetter(t *testing.T) {
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	addr := storage.MakeEmptyAddressStats("test")
 	if err := st.addToDBTest(addr, addr.Address, 0); err != nil {
@@ -34,7 +34,7 @@ func TestGetter(t *testing.T) {
 
 func TestGetObjects(t *testing.T) {
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	sender := "user"
 	count := uint64(100)
@@ -72,7 +72,7 @@ func TestGetObjects(t *testing.T) {
 
 func TestGetPaginatedWeekStats(t *testing.T) {
 	stor := NewStorage("")
-	defer stor.Close()
+	defer func() { _ = stor.Close() }()
 
 	tn, _ := goment.New()
 	weekStats := stor.GetWeekStats(int32(tn.ISOWeekYear()), int32(tn.ISOWeek()))
@@ -109,24 +109,24 @@ func TestStorage(t *testing.T) {
 		if err := storage.addToDBTest(addr, addr.Address, 0); err != nil {
 			t.Error(err)
 		}
-		storage.Close()
+		_ = storage.Close()
 	}
 	{
 		storage := NewStorage("/tmp/test")
-		defer storage.Close()
+		defer func() { _ = storage.Close() }()
 		ret := storage.GetAddressStats("test")
 		if !ret.IsEqual(addr) {
 			t.Error("Broken DB")
 		}
 	}
-	os.Remove("/tmp/test")
+	_ = os.Remove("/tmp/test")
 }
 
 func TestCleanStorage(t *testing.T) {
 	stats := storage.MakeEmptyAddressStats("test")
 	stats.PbftCount = 1
 	st := NewStorage("/tmp/test")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	if err := st.addToDBTest(stats, stats.Address, 0); err != nil {
 		t.Error(err)
@@ -140,13 +140,13 @@ func TestCleanStorage(t *testing.T) {
 
 	if err == nil {
 		t.Error("Clean DB does not work")
-		os.Remove("/tmp/test")
+		_ = os.Remove("/tmp/test")
 	}
 }
 
 func TestBatch(t *testing.T) {
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	addr := storage.MakeEmptyAddressStats("test")
 	batch := st.NewBatch()
@@ -169,7 +169,7 @@ func TestBatch(t *testing.T) {
 
 func TestAccountsBatch(t *testing.T) {
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	accounts := storage.MakeAccountBalancesMap()
 	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
 	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
@@ -193,7 +193,7 @@ func TestAccountsBatch(t *testing.T) {
 
 func TestTxByHash(t *testing.T) {
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	tx := models.Transaction{
 		Hash:  "0x111111",
@@ -233,7 +233,7 @@ func fillTransactions(st *Storage, address string, count uint64) {
 
 func TestForEach(t *testing.T) {
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	fillTransactions(st, "test", 100)
 
@@ -251,7 +251,7 @@ func TestForEach(t *testing.T) {
 
 func TestForEachBackwards(t *testing.T) {
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	count := uint64(100)
 	fillTransactions(st, "test", count)
 
@@ -271,7 +271,7 @@ func TestForEachBackwards(t *testing.T) {
 func TestWasAccountActive(t *testing.T) {
 	address := "0x123"
 	db := NewStorage(t.TempDir())
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	batch := db.NewBatch()
 	batch.Add(&models.Transaction{
@@ -289,7 +289,7 @@ func TestWasAccountActive(t *testing.T) {
 func TestReceivedTransactionsCount(t *testing.T) {
 	address := "0x123"
 	db := NewStorage(t.TempDir())
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	batch := db.NewBatch()
 	i := uint64(1)
