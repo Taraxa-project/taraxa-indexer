@@ -123,9 +123,10 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 
 	bc.accounts.AddToBalance(common.DposContractAddress, totalReward)
 
-	if bc.Block.Pbft.Number%1000 == 0 {
-		bc.checkIndexedBalances()
-	}
+	// disable balance check for now as it's taking too long
+	// if bc.Block.Pbft.Number%1000 == 0 {
+	// 	bc.checkIndexedBalances()
+	// }
 
 	bc.dayStats.AddBlock(bc.Block.Pbft)
 	bc.Batch.AddDayStats(bc.dayStats)
