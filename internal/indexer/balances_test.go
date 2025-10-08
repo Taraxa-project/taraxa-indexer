@@ -6,15 +6,18 @@ import (
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	"github.com/Taraxa-project/taraxa-indexer/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateBalancesInternal(t *testing.T) {
 	// Prepare test data
-	accounts := storage.MakeAccountBalancesMap()
-	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
-	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
+	accounts := storage.MakeAddressStatsMap()
+	testStorage := pebble.NewStorage("")
+
+	accounts.AddToBalance(testStorage, "0x1111111111111111111111111111111111111111", big.NewInt(100))
+	accounts.AddToBalance(testStorage, "0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 
 	trx := models.Transaction{
 		From:    "0x1111111111111111111111111111111111111111",
@@ -23,7 +26,7 @@ func TestUpdateBalancesInternal(t *testing.T) {
 		Value:   "20",
 	}
 
-	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
+	accounts.UpdateBalances(testStorage, trx.From, trx.To, trx.Value)
 
 	// Validate the updated balances
 	{
@@ -39,9 +42,10 @@ func TestUpdateBalancesInternal(t *testing.T) {
 
 func TestUpdateBalances(t *testing.T) {
 	// Prepare test data
-	accounts := storage.MakeAccountBalancesMap()
-	accounts.AddToBalance("0x1111111111111111111111111111111111111111", big.NewInt(100))
-	accounts.AddToBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
+	addresses := storage.MakeAddressStatsMap()
+	testStorage := pebble.NewStorage("")
+	addresses.AddToBalance(testStorage, "0x1111111111111111111111111111111111111111", big.NewInt(100))
+	addresses.AddToBalance(testStorage, "0x0DC0d841F962759DA25547c686fa440cF6C28C61", big.NewInt(50))
 
 	trx := &common.Transaction{
 		Logs: []common.EventLog{{
@@ -75,8 +79,8 @@ func TestUpdateBalances(t *testing.T) {
 	}
 
 	// Invoke the method
-	accounts.UpdateBalances(trx.From, trx.To, trx.Value)
-	err := accounts.UpdateEvents(trx.ExtractLogs())
+	addresses.UpdateBalances(testStorage, trx.From, trx.To, trx.Value)
+	err := addresses.UpdateEvents(testStorage, trx.ExtractLogs())
 
 	if err != nil {
 		t.Error("UpdateBalances failed to update balances correctly. Error: ", err)
@@ -84,13 +88,13 @@ func TestUpdateBalances(t *testing.T) {
 
 	// Validate the updated balances
 	{
-		balance := accounts.GetBalance("0x1111111111111111111111111111111111111111")
+		balance := addresses.GetBalance("0x1111111111111111111111111111111111111111")
 		if balance == nil || balance.Cmp(big.NewInt(70)) != 0 {
 			t.Error("UpdateBalances failed to update 'from' balance correctly. Should be 70 but is ", balance.String())
 		}
 	}
 	{
-		balance := accounts.GetBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61")
+		balance := addresses.GetBalance("0x0DC0d841F962759DA25547c686fa440cF6C28C61")
 		bigInt, _ := big.NewInt(0).SetString("12079862109893161818", 10)
 		if balance == nil || balance.Cmp(bigInt) != 0 {
 			t.Error("UpdateBalances failed to update 'to' balance correctly. Should be 12079862109893161818 but is ", balance.String())

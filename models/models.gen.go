@@ -20,7 +20,9 @@ const (
 // Account defines model for Account.
 type Account struct {
 	Address Address `json:"address"`
-	Balance string  `json:"balance"`
+
+	// Balance Big integer represented as string to avoid precision loss
+	Balance BigInt `json:"balance"`
 }
 
 // Address defines model for Address.
@@ -28,6 +30,9 @@ type Address = string
 
 // AddressFilter defines model for AddressFilter.
 type AddressFilter = Address
+
+// BigInt Big integer represented as string to avoid precision loss
+type BigInt = string
 
 // CallData defines model for CallData.
 type CallData struct {

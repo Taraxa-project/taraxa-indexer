@@ -53,8 +53,10 @@ func (b *Batch) UpdateWeekStats(w storage.WeekStats) {
 	}
 }
 
-func (b *Batch) SaveAccounts(a *storage.AccountBalancesMap) {
-	b.AddSingleKey(a.SortedSlice(), "")
+func (b *Batch) SaveHoldersLeaderboard(a storage.Accounts) {
+	count_to_save := common.Min(10000, len(a.Accounts))
+	a.Accounts = a.Accounts[:count_to_save]
+	b.AddSingleKey(a, "")
 }
 
 func (b *Batch) AddDailyContractUsers(address string, timestamp uint64, users *storage.DailyContractUsers) {

@@ -10,20 +10,18 @@ import (
 )
 
 type Genesis struct {
-	storage  storage.Storage
-	genesis  common.GenesisObject
-	bc       blockContext
-	hash     string
-	accounts *storage.AccountBalancesMap
+	storage storage.Storage
+	genesis common.GenesisObject
+	bc      blockContext
+	hash    string
 }
 
-func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObject, genesisHash storage.GenesisHash, accounts *storage.AccountBalancesMap, dayStats *storage.DayStatsWithTimestamp) *Genesis {
+func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObject, genesisHash storage.GenesisHash, dayStats *storage.DayStatsWithTimestamp) *Genesis {
 	var genesis Genesis
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
-	genesis.accounts = accounts
-	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()}, accounts, dayStats)
+	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()}, dayStats)
 
 	return &genesis
 }
@@ -46,19 +44,19 @@ func (g *Genesis) process() {
 		g.bc.SaveTransaction(trx, false)
 		value := common.ParseStringToBigInt(trx.Value)
 		genesisSupply.Add(genesisSupply, value)
-		g.accounts.AddToBalance(trx.To, value)
+		g.bc.addressStats.AddToBalance(g.bc.Storage, trx.To, value)
+		// g.accounts.AddToBalance(trx.To, value)
 	}
 	for _, validator := range g.genesis.Dpos.InitialValidators {
 		for addr, value := range validator.Delegations {
 			delegation := common.ParseStringToBigInt(value)
-			g.accounts.AddToBalance(addr, big.NewInt(0).Neg(delegation))
-			g.accounts.AddToBalance(common.DposContractAddress, delegation)
+			g.bc.addressStats.AddToBalance(g.bc.Storage, addr, big.NewInt(0).Neg(delegation))
+			g.bc.addressStats.AddToBalance(g.bc.Storage, common.DposContractAddress, delegation)
 		}
 	}
 	log.WithField("count", len(g.genesis.InitialBalances)).Info("Genesis: Init balance transactions parsed")
 
 	// Genesis transactions isn't real transactions, so don't count it here
-	g.bc.Batch.SaveAccounts(g.accounts)
 	g.bc.finalized.TrxCount = 0
 	g.bc.Batch.SetGenesisHash(storage.GenesisHash(g.hash))
 	g.bc.Batch.SetTotalSupply(genesisSupply)

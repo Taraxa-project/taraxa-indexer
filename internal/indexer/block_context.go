@@ -10,6 +10,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/metrics"
 	"github.com/Taraxa-project/taraxa-indexer/internal/rewards"
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/nleeper/goment"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,19 +21,17 @@ type blockContext struct {
 	Config             *common.Config
 	Client             common.Client
 	Block              *chain.BlockData
-	accounts           *storage.AccountBalancesMap
 	addressStats       *storage.AddressStatsMap
 	finalized          *common.FinalizationData
 	dayStats           *storage.DayStatsWithTimestamp
 	dailyContractUsers map[string]*storage.DailyContractUsers // key: contract_address
 }
 
-func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, accounts *storage.AccountBalancesMap, dayStats *storage.DayStatsWithTimestamp) *blockContext {
+func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, dayStats *storage.DayStatsWithTimestamp) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
 	bc.Config = config
-	bc.accounts = accounts
 	bc.addressStats = storage.MakeAddressStatsMap()
 	bc.finalized = s.GetFinalizationData()
 	bc.Client = client
@@ -117,20 +116,22 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 	// add total fee to the dpos contract balance after the magnolia hardfork(it is added to block producers commission pools)
 	if bc.Config.Chain != nil && (bc.Block.Pbft.Number >= bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
 		if blockFee != nil && blockFee.Cmp(big.NewInt(0)) > 0 {
-			bc.accounts.AddToBalance(common.DposContractAddress, blockFee)
+			bc.addressStats.AddToBalance(bc.Storage, common.DposContractAddress, blockFee)
 		}
 	}
 
-	bc.accounts.AddToBalance(common.DposContractAddress, totalReward)
+	bc.addressStats.AddToBalance(bc.Storage, common.DposContractAddress, totalReward)
 
 	// disable balance check for now as it's taking too long
 	// if bc.Block.Pbft.Number%1000 == 0 {
 	// 	bc.checkIndexedBalances()
 	// }
+	if bc.Block.Pbft.Number%5000 == 0 {
+		bc.SaveHoldersLeaderboard()
+	}
 
 	bc.dayStats.AddBlock(bc.Block.Pbft)
 	bc.Batch.AddDayStats(bc.dayStats)
-	bc.Batch.SaveAccounts(bc.accounts)
 
 	dags_count = uint64(len(bc.Block.Dags))
 	trx_count = uint64(len(bc.Block.Transactions))
@@ -150,28 +151,49 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 	return
 }
 
-func (bc *blockContext) checkIndexedBalances() {
-	if bc.accounts.GetLength() == 0 {
-		log.Fatal("checkIndexedBalances: No balances in the storage, something is wrong")
-	}
-	tp := common.MakeThreadPool()
-	for a, b := range bc.accounts.GetAccounts() {
-		address := a
-		balance := b
-		tp.Go(func() {
-			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.Block.Pbft.Number)
-			if get_err != nil {
-				log.WithError(get_err).WithField("address", address).Warn("GetBalanceAtBlock error for address")
-				return
-			}
-			chain_balance := common.ParseStringToBigInt(b)
-			if balance.Cmp(chain_balance) != 0 {
-				log.WithFields(log.Fields{"address": address, "balance": balance, "chain_balance": chain_balance}).Error("Balance check failed")
-			}
-		})
-	}
-	tp.Wait()
+func (bc *blockContext) SaveHoldersLeaderboard() {
+	accounts := storage.MakeAccountBalancesMap()
+	start := time.Now()
+	stats := storage.AddressStats{}
+	bc.Storage.ForEach(&stats, "", nil, storage.Forward, func(key, res []byte) (stop bool) {
+		err := rlp.DecodeBytes(res, &stats)
+		if err != nil {
+			log.WithError(err).Fatal("storage.ForEach failed")
+		}
+		// skip zero balances
+		if stats.Balance.Cmp(big.NewInt(0)) == 0 {
+			return false
+		}
+		accounts.Set(stats.Address, stats.Balance)
+		return false
+	})
+	log.WithFields(log.Fields{"time": time.Since(start)}).Info("Iterate over address stats for leaderboard")
+	bc.Batch.SaveHoldersLeaderboard(accounts.Sorted())
+	log.WithFields(log.Fields{"time": time.Since(start)}).Info("Saved holders leaderboard")
 }
+
+// func (bc *blockContext) checkIndexedBalances() {
+// 	if bc.accounts.GetLength() == 0 {
+// 		log.Fatal("checkIndexedBalances: No balances in the storage, something is wrong")
+// 	}
+// 	tp := common.MakeThreadPool()
+// 	for a, b := range bc.accounts.GetAccounts() {
+// 		address := a
+// 		balance := b
+// 		tp.Go(func() {
+// 			b, get_err := bc.Client.GetBalanceAtBlock(address, bc.Block.Pbft.Number)
+// 			if get_err != nil {
+// 				log.WithError(get_err).WithField("address", address).Warn("GetBalanceAtBlock error for address")
+// 				return
+// 			}
+// 			chain_balance := common.ParseStringToBigInt(b)
+// 			if balance.Cmp(chain_balance) != 0 {
+// 				log.WithFields(log.Fields{"address": address, "balance": balance, "chain_balance": chain_balance}).Error("Balance check failed")
+// 			}
+// 		})
+// 	}
+// 	tp.Wait()
+// }
 
 func (bc *blockContext) updateValidatorStats(block *common.Block) {
 	tn, _ := goment.Unix(int64(block.Timestamp))

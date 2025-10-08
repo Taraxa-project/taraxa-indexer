@@ -535,6 +535,10 @@ components:
       # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
       x-oapi-codegen-extra-tags:
         rlp: "nil"
+    BigInt:
+      type: string
+      description: "Big integer represented as string to avoid precision loss"
+      example: "123456789012345678901234567890"
     Week:
       type: object
       properties:
@@ -575,8 +579,7 @@ components:
         address:
           $ref: "#/components/schemas/Address"
         balance:
-          type: string
-          example: "0"
+          $ref: "#/components/schemas/BigInt"
     Period:
       type: object
       required:
