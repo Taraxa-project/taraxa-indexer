@@ -12,7 +12,7 @@ import (
 func TestBatch_AddDailyContractUsers(t *testing.T) {
 	// Create test storage
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contractAddress := "0x1111111111111111111111111111111111111111"
 	timestamp := uint64(time.Now().Unix())
@@ -40,7 +40,7 @@ func TestBatch_AddDailyContractUsers(t *testing.T) {
 func TestBatch_AddDailyContractUsers_EmptyUsers(t *testing.T) {
 	// Create test storage
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contractAddress := "0x1111111111111111111111111111111111111111"
 	timestamp := common.DayStart(uint64(time.Now().Unix()))
@@ -62,7 +62,7 @@ func TestBatch_AddDailyContractUsers_EmptyUsers(t *testing.T) {
 func TestBatch_AddDailyContractUsers_DuplicateUsers(t *testing.T) {
 	// Create test storage
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contractAddress := "0x1111111111111111111111111111111111111111"
 	timestamp := common.DayStart(uint64(time.Now().Unix()))
@@ -92,7 +92,7 @@ func TestBatch_AddDailyContractUsers_DuplicateUsers(t *testing.T) {
 func TestBatch_AddDailyContractUsers_MultipleContracts(t *testing.T) {
 	// Create test storage
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contract1 := "0x1111111111111111111111111111111111111111"
 	contract2 := "0x2222222222222222222222222222222222222222"
@@ -132,7 +132,7 @@ func TestBatch_AddDailyContractUsers_MultipleContracts(t *testing.T) {
 func TestBatch_AddDailyContractUsers_MultipleDays(t *testing.T) {
 	// Create test storage
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contractAddress := "0x1111111111111111111111111111111111111111"
 	baseTimestamp := common.DayStart(uint64(time.Now().Unix()))
@@ -173,7 +173,7 @@ func TestBatch_AddDailyContractUsers_MultipleDays(t *testing.T) {
 func TestBatch_AddDailyContractUsers_Overwrite(t *testing.T) {
 	// Create test storage
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contractAddress := "0x1111111111111111111111111111111111111111"
 	timestamp := common.DayStart(uint64(time.Now().Unix()))
@@ -214,7 +214,7 @@ func TestBatch_AddDailyContractUsers_Overwrite(t *testing.T) {
 func TestStorage_GetDailyContractUsers_NotFound(t *testing.T) {
 	// Create test storage
 	st := NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contractAddress := "0x1111111111111111111111111111111111111111"
 	timestamp := common.DayStart(uint64(time.Now().Unix()))

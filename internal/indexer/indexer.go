@@ -16,7 +16,6 @@ type Indexer struct {
 	retry_time                  time.Duration
 	consistency_check_available bool
 	stats                       *chain.Stats
-	accounts                    *storage.AccountBalancesMap
 	dayStats                    *storage.DayStatsWithTimestamp
 	lastBlockTimestamp          uint64
 }
@@ -36,7 +35,6 @@ func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats
 	i.storage = s
 	i.config = c
 	i.stats = stats
-	i.accounts = s.GetAccounts().ToMap()
 	i.client = client
 	i.retry_time = retry_time
 
@@ -83,7 +81,7 @@ func (i *Indexer) init() {
 
 	// Process genesis if db is clean
 	if db_clean {
-		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash, i.accounts, i.dayStats)
+		genesis := MakeGenesis(i.storage, i.client, chain_genesis, remote_hash, i.dayStats)
 		// Genesis hash and finalized period(0) is set inside
 		log.Info("Processing genesis")
 		genesis.process()
@@ -101,7 +99,7 @@ func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint
 	if i.dayStats == nil {
 		i.initDayStats(bd.Pbft)
 	}
-	bc := MakeBlockContext(i.storage, i.client, i.config, i.accounts, i.dayStats)
+	bc := MakeBlockContext(i.storage, i.client, i.config, i.dayStats)
 	dc, tc, err := bc.process(bd, i.stats)
 	if err != nil {
 		return nil, 0, 0, err

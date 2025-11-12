@@ -45,8 +45,7 @@ paths:
                       allOf:
                         - $ref: "#/components/schemas/HoldersPaginatedResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /totalSupply:
     get:
       tags:
@@ -67,8 +66,7 @@ paths:
                     type: string
                     example: "1234567890"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /totalYield:
     get:
       tags:
@@ -89,8 +87,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/YieldResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /validators:
     get:
       tags:
@@ -112,8 +109,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/ValidatorsPaginatedResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /validators/total:
     get:
       tags:
@@ -133,8 +129,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/CountResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /validators/{address}:
     get:
       tags:
@@ -155,8 +150,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Validator"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /address/{address}/stats:
     get:
       tags:
@@ -176,8 +170,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/StatsResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /address/{address}/transactions:
     get:
       tags:
@@ -199,8 +192,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/TransactionsPaginatedResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /address/{address}/dags:
     get:
       tags:
@@ -222,8 +214,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/DagsPaginatedResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /address/{address}/pbfts:
     get:
       tags:
@@ -245,8 +236,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/PbftsPaginatedResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /address/{address}/yield:
     get:
       tags:
@@ -268,8 +258,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/YieldResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /address/{address}/yieldForInterval:
     get:
       tags:
@@ -303,8 +292,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/YieldResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /transaction/{hash}:
     get:
       tags:
@@ -325,8 +313,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/Transaction"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /transaction/{hash}/internal_transactions:
     get:
       tags:
@@ -347,8 +334,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/InternalTransactionsResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /transaction/{hash}/logs:
     get:
       tags:
@@ -369,8 +355,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/TransactionLogsResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /chainStats:
     get:
       tags:
@@ -388,8 +373,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ChainStats"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /monthlyActiveAddresses:
     get:
       tags:
@@ -398,6 +382,8 @@ paths:
       description: |
         Returns the number of active addresses for the selected month
       operationId: "getMonthlyActiveAddresses"
+      security:
+        - basicAuth: []
       parameters:
         - $ref: "#/components/parameters/dateParam"
       responses:
@@ -410,8 +396,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/MonthlyActiveAddressesResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /monthlyStats:
     get:
       tags:
@@ -420,6 +405,8 @@ paths:
       description: |
         Returns the number of active addresses for the selected month
       operationId: "getMonthlyStats"
+      security:
+        - basicAuth: []
       parameters:
         - $ref: "#/components/parameters/dateParam"
       responses:
@@ -432,8 +419,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/MonthlyStatsResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
   /contractStats:
     get:
       tags:
@@ -442,6 +428,8 @@ paths:
       description: |
         Returns the number of active addresses for the selected month for contracts
       operationId: "getContractStats"
+      security:
+        - basicAuth: []
       parameters:
         - $ref: "#/components/parameters/fromDateParam"
         - $ref: "#/components/parameters/toDateParam"
@@ -454,9 +442,33 @@ paths:
               schema:
                 allOf:
                   - $ref: "#/components/schemas/ContractStatsResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
         default:
+          $ref: "#/components/responses/UnexpectedError"
+  /contracts:
+    get:
+      tags:
+        - Contracts
+      summary: "Returns all contract addresses"
+      description: |
+        Returns a list of all contract addresses registered on the chain
+      operationId: "getContracts"
+      security:
+        - basicAuth: []
+      responses:
+        "200":
           description: |
-            Unexpected error
+            A JSON array containing all contract addresses
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ContractsResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        default:
+          $ref: "#/components/responses/UnexpectedError"
   /monthlyAverageDailyActiveWallets/{address}:
     get:
       tags:
@@ -465,6 +477,8 @@ paths:
       description: |
         Returns the average daily active wallets for the selected month
       operationId: "getMonthlyAverageDailyActiveWallets"
+      security:
+        - basicAuth: []
       parameters:
         - $ref: "#/components/parameters/addressParam"
         - $ref: "#/components/parameters/dateParam"
@@ -478,8 +492,7 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/MonthlyAverageDailyActiveWalletsResponse"
         default:
-          description: |
-            Unexpected error
+          $ref: "#/components/responses/UnexpectedError"
 components:
   schemas:
     ChainStats:
@@ -522,6 +535,10 @@ components:
       # for optional values we should also specify extra rlp tag as below. this extras don't working with $refs
       x-oapi-codegen-extra-tags:
         rlp: "nil"
+    BigInt:
+      type: string
+      description: "Big integer represented as string to avoid precision loss"
+      example: "123456789012345678901234567890"
     Week:
       type: object
       properties:
@@ -562,8 +579,7 @@ components:
         address:
           $ref: "#/components/schemas/Address"
         balance:
-          type: string
-          example: "0"
+          $ref: "#/components/schemas/BigInt"
     Period:
       type: object
       required:
@@ -910,6 +926,14 @@ components:
           $ref: "#/components/schemas/Timestamp"
         transactionsCount:
           $ref: "#/components/schemas/Counter"
+    ContractsResponse:
+      required:
+        - contracts
+      properties:
+        contracts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
     MonthlyAverageDailyActiveWalletsResponse:
       required:
         - count
@@ -1008,3 +1032,15 @@ components:
         Addresses
       schema:
         $ref: "#/components/schemas/Address"
+  responses:
+    UnauthorizedError:
+      description: |
+        Unauthorized - Invalid or missing authentication credentials
+    UnexpectedError:
+      description: |
+        Unexpected error
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: "HTTP Basic Authentication with username and password"

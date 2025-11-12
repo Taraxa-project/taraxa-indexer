@@ -89,9 +89,9 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagina
 	holders := s.GetAccounts()
 	pagination = new(models.PaginatedResponse)
 	pagination.Start = from
-	pagination.Total = uint64(len(holders))
+	pagination.Total = uint64(holders.Total)
 	end := from + count
-	pagination.HasNext = (end < pagination.Total)
+	pagination.HasNext = (end < uint64(len(holders.Accounts)))
 	if end > pagination.Total {
 		end = pagination.Total
 	}
@@ -99,7 +99,7 @@ func GetHoldersPage(s Storage, from, count uint64) (ret []models.Account, pagina
 
 	ret = make([]models.Account, 0, count)
 	for i := from; i < end; i++ {
-		ret = append(ret, holders[i].ToModel())
+		ret = append(ret, holders.Accounts[i].ToModel())
 	}
 	return
 }

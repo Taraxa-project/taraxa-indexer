@@ -15,8 +15,7 @@ func prepareBlockContext(timestamp uint64, contractAddresses []string) *blockCon
 	st := pebble.NewStorage("")
 	dayStats := storage.MakeDayStatsWithTimestamp(common.DayStart(timestamp))
 	config := &common.Config{}
-	accounts := storage.MakeAccountBalancesMap()
-	bc := MakeBlockContext(st, nil, config, accounts, dayStats)
+	bc := MakeBlockContext(st, nil, config, dayStats)
 
 	// Create mock block data with the specified timestamp
 	bd := &chain.BlockData{

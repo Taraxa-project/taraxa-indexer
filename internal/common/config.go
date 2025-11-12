@@ -109,6 +109,9 @@ type Config struct {
 	ValidatorsYieldSavingInterval uint64
 	SyncQueueLimit                uint64
 	ChainStatsInterval            int
+	// Auth credentials for protected endpoints
+	AuthUsername string
+	AuthPassword string
 }
 
 func (c *Config) IsEligible(stake *big.Int) bool {

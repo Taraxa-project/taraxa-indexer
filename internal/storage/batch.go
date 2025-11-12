@@ -8,7 +8,7 @@ type Batch interface {
 	SetFinalizationData(f *common.FinalizationData)
 	SetGenesisHash(h GenesisHash)
 	UpdateWeekStats(w WeekStats)
-	SaveAccounts(a *AccountBalancesMap)
+	SaveHoldersLeaderboard(a Accounts)
 	AddDailyContractUsers(address string, timestamp uint64, users *DailyContractUsers)
 	Add(o any, key1 string, key2 uint64)
 	AddDayStats(d *DayStatsWithTimestamp)

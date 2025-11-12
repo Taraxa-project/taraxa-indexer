@@ -20,6 +20,8 @@ const DposContractAddress = "0x00000000000000000000000000000000000000fe"
 const Day = 24 * 60 * 60
 const Days30 = 30 * Day
 
+var TARA = big.NewInt(1e18)
+
 // isn't creating threads, but limiting goroutines count. Mostly used for RPC and db related tasks
 func MakeThreadPool() pool.Pool {
 	return pool.New(uint(runtime.NumCPU()))

@@ -74,10 +74,10 @@ func (b *DagBlock) UnmarshalJSON(data []byte) error {
 	b.Sender = rawStruct.Sender
 	b.Transactions = rawStruct.Transactions
 
-	b.Dag.Hash = rawStruct.Hash
-	b.Dag.Level = ParseUInt(rawStruct.Level)
-	b.Dag.Timestamp = ParseUInt(rawStruct.Timestamp)
-	b.Dag.TransactionCount = uint64(len(b.Transactions))
+	b.Hash = rawStruct.Hash
+	b.Level = ParseUInt(rawStruct.Level)
+	b.Timestamp = ParseUInt(rawStruct.Timestamp)
+	b.TransactionCount = uint64(len(b.Transactions))
 	b.Vdf.Difficulty = uint16(ParseUInt(rawStruct.Vdf.Difficulty))
 
 	return nil

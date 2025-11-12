@@ -26,7 +26,7 @@ func (bc *blockContext) processTransactions() (err error) {
 		trx_fee := bc.Block.Transactions[t_idx].GetFee()
 		feeReward.Add(feeReward, trx_fee)
 		// Remove fee from sender balance
-		bc.accounts.AddToBalance(bc.Block.Transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
+		bc.addressStats.AddToBalance(bc.Storage, bc.Block.Transactions[t_idx].From, big.NewInt(0).Neg(trx_fee))
 		err = bc.processTransaction(t_idx)
 		if err != nil {
 			return
@@ -36,7 +36,7 @@ func (bc *blockContext) processTransactions() (err error) {
 	log.WithFields(log.Fields{"func": "scheduleTransactions", "period": bc.Block.Pbft.Number, "elapsed": elapsed_tp}).Debug("Schedule transactions time")
 	// add total fee to the block producer balance before the magnolia hardfork
 	if bc.Config.Chain != nil && (bc.Block.Pbft.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
-		bc.accounts.AddToBalance(bc.Block.Pbft.Author, feeReward)
+		bc.addressStats.AddToBalance(bc.Storage, bc.Block.Pbft.Author, feeReward)
 	}
 	elapsed := time.Since(start)
 	log.WithFields(log.Fields{"func": "processTransactions", "elapsed": elapsed}).Debug("Process transactions time")
@@ -58,7 +58,7 @@ func (bc *blockContext) processTransaction(t_idx int) (err error) {
 	if receiver == "" {
 		receiver = trx.ContractAddress
 	}
-	bc.accounts.UpdateBalances(trx.From, receiver, trx.Value)
+	bc.addressStats.UpdateBalances(bc.Storage, trx.From, receiver, trx.Value)
 
 	bc.addContractUser(trx.From, receiver)
 
@@ -94,7 +94,7 @@ func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transac
 
 		bc.SaveTransaction(internal, true)
 		if entry.Action.CallType != "delegatecall" {
-			bc.accounts.UpdateBalances(internal.From, internal.To, internal.Value)
+			bc.addressStats.UpdateBalances(bc.Storage, internal.From, internal.To, internal.Value)
 		}
 	}
 	return

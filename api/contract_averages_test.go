@@ -14,7 +14,7 @@ import (
 func TestApiHandler_calculateContract30DayAverage(t *testing.T) {
 	// Create test storage
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -30,7 +30,7 @@ func TestApiHandler_calculateContract30DayAverage(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_WithData(t *testing.T) {
 	// Create test storage
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -68,7 +68,7 @@ func TestApiHandler_calculateContract30DayAverage_WithData(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_NoDataDays(t *testing.T) {
 	// Create test storage
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -107,7 +107,7 @@ func TestApiHandler_calculateContract30DayAverage_NoDataDays(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_EmptyDays(t *testing.T) {
 	// Create test storage
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -142,7 +142,7 @@ func TestApiHandler_calculateContract30DayAverage_EmptyDays(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_MixedData(t *testing.T) {
 	// Create test storage
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -220,7 +220,7 @@ func TestApiHandler_calculateContract30DayAverage_MixedData(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_RecentActivity(t *testing.T) {
 	// Test scenario where most activity is recent
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -257,7 +257,7 @@ func TestApiHandler_calculateContract30DayAverage_RecentActivity(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_OldActivity(t *testing.T) {
 	// Test scenario where most activity is old
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -294,7 +294,7 @@ func TestApiHandler_calculateContract30DayAverage_OldActivity(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_SingleDayHigh(t *testing.T) {
 	// Test scenario with one day of very high activity
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -327,7 +327,7 @@ func TestApiHandler_calculateContract30DayAverage_SingleDayHigh(t *testing.T) {
 func TestApiHandler_calculateContract30DayAverage_GradualIncrease(t *testing.T) {
 	// Test scenario with gradually increasing activity
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -366,7 +366,7 @@ func TestApiHandler_calculateContract30DayAverage_GradualIncrease(t *testing.T) 
 func TestApiHandler_calculateContract30DayAverage_MultipleContracts(t *testing.T) {
 	// Test with multiple contracts to ensure isolation
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	config := &common.Config{}
 	handler := NewApiHandler(st, config, nil)
@@ -421,7 +421,7 @@ func makeTestAddress(i int) string {
 func TestDailyContractUsers_Integration(t *testing.T) {
 	// Test the integration between DailyContractUsers and storage
 	st := pebble.NewStorage("")
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	contractAddress := "0x1111111111111111111111111111111111111111"
 	timestamp := common.DayStart(uint64(time.Now().Unix()))

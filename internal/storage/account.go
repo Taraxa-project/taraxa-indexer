@@ -3,12 +3,8 @@ package storage
 import (
 	"math/big"
 	"sort"
-	"strings"
 
-	"github.com/Taraxa-project/taraxa-indexer/internal/common"
-	"github.com/Taraxa-project/taraxa-indexer/internal/events"
 	"github.com/Taraxa-project/taraxa-indexer/models"
-	log "github.com/sirupsen/logrus"
 )
 
 type Account struct {
@@ -23,13 +19,16 @@ func (a *Account) ToModel() models.Account {
 	}
 }
 
-type Accounts []Account
+type Accounts struct {
+	Accounts []Account `json:"accounts"`
+	Total    uint64    `json:"total"`
+}
 
 func (a Accounts) ToMap() *AccountBalancesMap {
 	am := &AccountBalancesMap{
 		accounts: make(map[string]*big.Int),
 	}
-	for _, account := range a {
+	for _, account := range a.Accounts {
 		am.accounts[account.Address] = account.Balance
 	}
 	return am
@@ -53,58 +52,27 @@ func (am *AccountBalancesMap) GetLength() int {
 	return len(am.accounts)
 }
 
-func (am *AccountBalancesMap) toSlice() Accounts {
-	slice := make(Accounts, 0, len(am.accounts))
+func (am *AccountBalancesMap) ToSlice() Accounts {
+	slice := make([]Account, 0, len(am.accounts))
 	for address, balance := range am.accounts {
 		slice = append(slice, Account{Address: address, Balance: balance})
 	}
-	return slice
+	return Accounts{Accounts: slice, Total: uint64(len(am.accounts))}
 }
 
-func (am *AccountBalancesMap) SortedSlice() Accounts {
-	sl := am.toSlice()
-	sort.Slice(sl, func(i, j int) bool {
-		return sl[i].Balance.Cmp(sl[j].Balance) == 1
+func (am *AccountBalancesMap) Sorted() Accounts {
+	sl := am.ToSlice()
+	sort.Slice(sl.Accounts, func(i, j int) bool {
+		return sl.Accounts[i].Balance.Cmp(sl.Accounts[j].Balance) == 1
 	})
 	return sl
 }
 
 func (am *AccountBalancesMap) GetBalance(address string) *big.Int {
-	address = strings.ToLower(address)
 	return am.accounts[address]
 }
 
-func (am *AccountBalancesMap) AddToBalance(address string, value *big.Int) {
-	address = strings.ToLower(address)
-	if _, ok := am.accounts[address]; !ok {
-		am.accounts[address] = big.NewInt(0)
-	}
-	am.accounts[address].Add(am.accounts[address], value)
-	if am.accounts[address].Cmp(big.NewInt(0)) < 0 {
-		log.WithField("address", address).WithField("balance", am.accounts[address].String()).Warn("Balance is negative")
-		am.accounts[address] = big.NewInt(0)
-	}
-}
-
-func (am *AccountBalancesMap) UpdateBalances(from, to, valueStr string) {
-	value, ok := big.NewInt(0).SetString(valueStr, 0)
-
-	if ok && value.Cmp(big.NewInt(0)) > 0 {
-		am.AddToBalance(from, big.NewInt(0).Neg(value))
-		am.AddToBalance(to, value)
-	}
-}
-
-func (am *AccountBalancesMap) UpdateEvents(logs []models.EventLog) error {
-	if len(logs) > 0 {
-		rewardsEvents, err := events.DecodeRewardsTopics(logs)
-		if err != nil {
-			return err
-		}
-		for _, event := range rewardsEvents {
-			am.AddToBalance(common.DposContractAddress, big.NewInt(0).Neg(event.Value))
-			am.AddToBalance(event.Account, event.Value)
-		}
-	}
-	return nil
+func (am *AccountBalancesMap) Set(address string, value *big.Int) {
+	// make a copy!
+	am.accounts[address] = big.NewInt(0).Set(value)
 }

@@ -205,7 +205,7 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 
 func (s *Storage) forEachKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
 	iter := s.find(prefix)
-	defer iter.Close()
+	defer func() { _ = iter.Close() }()
 	if len(start_key) == 0 {
 		start_key = prefix
 	}
@@ -231,7 +231,7 @@ func (s *Storage) ForEach(o any, address string, start *uint64, direction storag
 	prefix := GetPrefixKey(GetPrefix(&o), address)
 
 	iter := s.find(prefix)
-	defer iter.Close()
+	defer func() { _ = iter.Close() }()
 
 	if start == nil {
 		if direction == storage.Backward {

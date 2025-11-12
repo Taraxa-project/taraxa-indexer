@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/Taraxa-project/taraxa-indexer/models"
 )
@@ -25,100 +24,6 @@ func GetTypeName[T any]() string {
 	tt := reflect.TypeOf(t)
 	// Don't include package name in this returned value
 	return strings.Split(tt.String(), ".")[1]
-}
-
-// AddressStats defines the model for an address aggregate.
-type AddressStats struct {
-	models.StatsResponse
-	Address string       `json:"address"`
-	mutex   sync.RWMutex `rlp:"-"`
-}
-
-func MakeEmptyAddressStats(addr string) *AddressStats {
-	data := new(AddressStats)
-	data.Address = addr
-	return data
-}
-
-func (a *AddressStats) RegisterValidatorBlock(blockHeight uint64) {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.ValidatorRegisteredBlock = &blockHeight
-}
-
-func (a *AddressStats) AddTransaction(trx *models.Transaction) uint64 {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.TransactionsCount++
-	if a.Address == trx.From {
-		a.LastTransactionTimestamp = &trx.Timestamp
-	}
-	if a.Address == trx.To && (trx.Type == models.ContractCreation || trx.Type == models.InternalContractCreation) {
-		a.ContractRegisteredTimestamp = &trx.Timestamp
-	}
-	return a.TransactionsCount
-}
-
-func (a *AddressStats) AddPbft(timestamp models.Timestamp) uint64 {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.PbftCount++
-	a.LastPbftTimestamp = &timestamp
-	return a.PbftCount
-}
-
-func (a *AddressStats) AddDag(timestamp models.Timestamp) uint64 {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	a.DagsCount++
-	a.LastDagTimestamp = &timestamp
-	return a.DagsCount
-}
-
-func (a *AddressStats) IsEqual(b *AddressStats) bool {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
-	if a.Address == b.Address && a.TransactionsCount == b.TransactionsCount && a.DagsCount == b.DagsCount && a.PbftCount == b.PbftCount {
-		return true
-	}
-	return false
-}
-
-func (a *AddressStats) IsContract() bool {
-	return a.ContractRegisteredTimestamp != nil
-}
-
-type AddressStatsMap struct {
-	m            sync.RWMutex
-	addressStats map[string]*AddressStats
-}
-
-func (a *AddressStatsMap) AddToBatch(b Batch) {
-	for _, stats := range a.addressStats {
-		b.Add(stats, stats.Address, 0)
-	}
-}
-
-func (a *AddressStatsMap) GetAddress(s Storage, addr string) *AddressStats {
-	addr = strings.ToLower(addr)
-	a.m.Lock()
-	defer a.m.Unlock()
-	stats := a.addressStats[addr]
-	if stats != nil {
-		return stats
-	}
-
-	a.addressStats[addr] = s.GetAddressStats(addr)
-
-	return a.addressStats[addr]
-}
-
-func MakeAddressStatsMap() *AddressStatsMap {
-	return &AddressStatsMap{
-		addressStats: make(map[string]*AddressStats),
-	}
 }
 
 type GenesisHash string
