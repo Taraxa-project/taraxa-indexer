@@ -14,7 +14,7 @@ require (
 	github.com/nleeper/goment v1.4.4
 	github.com/oapi-codegen/echo-middleware v1.0.2
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
-	github.com/oapi-codegen/runtime v1.1.1
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spiretechnology/go-pool v1.0.0
 	github.com/stretchr/testify v1.11.1
