@@ -75,3 +75,8 @@ type RewardsStats struct {
 func FormatIntToKey(i uint64) string {
 	return fmt.Sprintf("%020d", i)
 }
+
+type YieldSaving struct {
+	Time   uint64
+	Period uint64
+}

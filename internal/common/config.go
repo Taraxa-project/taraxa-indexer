@@ -90,6 +90,7 @@ type ChainConfig struct {
 	MaxBlockAuthorReward        *big.Int
 	EligibilityBalanceThreshold *big.Int
 	Hardforks                   HardforksConfig
+	DagGenesisBlock             DagBlock
 }
 
 func DefaultChainConfig() *ChainConfig {
@@ -104,11 +105,9 @@ func DefaultChainConfig() *ChainConfig {
 }
 
 type Config struct {
-	Chain                         *ChainConfig
-	TotalYieldSavingInterval      uint64
-	ValidatorsYieldSavingInterval uint64
-	SyncQueueLimit                uint64
-	ChainStatsInterval            int
+	Chain              *ChainConfig
+	SyncQueueLimit     uint64
+	ChainStatsInterval int
 	// Auth credentials for protected endpoints
 	AuthUsername string
 	AuthPassword string
@@ -123,9 +122,7 @@ func (c *Config) IsEligible(stake *big.Int) bool {
 
 func DefaultConfig() *Config {
 	return &Config{
-		Chain:                         DefaultChainConfig(),
-		TotalYieldSavingInterval:      1000,
-		ValidatorsYieldSavingInterval: 1000,
-		SyncQueueLimit:                10,
+		Chain:          DefaultChainConfig(),
+		SyncQueueLimit: 10,
 	}
 }

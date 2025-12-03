@@ -128,7 +128,8 @@ func TestRewards(t *testing.T) {
 	st := pebble.NewStorage("")
 	block := common.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(5000000 * 4), TotalSupply: big.NewInt(1), Validators: validators_list}
-	r := MakeRewards(st, st.NewBatch(), config, bd)
+	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
+	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
 
 	trxs := makeTransactions(5)
 	dags := makeDags(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
@@ -181,7 +182,8 @@ func TestRewardsWithNodeData(t *testing.T) {
 	// Simulated rewards statistics
 	block := common.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8)), TotalSupply: big.NewInt(1), Validators: validators_list}
-	r := MakeRewards(st, st.NewBatch(), config, bd)
+	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
+	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
 	{
 		rewardsStats := storage.RewardsStats{}
 		rewardsStats.ValidatorsStats = []storage.ValidatorStatsWithAddress{
@@ -337,22 +339,22 @@ func TestYieldsCalculation(t *testing.T) {
 func TestTotalYieldSaving(t *testing.T) {
 	st := pebble.NewStorage("")
 	config := makeTestConfig()
-	config.TotalYieldSavingInterval = 10
 	config.Chain.BlocksPerYear = big.NewInt(100)
-
+	blocks := 10
 	batch := st.NewBatch()
 	// 10% yield per block
 	multiplied_yield := GetMultipliedYield(big.NewInt(10), big.NewInt(1000))
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= blocks; i++ {
 		batch.AddSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
 	}
 	batch.CommitBatch()
 
 	totalStake := big.NewInt(0)
 
-	block := common.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
+	block := common.Block{Pbft: models.Pbft{Number: uint64(blocks), Author: "0x4"}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
-	r := MakeRewards(st, st.NewBatch(), config, bd)
+	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
+	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -363,7 +365,7 @@ func TestTotalYieldSaving(t *testing.T) {
 		})
 		assert.Equal(t, 10, count)
 	}
-	r.processIntervalYield(b)
+	r.processIntervalYield(prevYieldsSaving.Period, b)
 	b.CommitBatch()
 	// check that this data was removed
 	{
@@ -377,19 +379,19 @@ func TestTotalYieldSaving(t *testing.T) {
 
 	// 10% yield per block will be equal to 100% for 10 blocks
 	yield := st.GetTotalYield(10)
-	assert.Equal(t, common.FormatFloat(10*GetYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
+	assert.Equal(t, common.FormatFloat(10*GetYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(blocks))), yield.Yield)
 }
 
 func TestValidatorsYieldSaving(t *testing.T) {
 	st := pebble.NewStorage("")
 	config := makeTestConfig()
-	config.TotalYieldSavingInterval = 10
 	config.Chain.BlocksPerYear = big.NewInt(100)
 
 	batch := st.NewBatch()
+	blocks := 10
 	// 10% yield per block
 	multiplied_yield := GetMultipliedYield(big.NewInt(10), big.NewInt(1000))
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= blocks; i++ {
 		batch.AddSingleKey(storage.MultipliedYield{Yield: multiplied_yield}, storage.FormatIntToKey(uint64(i)))
 	}
 	batch.CommitBatch()
@@ -397,7 +399,8 @@ func TestValidatorsYieldSaving(t *testing.T) {
 
 	block := common.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
-	r := MakeRewards(st, st.NewBatch(), config, bd)
+	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
+	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -408,7 +411,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 		})
 		assert.Equal(t, 10, count)
 	}
-	r.processIntervalYield(b)
+	r.processIntervalYield(prevYieldsSaving.Period, b)
 	b.CommitBatch()
 	// check that this data was removed
 	{
@@ -422,5 +425,5 @@ func TestValidatorsYieldSaving(t *testing.T) {
 
 	// 10% yield per block will be equal to 100% for 10 blocks
 	yield := st.GetTotalYield(10)
-	assert.Equal(t, common.FormatFloat(10*GetYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(config.TotalYieldSavingInterval))), yield.Yield)
+	assert.Equal(t, common.FormatFloat(10*GetYieldForInterval(multiplied_yield, config.Chain.BlocksPerYear, int64(blocks))), yield.Yield)
 }

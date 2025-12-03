@@ -90,7 +90,7 @@ func (bc *blockContext) saveDailyContractUsers() {
 	}
 }
 
-func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_count, trx_count uint64, err error) {
+func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats, prevYieldsSaving *storage.YieldSaving) (dags_count, trx_count uint64, err error) {
 	if (bc.finalized.PbftCount + 1) != bd.Pbft.Number {
 		err = fmt.Errorf("block number mismatch: %d != %d", bc.finalized.PbftCount+1, bd.Pbft.Number)
 		return
@@ -110,7 +110,7 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 
 	totalReward := common.ParseStringToBigInt(bd.Pbft.TotalReward)
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block)
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block, prevYieldsSaving)
 	blockFee := r.Process(totalReward, bc.Block.Dags, bc.Block.Transactions, bc.Block.Votes, bc.Block.Pbft.Author)
 
 	// add total fee to the dpos contract balance after the magnolia hardfork(it is added to block producers commission pools)

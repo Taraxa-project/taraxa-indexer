@@ -2,6 +2,7 @@ package rewards
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/Taraxa-project/taraxa-indexer/internal/chain"
 	"github.com/Taraxa-project/taraxa-indexer/internal/common"
@@ -16,12 +17,14 @@ type Rewards struct {
 	validators  *Validators
 	totalStake  *big.Int
 	totalSupply *big.Int
+	blockNum    uint64
+	blockTime   uint64
 
-	blockNum uint64
+	prevYieldsSaving *storage.YieldSaving
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.BlockData) *Rewards {
-	r := Rewards{storage, batch, config, MakeValidators(config, block.Validators), block.TotalAmountDelegated, block.TotalSupply, block.Pbft.Number}
+func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.BlockData, prevYieldsSaving *storage.YieldSaving) *Rewards {
+	r := Rewards{storage, batch, config, MakeValidators(config, block.Validators), block.TotalAmountDelegated, block.TotalSupply, block.Pbft.Number, block.Pbft.Timestamp, prevYieldsSaving}
 	// special case for  the networks without aspen hf part1 (incorrect initialization of the supply without aspen hf part1)
 	if r.totalSupply.Sign() == 0 {
 		r.totalSupply = r.storage.GetTotalSupply()
@@ -38,9 +41,6 @@ func (r *Rewards) addTotalMinted(amount *big.Int) {
 }
 
 func (r *Rewards) Process(totalMinted *big.Int, dags []common.DagBlock, trxs []common.Transaction, votes common.VotesResponse, blockAuthor string) (currentBlockFee *big.Int) {
-	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
-		log.WithFields(log.Fields{"total_stake": r.totalStake}).Info("totalStake")
-	}
 	rewardsStats := r.makeRewardsStats(dags, votes, trxs, blockAuthor)
 	totalReward, currentBlockFee := r.ProcessStats(rewardsStats, totalMinted)
 
@@ -166,11 +166,16 @@ func (r *Rewards) rewardsFromStats(stats *storage.RewardsStats) (rewards Interva
 
 func (r *Rewards) AfterCommit() {
 	b := r.storage.NewBatch()
-	if r.blockNum%r.config.TotalYieldSavingInterval == 0 {
-		r.processIntervalYield(b)
-	}
-	if r.blockNum%r.config.ValidatorsYieldSavingInterval == 0 {
-		r.processValidatorsIntervalYield(b)
+	rewardsDistributed := r.blockNum%uint64(r.config.Chain.Hardforks.GetDistributionFrequency(r.blockNum)) == 0
+	_, pWeek := time.Unix(int64(r.prevYieldsSaving.Time), 0).ISOWeek()
+	_, cWeek := time.Unix(int64(r.blockTime), 0).ISOWeek()
+	processYields := pWeek != cWeek
+
+	if rewardsDistributed && processYields {
+		r.processIntervalYield(r.prevYieldsSaving.Period, b)
+		r.processValidatorsIntervalYield(r.prevYieldsSaving.Period, b)
+		// get a start of an hour from the current time
+		r.prevYieldsSaving = &storage.YieldSaving{Time: r.blockTime, Period: r.prevYieldsSaving.Period}
 	}
 	b.CommitBatch()
 }

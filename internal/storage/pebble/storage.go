@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -39,22 +40,13 @@ const RewardsStatsPrefix = "rs"
 const dayStatsPrefix = "ds"
 const monthlyActiveAddressesPrefix = "ma"
 const dailyContractUsersPrefix = "cu"
+const yieldSavingPrefix = "ys"
+
+var ErrNotFound = pebble.ErrNotFound
 
 type Storage struct {
 	db   *pebble.DB
 	path string
-}
-
-func navigate(direction storage.Direction) func(iter *pebble.Iterator) {
-	if direction == storage.Backward {
-		return func(iter *pebble.Iterator) {
-			iter.Prev()
-		}
-	}
-
-	return func(iter *pebble.Iterator) {
-		iter.Next()
-	}
 }
 
 func (s *Storage) NewBatch() storage.Batch {
@@ -151,6 +143,8 @@ func GetPrefix(o any) (ret string) {
 		ret = monthlyActiveAddressesPrefix
 	case *storage.DailyContractUsersList, storage.DailyContractUsersList:
 		ret = dailyContractUsersPrefix
+	case *storage.YieldSaving, storage.YieldSaving:
+		ret = yieldSavingPrefix
 	// hack if we aren't passing original type directly to this function, but passing any from other function
 	case *any:
 		ret = GetPrefix(*o.(*any))
@@ -201,6 +195,18 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 		log.WithError(err).Fatal("NewIter failed")
 	}
 	return iter
+}
+
+func navigate(direction storage.Direction) func(iter *pebble.Iterator) {
+	if direction == storage.Backward {
+		return func(iter *pebble.Iterator) {
+			iter.Prev()
+		}
+	}
+
+	return func(iter *pebble.Iterator) {
+		iter.Next()
+	}
 }
 
 func (s *Storage) forEachKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
@@ -362,6 +368,24 @@ func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
 	return s.GetValidatorYield("", block)
 }
 
+func (s *Storage) GetLatestYieldSaving() (res *storage.YieldSaving) {
+	itr := s.find([]byte(GetPrefix(res)))
+	itr.Last()
+	if !itr.Valid() {
+		return
+	}
+	key := itr.Key()
+	parts := strings.Split(string(key), "|")
+	if len(parts) < 2 {
+		return
+	}
+	_, err := strconv.ParseUint(parts[1], 10, 64)
+	if err != nil {
+		return
+	}
+	return res
+}
+
 func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
 	err := s.GetFromDB(&res, GetPrefixKey(GetPrefix(&res), strings.ToLower(hash)))
 	if err != nil && err != pebble.ErrNotFound {
@@ -399,6 +423,36 @@ func (s *Storage) GetDailyContractUsers(address string, timestamp uint64) storag
 		log.WithError(err).Fatal("GetDailyContractUsers failed")
 	}
 	return ret
+}
+
+func (s *Storage) GetYieldInterval(block uint64) (uint64, uint64) {
+	blocks := s.GetYieldIntervals(block, block)
+	if len(blocks) == 0 {
+		return 0, 0
+	}
+	return blocks[0], blocks[len(blocks)-1]
+}
+
+func (s *Storage) GetYieldIntervals(from_block, to_block uint64) []uint64 {
+	intervals := make([]uint64, 0)
+	s.ForEachFromKey([]byte(GetPrefix(storage.Yield{})), []byte(storage.FormatIntToKey(from_block)), storage.Forward, func(key, res []byte) (stop bool) {
+		keyParts := strings.Split(string(key), "|")
+		if len(keyParts) < 2 {
+			return false
+		}
+		// Parse as base 10 to handle leading zeros correctly
+		curr_block, err := strconv.ParseUint(keyParts[1], 10, 64)
+		if err != nil {
+			return false
+		}
+		// Only include blocks within the range [from_block, to_block]
+		if curr_block >= from_block && curr_block <= to_block {
+			intervals = append(intervals, curr_block)
+		}
+		// Stop if we've gone past the to_block
+		return curr_block > to_block
+	})
+	return intervals
 }
 
 func (s *Storage) GetFromDB(o any, key []byte) error {

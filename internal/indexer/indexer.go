@@ -18,6 +18,7 @@ type Indexer struct {
 	stats                       *chain.Stats
 	dayStats                    *storage.DayStatsWithTimestamp
 	lastBlockTimestamp          uint64
+	prevYieldsSaving            storage.YieldSaving
 }
 
 func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) {
@@ -48,6 +49,17 @@ func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
 	}
+	// get it from the database
+	ys := i.storage.GetLatestYieldSaving()
+	if ys != nil {
+		i.prevYieldsSaving = *ys
+	} else {
+		i.prevYieldsSaving = storage.YieldSaving{
+			Time:   i.config.Chain.DagGenesisBlock.Timestamp,
+			Period: 0,
+		}
+	}
+
 	return
 }
 
@@ -100,7 +112,7 @@ func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint
 		i.initDayStats(bd.Pbft)
 	}
 	bc := MakeBlockContext(i.storage, i.client, i.config, i.dayStats)
-	dc, tc, err := bc.process(bd, i.stats)
+	dc, tc, err := bc.process(bd, i.stats, &i.prevYieldsSaving)
 	if err != nil {
 		return nil, 0, 0, err
 	}

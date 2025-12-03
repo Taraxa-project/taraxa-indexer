@@ -250,16 +250,15 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash models.HashParam)
 
 func (a *ApiHandler) getAddressYield(address models.AddressParam, block *uint64) (resp *models.YieldResponse, err error) {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
-	block_num := common.GetYieldIntervalEnd(pbft_count, block, a.config.ValidatorsYieldSavingInterval)
-	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
-	if pbft_count < block_num {
-		err = fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+	from_block, to_block := a.storage.GetYieldInterval(*block)
+	if pbft_count < to_block {
+		err = fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, to_block)
 		return
 	}
 	return &models.YieldResponse{
-		FromBlock: block_num - a.config.ValidatorsYieldSavingInterval + 1,
-		ToBlock:   block_num,
-		Yield:     a.storage.GetValidatorYield(address, block_num).Yield,
+		FromBlock: from_block,
+		ToBlock:   to_block,
+		Yield:     a.storage.GetValidatorYield(address, to_block).Yield,
 	}, nil
 }
 
@@ -275,11 +274,13 @@ func (a *ApiHandler) GetAddressYield(ctx echo.Context, address models.AddressPar
 	return ctx.JSON(http.StatusOK, resp)
 }
 func (a *ApiHandler) GetAddressYieldForInterval(ctx echo.Context, address models.AddressParam, params models.GetAddressYieldForIntervalParams) error {
-	pbft_count := a.storage.GetFinalizationData().PbftCount
-	block_num := common.GetYieldIntervalEnd(pbft_count, params.FromBlock, a.config.ValidatorsYieldSavingInterval)
-
-	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
-	to_block := common.GetYieldIntervalEnd(pbft_count, &params.ToBlock, a.config.ValidatorsYieldSavingInterval)
+	// pbft_count := a.storage.GetFinalizationData().PbftCount
+	blocks := a.storage.GetYieldIntervals(*params.FromBlock, params.ToBlock)
+	if len(blocks) < 2 {
+		return fmt.Errorf("no yield data found for the %s at interval [%d, %d]", address, params.FromBlock, params.ToBlock)
+	}
+	from_block := blocks[0]
+	to_block := blocks[len(blocks)-1]
 
 	prefix := []byte(pebble.GetPrefixKey(pebble.GetPrefix(storage.Yield{}), address))
 	yield := float64(0)
@@ -318,15 +319,14 @@ func (a *ApiHandler) GetAddressYieldForInterval(ctx echo.Context, address models
 
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params models.GetTotalYieldParams) error {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
-	block_num := common.GetYieldIntervalEnd(pbft_count, params.BlockNumber, a.config.TotalYieldSavingInterval)
-	from_block := block_num - a.config.ValidatorsYieldSavingInterval + 1
-	if pbft_count < block_num {
-		return fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, block_num)
+	from_block, to_block := a.storage.GetYieldInterval(*params.BlockNumber)
+	if pbft_count < to_block {
+		return fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, to_block)
 	}
 	resp := models.YieldResponse{
-		FromBlock: block_num - a.config.TotalYieldSavingInterval + 1,
-		ToBlock:   block_num,
-		Yield:     a.storage.GetTotalYield(block_num).Yield,
+		FromBlock: from_block,
+		ToBlock:   to_block,
+		Yield:     a.storage.GetTotalYield(to_block).Yield,
 	}
 	return ctx.JSON(http.StatusOK, resp)
 }

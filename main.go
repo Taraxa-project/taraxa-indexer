@@ -25,18 +25,16 @@ import (
 )
 
 var (
-	http_port                        *int
-	metrics_port                     *int
-	blockchain_ws                    *string
-	data_dir                         *string
-	log_level                        *string
-	yield_saving_interval            *int
-	validators_yield_saving_interval *int
-	sync_queue_limit                 *int
-	chain_stats_interval             *int
-	auth_username                    *string
-	auth_password                    *string
-	retry_time                       time.Duration = 5 * time.Second
+	http_port            *int
+	metrics_port         *int
+	blockchain_ws        *string
+	data_dir             *string
+	log_level            *string
+	sync_queue_limit     *int
+	chain_stats_interval *int
+	auth_username        *string
+	auth_password        *string
+	retry_time           time.Duration = 5 * time.Second
 )
 
 func init() {
@@ -45,8 +43,6 @@ func init() {
 	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
-	yield_saving_interval = flag.Int("yield_saving_interval", 150000, "interval for saving total yield")
-	validators_yield_saving_interval = flag.Int("validators_yield_saving_interval", 150000, "interval for saving validators yield")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
 	chain_stats_interval = flag.Int("chain_stats_interval", 100, "interval for saving chain stats")
 	auth_username = flag.String("auth_username", "taraxa", "username for protected endpoints (required if auth_password is set)")
@@ -111,8 +107,6 @@ func main() {
 	e := echo.New()
 
 	c := common.DefaultConfig()
-	c.TotalYieldSavingInterval = uint64(*yield_saving_interval)
-	c.ValidatorsYieldSavingInterval = uint64(*validators_yield_saving_interval)
 	c.SyncQueueLimit = uint64(*sync_queue_limit)
 	c.ChainStatsInterval = *chain_stats_interval
 	c.AuthUsername = *auth_username

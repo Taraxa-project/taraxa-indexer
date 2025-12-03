@@ -35,8 +35,11 @@ type Storage interface {
 	GetTransactionLogs(hash string) models.TransactionLogsResponse
 	GetValidatorYield(validator string, block uint64) (res Yield)
 	GetTotalYield(block uint64) (res Yield)
+	GetLatestYieldSaving() *YieldSaving
 	GetMonthlyActiveAddresses(to_date uint64) *uint64
 	GetDailyContractUsers(address string, timestamp uint64) DailyContractUsersList
+	GetYieldIntervals(from_block, to_block uint64) []uint64
+	GetYieldInterval(block uint64) (uint64, uint64)
 }
 
 func GetTotal[T Paginated](s Storage, address string) (r uint64) {
