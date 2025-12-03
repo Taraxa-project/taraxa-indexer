@@ -53,7 +53,7 @@ func TestRewardsWithYieldSaving(t *testing.T) {
 	}
 	pys := prevYieldsSaving
 
-	r := MakeRewards(st, st.NewBatch(), config, bd, &pys)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, &pys)
 
 	assert.Equal(t, uint64(1000), r.blockNum)
 	assert.Equal(t, prevYieldsSaving, pys)
@@ -90,7 +90,7 @@ func TestAfterCommit_NoRewardsDistribution(t *testing.T) {
 	}
 
 	pys := &prevYieldsSaving
-	r := MakeRewards(st, st.NewBatch(), config, bd, pys)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, pys)
 
 	r.AfterCommit()
 	assert.Equal(t, *pys, *r.prevYieldsSaving) // No yield saving should occur
@@ -137,7 +137,7 @@ func TestAfterCommit_WithRewardsDistributionAndWeekChange(t *testing.T) {
 	batch.CommitBatch()
 
 	pys := &prevYieldsSaving
-	r := MakeRewards(st, st.NewBatch(), config, bd, pys)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, pys)
 
 	r.AfterCommit()
 	assert.NotEqual(t, *pys, *r.prevYieldsSaving)
@@ -175,7 +175,7 @@ func TestAfterCommit_SameWeek(t *testing.T) {
 	}
 
 	pys := &prevYieldsSaving
-	r := MakeRewards(st, st.NewBatch(), config, bd, pys)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, pys)
 
 	r.AfterCommit()
 	assert.Equal(t, *pys, *r.prevYieldsSaving) // No yield saving should occur (same week)
@@ -222,7 +222,7 @@ func TestProcessIntervalYield_WithCustomInterval(t *testing.T) {
 	}
 
 	pys := &prevYieldsSaving
-	r := MakeRewards(st, st.NewBatch(), config, bd, pys)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, pys)
 
 	// Test the interval yield processing
 	testBatch := st.NewBatch()
@@ -290,7 +290,7 @@ func TestProcessValidatorsIntervalYield_WithCustomInterval(t *testing.T) {
 	}
 
 	pys := &prevYieldsSaving
-	r := MakeRewards(st, st.NewBatch(), config, bd, pys)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, pys)
 
 	// Test the validators interval yield processing
 	testBatch := st.NewBatch()

@@ -64,6 +64,7 @@ type TotalRewardsStats struct {
 	TotalVotesWeight uint64
 	MaxVotesWeight   uint64
 	TotalDagCount    uint64
+	LambdaMs         uint64
 }
 
 // map can't be serialized to rlp, so we need to use slice of structs
@@ -79,4 +80,8 @@ func FormatIntToKey(i uint64) string {
 type YieldSaving struct {
 	Time   uint64
 	Period uint64
+}
+
+type Lambda struct {
+	LambdaMs uint64
 }

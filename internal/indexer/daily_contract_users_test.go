@@ -14,8 +14,7 @@ import (
 func prepareBlockContext(timestamp uint64, contractAddresses []string) *blockContext {
 	st := pebble.NewStorage("")
 	dayStats := storage.MakeDayStatsWithTimestamp(common.DayStart(timestamp))
-	config := &common.Config{}
-	bc := MakeBlockContext(st, nil, config, dayStats)
+	bc := MakeBlockContext(st, nil, common.DefaultChainConfig(), dayStats)
 
 	// Create mock block data with the specified timestamp
 	bd := &chain.BlockData{

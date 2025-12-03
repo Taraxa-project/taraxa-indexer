@@ -28,6 +28,7 @@ type Client interface {
 	GetBalanceAtBlock(address string, blockNumber uint64) (balance string, err error)
 	GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error)
 	FilterContracts(addresses []models.Address) (contracts []models.Address, err error)
+	GetPeriodLambda(block_num uint64) (lambdaMs *uint64, err error)
 	// Close disconnects from the node
 	Close()
 }

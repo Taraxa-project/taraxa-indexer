@@ -41,6 +41,7 @@ const dayStatsPrefix = "ds"
 const monthlyActiveAddressesPrefix = "ma"
 const dailyContractUsersPrefix = "cu"
 const yieldSavingPrefix = "ys"
+const lambdaPrefix = "l"
 
 var ErrNotFound = pebble.ErrNotFound
 
@@ -145,6 +146,8 @@ func GetPrefix(o any) (ret string) {
 		ret = dailyContractUsersPrefix
 	case *storage.YieldSaving, storage.YieldSaving:
 		ret = yieldSavingPrefix
+	case *storage.Lambda, storage.Lambda:
+		ret = lambdaPrefix
 	// hack if we aren't passing original type directly to this function, but passing any from other function
 	case *any:
 		ret = GetPrefix(*o.(*any))
@@ -368,24 +371,6 @@ func (s *Storage) GetTotalYield(block uint64) (res storage.Yield) {
 	return s.GetValidatorYield("", block)
 }
 
-func (s *Storage) GetLatestYieldSaving() (res *storage.YieldSaving) {
-	itr := s.find([]byte(GetPrefix(res)))
-	itr.Last()
-	if !itr.Valid() {
-		return
-	}
-	key := itr.Key()
-	parts := strings.Split(string(key), "|")
-	if len(parts) < 2 {
-		return
-	}
-	_, err := strconv.ParseUint(parts[1], 10, 64)
-	if err != nil {
-		return
-	}
-	return res
-}
-
 func (s *Storage) GetTransactionByHash(hash string) (res models.Transaction) {
 	err := s.GetFromDB(&res, GetPrefixKey(GetPrefix(&res), strings.ToLower(hash)))
 	if err != nil && err != pebble.ErrNotFound {
@@ -453,6 +438,36 @@ func (s *Storage) GetYieldIntervals(from_block, to_block uint64) []uint64 {
 		return curr_block > to_block
 	})
 	return intervals
+}
+
+func (s *Storage) GetLatestYieldSaving() (res *storage.YieldSaving) {
+	itr := s.find([]byte(GetPrefix(res)))
+	itr.Last()
+	if !itr.Valid() {
+		return
+	}
+	key := itr.Key()
+	parts := strings.Split(string(key), "|")
+	if len(parts) < 2 {
+		return
+	}
+	_, err := strconv.ParseUint(parts[1], 10, 64)
+	if err != nil {
+		return
+	}
+	return res
+}
+
+func (s *Storage) GetLambda() *uint64 {
+	res := storage.Lambda{}
+	err := s.GetFromDB(&res, []byte(GetPrefix(res)))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetLambda failed")
+	}
+	if err == pebble.ErrNotFound {
+		return nil
+	}
+	return &res.LambdaMs
 }
 
 func (s *Storage) GetFromDB(o any, key []byte) error {

@@ -129,7 +129,7 @@ func TestRewards(t *testing.T) {
 	block := common.Block{Pbft: models.Pbft{Number: 1, Author: validator4_addr}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(5000000 * 4), TotalSupply: big.NewInt(1), Validators: validators_list}
 	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
-	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, &prevYieldsSaving)
 
 	trxs := makeTransactions(5)
 	dags := makeDags(AddressCount{validator1_addr: 1, validator2_addr: 2, validator3_addr: 2})
@@ -183,7 +183,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 	block := common.Block{Pbft: models.Pbft{Number: 1, Author: validator3_addr}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: big.NewInt(0).Mul(DefaultMinimumDeposit, big.NewInt(8)), TotalSupply: big.NewInt(1), Validators: validators_list}
 	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
-	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, &prevYieldsSaving)
 	{
 		rewardsStats := storage.RewardsStats{}
 		rewardsStats.ValidatorsStats = []storage.ValidatorStatsWithAddress{
@@ -199,7 +199,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 		// Expected block reward
 		totalReward := rewardFromStake(config.Chain, r.totalStake)
 		assert.Equal(t, totalReward, big.NewInt(202942668696093))
-		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
+		rewardsParts := calculatePeriodRewardsParts(r.config, totalReward, false)
 		rewards := r.rewardsFromStats(&rewardsStats)
 		// We have 1 out of 2 bonus votes, so block author should get half of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(2)), rewards.ValidatorRewards[block.Author])
@@ -227,7 +227,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 
 		// Expected block reward
 		totalReward := rewardFromStake(config.Chain, r.totalStake)
-		rewardsParts := calculatePeriodRewardsParts(r.config.Chain, totalReward, false)
+		rewardsParts := calculatePeriodRewardsParts(r.config, totalReward, false)
 		rewards := r.rewardsFromStats(&rewardsStats)
 		// We have 1 out of 4 bonus votes, so block author should get 1/4 of the bonus reward
 		assert.Equal(t, big.NewInt(0).Div(rewardsParts.bonus, big.NewInt(4)), rewards.ValidatorRewards[block.Author])
@@ -315,7 +315,7 @@ func TestYieldsCalculation(t *testing.T) {
 		{Address: "0x4", TotalStake: big.NewInt(20000000)},
 		{Address: "0x5", TotalStake: big.NewInt(25000000)},
 	}
-	validators := MakeValidators(config, validators_list)
+	validators := MakeValidators(config.Chain, validators_list)
 	totalStake := CalculateTotalStake(validators)
 	rewards := make(map[string]*big.Int)
 
@@ -354,7 +354,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	block := common.Block{Pbft: models.Pbft{Number: uint64(blocks), Author: "0x4"}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
 	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
-	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, &prevYieldsSaving)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
@@ -400,7 +400,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	block := common.Block{Pbft: models.Pbft{Number: 10, Author: "0x4"}}
 	bd := &chain.BlockData{Pbft: &block, TotalAmountDelegated: totalStake, TotalSupply: big.NewInt(1)}
 	prevYieldsSaving := storage.YieldSaving{Time: 0, Period: 0}
-	r := MakeRewards(st, st.NewBatch(), config, bd, &prevYieldsSaving)
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, &prevYieldsSaving)
 	b := st.NewBatch()
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{

@@ -116,6 +116,10 @@ func (c *ClientMock) SubscribeNewHeads() (chan common.Block, *rpc.ClientSubscrip
 	return nil, nil, nil
 }
 
+func (c *ClientMock) GetPeriodLambda(uint64) (lambdaMs *uint64, err error) {
+	return nil, nil
+}
+
 func (c *ClientMock) Close() {
 }
 

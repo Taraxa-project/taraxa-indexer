@@ -7,11 +7,11 @@ import (
 )
 
 type Validators struct {
-	config     *common.Config
+	config     *common.ChainConfig
 	validators map[string]common.Validator
 }
 
-func MakeValidators(config *common.Config, validators []common.Validator) *Validators {
+func MakeValidators(config *common.ChainConfig, validators []common.Validator) *Validators {
 	v := Validators{config, make(map[string]common.Validator)}
 	for _, val := range validators {
 		v.validators[strings.ToLower(val.Address)] = val

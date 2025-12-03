@@ -560,3 +560,25 @@ func TestKeyUpperBoundEdgeCases(t *testing.T) {
 		assert.Equal(t, expected, result)
 	})
 }
+
+// test for getLambda
+func TestGetLambda(t *testing.T) {
+	db := NewStorage(t.TempDir())
+	defer func() { _ = db.Close() }()
+
+	batch := db.NewBatch()
+	batch.AddLambda(1000)
+	batch.CommitBatch()
+
+	lambda := db.GetLambda()
+	assert.Equal(t, uint64(1000), *lambda)
+}
+
+// test for getLambda not found
+func TestGetLambdaNotFound(t *testing.T) {
+	db := NewStorage(t.TempDir())
+	defer func() { _ = db.Close() }()
+
+	lambda := db.GetLambda()
+	assert.Nil(t, lambda)
+}

@@ -44,10 +44,31 @@ func (hf *AspenHfConfig) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type CactiHfConfig struct {
+	BlockNum       uint64 `json:"block_num"`
+	DefaultLambda  uint64 `json:"lambda_default"`
+	ConsensusDelay uint64 `json:"consensus_delay"`
+}
+
+func (hf *CactiHfConfig) UnmarshalJSON(data []byte) error {
+	var res map[string]string
+
+	if err := json.Unmarshal(data, &res); err != nil {
+		return err
+	}
+
+	hf.BlockNum = ParseUInt(res["block_num"])
+	hf.DefaultLambda = ParseUInt(res["lambda_default"])
+	hf.ConsensusDelay = ParseUInt(res["consensus_delay"])
+
+	return nil
+}
+
 type HardforksConfig struct {
 	RewardsDistributionFrequency map[uint64]uint32 `json:"rewards_distribution_frequency"`
 	MagnoliaHf                   MagnoliaHfConfig  `json:"magnolia_hf"`
 	AspenHf                      AspenHfConfig     `json:"aspen_hf"`
+	CactiHf                      CactiHfConfig     `json:"cacti_hf"`
 }
 
 func (c *HardforksConfig) GetDistributionFrequency(period uint64) uint32 {
@@ -82,6 +103,10 @@ func (c *HardforksConfig) IsAspenHfTwo(blockNum uint64) bool {
 	return blockNum >= c.AspenHf.BlockNumPartTwo
 }
 
+func (c *HardforksConfig) IsCactiHf(blockNum uint64) bool {
+	return blockNum >= c.CactiHf.BlockNum
+}
+
 type ChainConfig struct {
 	CommitteeSize               *big.Int
 	BlocksPerYear               *big.Int
@@ -91,6 +116,31 @@ type ChainConfig struct {
 	EligibilityBalanceThreshold *big.Int
 	Hardforks                   HardforksConfig
 	DagGenesisBlock             DagBlock
+	LambdaMs                    uint64
+}
+
+func (cc *ChainConfig) IsEligible(stake *big.Int) bool {
+	if cc.EligibilityBalanceThreshold != nil && stake.Cmp(cc.EligibilityBalanceThreshold) >= 0 {
+		return true
+	}
+	return false
+}
+
+func (cc *ChainConfig) InitLambda(period uint64, dbLambdaMs *uint64) {
+	if cc.Hardforks.CactiHf.BlockNum >= period {
+		if dbLambdaMs != nil {
+			cc.LambdaMs = *dbLambdaMs
+		}
+		cc.LambdaMs = cc.Hardforks.CactiHf.DefaultLambda
+	}
+}
+
+func (cc *ChainConfig) AdjustLambda(period uint64, lambda *uint64) {
+	if cc.Hardforks.CactiHf.BlockNum <= period {
+		if lambda != nil {
+			cc.LambdaMs = *lambda
+		}
+	}
 }
 
 func DefaultChainConfig() *ChainConfig {
@@ -111,13 +161,6 @@ type Config struct {
 	// Auth credentials for protected endpoints
 	AuthUsername string
 	AuthPassword string
-}
-
-func (c *Config) IsEligible(stake *big.Int) bool {
-	if c.Chain != nil && c.Chain.EligibilityBalanceThreshold != nil && stake.Cmp(c.Chain.EligibilityBalanceThreshold) >= 0 {
-		return true
-	}
-	return false
 }
 
 func DefaultConfig() *Config {

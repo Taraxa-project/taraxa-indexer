@@ -13,7 +13,7 @@ import (
 type Rewards struct {
 	storage     storage.Storage
 	batch       storage.Batch
-	config      *common.Config
+	config      *common.ChainConfig
 	validators  *Validators
 	totalStake  *big.Int
 	totalSupply *big.Int
@@ -23,7 +23,7 @@ type Rewards struct {
 	prevYieldsSaving *storage.YieldSaving
 }
 
-func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.Config, block *chain.BlockData, prevYieldsSaving *storage.YieldSaving) *Rewards {
+func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.ChainConfig, block *chain.BlockData, prevYieldsSaving *storage.YieldSaving) *Rewards {
 	r := Rewards{storage, batch, config, MakeValidators(config, block.Validators), block.TotalAmountDelegated, block.TotalSupply, block.Pbft.Number, block.Pbft.Timestamp, prevYieldsSaving}
 	// special case for  the networks without aspen hf part1 (incorrect initialization of the supply without aspen hf part1)
 	if r.totalSupply.Sign() == 0 {
@@ -53,7 +53,7 @@ func (r *Rewards) Process(totalMinted *big.Int, dags []common.DagBlock, trxs []c
 }
 
 func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, totalMinted *big.Int) (*big.Int, *big.Int) {
-	distributionFrequency := r.config.Chain.Hardforks.GetDistributionFrequency(r.blockNum)
+	distributionFrequency := r.config.Hardforks.GetDistributionFrequency(r.blockNum)
 
 	if r.blockNum%uint64(distributionFrequency) != 0 {
 		// Save blockFee to db to process it later and return it from this method to avoid yield double counting
@@ -79,31 +79,43 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, totalMinted *b
 func (r *Rewards) makeRewardsStats(
 	dags []common.DagBlock, votes common.VotesResponse,
 	trxs []common.Transaction, block_author string) *storage.RewardsStats {
-	return makeRewardsStats(r.config.Chain.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.Chain.CommitteeSize.Uint64(), block_author).ToStorage()
+	return makeRewardsStats(r.config.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.CommitteeSize.Uint64(), block_author, r.config.LambdaMs).ToStorage()
 }
 
-func (r *Rewards) calculateBlockReward(total_stake, current_total_tara_supply *big.Int) (block_reward *big.Int, yield *big.Int) {
+func (r *Rewards) calculateBlockReward(total_stake, current_total_tara_supply, blocks_per_year *big.Int) (block_reward *big.Int, yield *big.Int) {
 	yield = r.calculateCurrentYield(current_total_tara_supply)
 	block_reward = big.NewInt(0).Mul(total_stake, yield)
-	block_reward.Div(block_reward, big.NewInt(0).Mul(YieldFractionDecimalPrecision, r.config.Chain.BlocksPerYear))
+	block_reward.Div(block_reward, big.NewInt(0).Mul(YieldFractionDecimalPrecision, blocks_per_year))
 	return
 }
 
-func (r *Rewards) calculateFullBlockReward() *big.Int {
-	if r.config.Chain.Hardforks.IsAspenHfTwo(r.blockNum) {
-		fullReward, _ := r.calculateBlockReward(r.totalStake, r.totalSupply)
+func blocksPerYearFromLambdaMs(lambda_ms, delay_ms uint64) *big.Int {
+	var year_ms uint64 = 365 * 24 * 60 * 60
+	year_ms *= 1000
+	// we have fixed 2*lambda time for proposing step and adding approx delay it takes to receive 2t+1 soft and cert votes
+	expected_block_time := 2*lambda_ms + delay_ms
+	return big.NewInt(0).SetUint64(year_ms / expected_block_time)
+}
+
+func (r *Rewards) calculateFullBlockReward(stats *storage.RewardsStats) *big.Int {
+	if r.config.Hardforks.IsCactiHf(r.blockNum) {
+		blocks_per_year := blocksPerYearFromLambdaMs(stats.LambdaMs, r.config.Hardforks.CactiHf.ConsensusDelay)
+		fullReward, _ := r.calculateBlockReward(r.totalStake, r.totalSupply, blocks_per_year)
+		return fullReward
+	} else if r.config.Hardforks.IsAspenHfTwo(r.blockNum) {
+		fullReward, _ := r.calculateBlockReward(r.totalStake, r.totalSupply, r.config.BlocksPerYear)
 		return fullReward
 	} else {
-		fullReward := big.NewInt(0).Mul(r.totalStake, r.config.Chain.YieldPercentage)
-		fullReward.Div(fullReward, big.NewInt(0).Mul(big.NewInt(100), r.config.Chain.BlocksPerYear))
+		fullReward := big.NewInt(0).Mul(r.totalStake, r.config.YieldPercentage)
+		fullReward.Div(fullReward, big.NewInt(0).Mul(big.NewInt(100), r.config.BlocksPerYear))
 
 		return fullReward
 	}
 }
 
 func (r *Rewards) rewardsFromStats(stats *storage.RewardsStats) (rewards IntervalRewards) {
-	full_block_reward := r.calculateFullBlockReward()
-	totalRewardsParts := calculatePeriodRewardsParts(r.config.Chain, full_block_reward, stats.TotalVotesWeight == 0)
+	full_block_reward := r.calculateFullBlockReward(stats)
+	totalRewardsParts := calculatePeriodRewardsParts(r.config, full_block_reward, stats.TotalVotesWeight == 0)
 
 	rewards = makeIntervalRewards()
 	for _, s := range stats.ValidatorsStats {
@@ -166,7 +178,7 @@ func (r *Rewards) rewardsFromStats(stats *storage.RewardsStats) (rewards Interva
 
 func (r *Rewards) AfterCommit() {
 	b := r.storage.NewBatch()
-	rewardsDistributed := r.blockNum%uint64(r.config.Chain.Hardforks.GetDistributionFrequency(r.blockNum)) == 0
+	rewardsDistributed := r.blockNum%uint64(r.config.Hardforks.GetDistributionFrequency(r.blockNum)) == 0
 	_, pWeek := time.Unix(int64(r.prevYieldsSaving.Time), 0).ISOWeek()
 	_, cWeek := time.Unix(int64(r.blockTime), 0).ISOWeek()
 	processYields := pWeek != cWeek
@@ -175,7 +187,7 @@ func (r *Rewards) AfterCommit() {
 		r.processIntervalYield(r.prevYieldsSaving.Period, b)
 		r.processValidatorsIntervalYield(r.prevYieldsSaving.Period, b)
 		// get a start of an hour from the current time
-		r.prevYieldsSaving = &storage.YieldSaving{Time: r.blockTime, Period: r.prevYieldsSaving.Period}
+		r.prevYieldsSaving = &storage.YieldSaving{Time: r.blockTime, Period: r.blockNum}
 	}
 	b.CommitBatch()
 }

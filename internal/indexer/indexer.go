@@ -12,13 +12,14 @@ import (
 type Indexer struct {
 	client                      common.Client
 	storage                     storage.Storage
-	config                      *common.Config
+	config                      *common.ChainConfig
 	retry_time                  time.Duration
 	consistency_check_available bool
 	stats                       *chain.Stats
 	dayStats                    *storage.DayStatsWithTimestamp
 	lastBlockTimestamp          uint64
 	prevYieldsSaving            storage.YieldSaving
+	syncQueueLimit              uint64
 }
 
 func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) {
@@ -34,17 +35,18 @@ func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats
 func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) (i *Indexer) {
 	i = new(Indexer)
 	i.storage = s
-	i.config = c
+	i.config = c.Chain
 	i.stats = stats
 	i.client = client
 	i.retry_time = retry_time
+	i.syncQueueLimit = c.SyncQueueLimit
 
 	version, err := i.client.GetVersion()
 	if err != nil || !chain.CheckProtocolVersion(version) {
 		log.WithFields(log.Fields{"version": version, "minimum": chain.MinimumProtocolVersion}).Fatal("Unsupported protocol version")
 	}
 	i.init()
-	_, stats_err := i.client.GetChainStats()
+	fd, stats_err := i.client.GetChainStats()
 	i.consistency_check_available = (stats_err == nil)
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
@@ -55,10 +57,11 @@ func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats
 		i.prevYieldsSaving = *ys
 	} else {
 		i.prevYieldsSaving = storage.YieldSaving{
-			Time:   i.config.Chain.DagGenesisBlock.Timestamp,
+			Time:   i.config.DagGenesisBlock.Timestamp,
 			Period: 0,
 		}
 	}
+	i.config.InitLambda(fd.PbftCount, i.storage.GetLambda())
 
 	return
 }
@@ -89,7 +92,7 @@ func (i *Indexer) init() {
 	if err != nil {
 		log.WithError(err).Fatal("GetGenesis error")
 	}
-	i.config.Chain = chain_genesis.ToChainConfig()
+	i.config = chain_genesis.ToChainConfig()
 
 	// Process genesis if db is clean
 	if db_clean {
@@ -107,7 +110,15 @@ func (i *Indexer) initDayStats(block *common.Block) {
 	i.dayStats = &day_stats
 }
 
+func (i *Indexer) saveLambda() {
+	batch := i.storage.NewBatch()
+	batch.AddLambda(i.config.LambdaMs)
+	batch.CommitBatch()
+}
+
 func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint64, error) {
+	i.config.AdjustLambda(bd.Pbft.Number, bd.LambdaMs)
+
 	if i.dayStats == nil {
 		i.initDayStats(bd.Pbft)
 	}
@@ -125,6 +136,7 @@ func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint
 	}
 	i.lastBlockTimestamp = bd.Pbft.Timestamp
 
+	i.saveLambda()
 	return bc, dc, tc, nil
 }
 
@@ -133,7 +145,7 @@ func (i *Indexer) sync(start, end uint64) error {
 	if start >= end {
 		return nil
 	}
-	queue_limit := min(end-start, i.config.SyncQueueLimit)
+	queue_limit := min(end-start, i.syncQueueLimit)
 	log.WithFields(log.Fields{"start": start, "end": end, "queue_limit": queue_limit}).Info("Syncing: started")
 	sq := MakeSyncQueue(start, end, queue_limit, i.client)
 

@@ -201,6 +201,21 @@ func (client *WsClient) GetTotalSupply(block_num uint64) (totalSupply *big.Int, 
 	return
 }
 
+func (client *WsClient) GetPeriodLambda(period uint64) (lambdaMs *uint64, err error) {
+	lambdaStr := ""
+	err = client.rpc.Call(&lambdaStr, "taraxa_getPeriodLambda", fmt.Sprintf("0x%x", period))
+	if err != nil {
+		return
+	}
+	if lambdaStr == "" {
+		return
+	}
+	lambdaMs = new(uint64)
+	*lambdaMs = common.ParseUInt(lambdaStr)
+	metrics.RpcCallsCounter.Inc()
+	return
+}
+
 func (client *WsClient) FilterContracts(addresses []models.Address) (contracts []models.Address, err error) {
 	contracts = make([]models.Address, 0, len(addresses))
 	batch := make([]rpc.BatchElem, len(addresses))

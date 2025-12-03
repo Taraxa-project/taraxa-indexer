@@ -21,7 +21,7 @@ func MakeGenesis(s storage.Storage, c common.Client, gen_obj common.GenesisObjec
 	genesis.storage = s
 	genesis.genesis = gen_obj
 	genesis.hash = string(genesisHash)
-	genesis.bc = *MakeBlockContext(s, c, &common.Config{Chain: gen_obj.ToChainConfig()}, dayStats)
+	genesis.bc = *MakeBlockContext(s, c, gen_obj.ToChainConfig(), dayStats)
 
 	return &genesis
 }

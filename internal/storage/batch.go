@@ -14,6 +14,7 @@ type Batch interface {
 	AddDailyContractUsers(address string, timestamp uint64, users *DailyContractUsers)
 	AddDayStats(d *DayStatsWithTimestamp)
 	AddYieldSaving(period, timestamp uint64)
+	AddLambda(lambdaMs uint64)
 
 	Add(o any, key1 string, key2 uint64)
 	AddSerialized(o any, data []byte, key1 string, key2 uint64)

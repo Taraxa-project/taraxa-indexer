@@ -89,11 +89,12 @@ func (s *RewardsStats) processDagsAspen(dags []common.DagBlock, trxs []common.Tr
 	}
 }
 
-func makeRewardsStats(is_aspen_dag_rewards bool, dags []common.DagBlock, votes common.VotesResponse, trxs []common.Transaction, committee_size uint64, blockAuthor string) (s *RewardsStats) {
+func makeRewardsStats(is_aspen_dag_rewards bool, dags []common.DagBlock, votes common.VotesResponse, trxs []common.Transaction, committee_size uint64, blockAuthor string, lambdaMs uint64) (s *RewardsStats) {
 	s = new(RewardsStats)
 	s.ValidatorsStats = make(map[string]storage.ValidatorStats)
 	s.MaxVotesWeight = common.Min(votes.PeriodTotalVotesCount, committee_size)
 	s.BlockAuthor = blockAuthor
+	s.LambdaMs = lambdaMs
 
 	for _, v := range votes.Votes {
 		voter := strings.ToLower(v.Voter)
