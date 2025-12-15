@@ -46,13 +46,14 @@ func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats
 		log.WithFields(log.Fields{"version": version, "minimum": chain.MinimumProtocolVersion}).Fatal("Unsupported protocol version")
 	}
 	i.init()
-	fd, stats_err := i.client.GetChainStats()
+	_, stats_err := i.client.GetChainStats()
 	i.consistency_check_available = (stats_err == nil)
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
 	}
 	// get it from the database
 	ys := i.storage.GetLatestYieldSaving()
+	log.WithFields(log.Fields{"ys": ys}).Info("GetLatestYieldSaving")
 	if ys != nil {
 		i.prevYieldsSaving = *ys
 	} else {
@@ -61,7 +62,7 @@ func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats
 			Period: 0,
 		}
 	}
-	i.config.InitLambda(fd.PbftCount, i.storage.GetLambda())
+	i.config.InitLambda(i.storage.GetFinalizationData().PbftCount, i.storage.GetLambda())
 
 	return
 }
@@ -110,9 +111,12 @@ func (i *Indexer) initDayStats(block *common.Block) {
 	i.dayStats = &day_stats
 }
 
-func (i *Indexer) saveLambda() {
+func (i *Indexer) saveLambda(lambdaMs *uint64) {
+	if lambdaMs == nil {
+		return
+	}
 	batch := i.storage.NewBatch()
-	batch.AddLambda(i.config.LambdaMs)
+	batch.AddLambda(*lambdaMs)
 	batch.CommitBatch()
 }
 
@@ -136,7 +140,7 @@ func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint
 	}
 	i.lastBlockTimestamp = bd.Pbft.Timestamp
 
-	i.saveLambda()
+	i.saveLambda(bd.LambdaMs)
 	return bc, dc, tc, nil
 }
 

@@ -40,8 +40,9 @@ func (r *Rewards) addTotalMinted(amount *big.Int) {
 	r.batch.SetTotalSupply(current)
 }
 
-func (r *Rewards) Process(totalMinted *big.Int, dags []common.DagBlock, trxs []common.Transaction, votes common.VotesResponse, blockAuthor string) (currentBlockFee *big.Int) {
-	rewardsStats := r.makeRewardsStats(dags, votes, trxs, blockAuthor)
+func (r *Rewards) Process(totalMinted *big.Int, block *chain.BlockData) (currentBlockFee *big.Int) {
+	rewardsStats := r.makeRewardsStats(block.Dags, block.Votes, block.Transactions, block.Pbft.Author)
+
 	totalReward, currentBlockFee := r.ProcessStats(rewardsStats, totalMinted)
 
 	if totalReward.Cmp(totalMinted) != 0 {
@@ -79,7 +80,7 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, totalMinted *b
 func (r *Rewards) makeRewardsStats(
 	dags []common.DagBlock, votes common.VotesResponse,
 	trxs []common.Transaction, block_author string) *storage.RewardsStats {
-	return makeRewardsStats(r.config.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.CommitteeSize.Uint64(), block_author, r.config.LambdaMs).ToStorage()
+	return makeRewardsStats(r.config.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.CommitteeSize.Uint64(), block_author, r.config.GetLambda(votes.Round)).ToStorage()
 }
 
 func (r *Rewards) calculateBlockReward(total_stake, current_total_tara_supply, blocks_per_year *big.Int) (block_reward *big.Int, yield *big.Int) {
@@ -187,7 +188,9 @@ func (r *Rewards) AfterCommit() {
 		r.processIntervalYield(r.prevYieldsSaving.Period, b)
 		r.processValidatorsIntervalYield(r.prevYieldsSaving.Period, b)
 		// get a start of an hour from the current time
-		r.prevYieldsSaving = &storage.YieldSaving{Time: r.blockTime, Period: r.blockNum}
+		log.WithFields(log.Fields{"period": r.blockNum, "time": r.blockTime}).Info("Adding yield saving")
+		b.AddYieldSaving(r.blockNum, r.blockTime)
+		*r.prevYieldsSaving = storage.YieldSaving{Time: r.blockTime, Period: r.blockNum}
 	}
 	b.CommitBatch()
 }

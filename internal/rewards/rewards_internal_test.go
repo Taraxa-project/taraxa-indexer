@@ -53,6 +53,8 @@ func makeTestConfig() (config *common.Config) {
 	config.Chain.EligibilityBalanceThreshold = big.NewInt(1)
 	config.Chain.Hardforks.AspenHf.BlockNumPartTwo = 100
 	config.Chain.Hardforks.MagnoliaHf.BlockNum = 100
+	config.Chain.Hardforks.CactiHf.BlockNum = 110
+	config.Chain.LambdaMs = 1000
 
 	return
 }
@@ -74,7 +76,7 @@ func TestMakeStats(t *testing.T) {
 	assert.Equal(t, uint64(6), votes.PeriodTotalVotesCount)
 
 	is_aspen_dag_rewards := false
-	s := makeRewardsStats(is_aspen_dag_rewards, dags, votes, trxs, 100, block_author)
+	s := makeRewardsStats(is_aspen_dag_rewards, dags, votes, trxs, 100, block_author, 1000)
 	assert.Equal(t, 3, len(s.ValidatorsStats))
 	assert.Equal(t, 6, int(s.TotalDagCount))
 	assert.Equal(t, 6, int(s.TotalVotesWeight))
@@ -160,6 +162,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 	config.Chain.EligibilityBalanceThreshold = big.NewInt(5000000)
 	config.Chain.Hardforks.AspenHf.BlockNumPartTwo = 100
 	config.Chain.Hardforks.MagnoliaHf.BlockNum = 100
+	config.Chain.Hardforks.CactiHf.BlockNum = 110
 
 	st := pebble.NewStorage("")
 
@@ -195,6 +198,7 @@ func TestRewardsWithNodeData(t *testing.T) {
 		rewardsStats.TotalVotesWeight = 7
 		rewardsStats.MaxVotesWeight = 8
 		rewardsStats.BlockAuthor = block.Author
+		rewardsStats.LambdaMs = 1000
 
 		// Expected block reward
 		totalReward := rewardFromStake(config.Chain, r.totalStake)

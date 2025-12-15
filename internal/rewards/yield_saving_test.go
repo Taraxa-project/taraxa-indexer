@@ -106,7 +106,7 @@ func TestAfterCommit_WithRewardsDistributionAndWeekChange(t *testing.T) {
 	// Current time - week 2 of 2022
 	currentTime := time.Date(2022, 1, 10, 0, 0, 0, 0, time.UTC) // Monday of week 2
 	// Previous time - week 1 of 2022
-	prevTime := time.Date(2022, 1, 3, 0, 0, 0, 0, time.UTC) // Monday of week 1
+	prevTime := time.Date(2022, 1, 2, 0, 0, 0, 0, time.UTC) // Monday of week 1
 
 	block := common.Block{
 		Pbft: models.Pbft{
@@ -136,11 +136,11 @@ func TestAfterCommit_WithRewardsDistributionAndWeekChange(t *testing.T) {
 	}
 	batch.CommitBatch()
 
-	pys := &prevYieldsSaving
-	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, pys)
+	pys := prevYieldsSaving
+	r := MakeRewards(st, st.NewBatch(), config.Chain, bd, &pys)
 
 	r.AfterCommit()
-	assert.NotEqual(t, *pys, *r.prevYieldsSaving)
+	assert.NotEqual(t, *r.prevYieldsSaving, prevYieldsSaving)
 }
 
 func TestAfterCommit_SameWeek(t *testing.T) {

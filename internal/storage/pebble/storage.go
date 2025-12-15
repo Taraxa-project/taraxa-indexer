@@ -441,20 +441,21 @@ func (s *Storage) GetYieldIntervals(from_block, to_block uint64) []uint64 {
 }
 
 func (s *Storage) GetLatestYieldSaving() (res *storage.YieldSaving) {
+	res = new(storage.YieldSaving)
 	itr := s.find([]byte(GetPrefix(res)))
+	for itr.Valid() {
+		log.WithFields(log.Fields{"key": itr.Key()}).Info("GetLatestYieldSaving")
+		itr.Next()
+	}
 	itr.Last()
 	if !itr.Valid() {
 		return
 	}
-	key := itr.Key()
-	parts := strings.Split(string(key), "|")
-	if len(parts) < 2 {
-		return
-	}
-	_, err := strconv.ParseUint(parts[1], 10, 64)
+	err := rlp.DecodeBytes(itr.Value(), res)
 	if err != nil {
-		return
+		log.WithError(err).Fatal("GetLatestYieldSaving failed")
 	}
+	log.WithFields(log.Fields{"res": res}).Info("GetLatestYieldSaving")
 	return res
 }
 

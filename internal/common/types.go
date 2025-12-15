@@ -123,6 +123,7 @@ type TransactionTrace struct {
 }
 
 type VotesResponse struct {
+	Round                 uint64 `json:"round"`
 	PeriodTotalVotesCount uint64 `json:"total_votes_count,omitempty"`
 	Votes                 []Vote `json:"votes,omitempty"`
 }

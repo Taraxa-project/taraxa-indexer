@@ -127,11 +127,12 @@ func (cc *ChainConfig) IsEligible(stake *big.Int) bool {
 }
 
 func (cc *ChainConfig) InitLambda(period uint64, dbLambdaMs *uint64) {
-	if cc.Hardforks.CactiHf.BlockNum >= period {
+	if cc.Hardforks.CactiHf.BlockNum <= period {
 		if dbLambdaMs != nil {
 			cc.LambdaMs = *dbLambdaMs
+		} else {
+			cc.LambdaMs = cc.Hardforks.CactiHf.DefaultLambda
 		}
-		cc.LambdaMs = cc.Hardforks.CactiHf.DefaultLambda
 	}
 }
 
@@ -143,6 +144,13 @@ func (cc *ChainConfig) AdjustLambda(period uint64, lambda *uint64) {
 	}
 }
 
+func (cc *ChainConfig) GetLambda(round uint64) uint64 {
+	if round == 1 {
+		return cc.LambdaMs
+	}
+	return cc.Hardforks.CactiHf.DefaultLambda
+}
+
 func DefaultChainConfig() *ChainConfig {
 	return &ChainConfig{
 		CommitteeSize:               big.NewInt(1000),
@@ -151,6 +159,7 @@ func DefaultChainConfig() *ChainConfig {
 		DagProposersReward:          big.NewInt(50),
 		MaxBlockAuthorReward:        big.NewInt(10),
 		EligibilityBalanceThreshold: ParseStringToBigInt("0x69E10DE76676D0800000"),
+		LambdaMs:                    1500,
 	}
 }
 
