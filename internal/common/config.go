@@ -47,6 +47,7 @@ func (hf *AspenHfConfig) UnmarshalJSON(data []byte) error {
 type CactiHfConfig struct {
 	BlockNum       uint64 `json:"block_num"`
 	DefaultLambda  uint64 `json:"lambda_default"`
+	LambdaMax      uint64 `json:"lambda_max"`
 	ConsensusDelay uint64 `json:"consensus_delay"`
 }
 
@@ -59,6 +60,7 @@ func (hf *CactiHfConfig) UnmarshalJSON(data []byte) error {
 
 	hf.BlockNum = ParseUInt(res["block_num"])
 	hf.DefaultLambda = ParseUInt(res["lambda_default"])
+	hf.LambdaMax = ParseUInt(res["lambda_max"])
 	hf.ConsensusDelay = ParseUInt(res["consensus_delay"])
 
 	return nil
@@ -131,7 +133,7 @@ func (cc *ChainConfig) InitLambda(period uint64, dbLambdaMs *uint64) {
 		if dbLambdaMs != nil {
 			cc.LambdaMs = *dbLambdaMs
 		} else {
-			cc.LambdaMs = cc.Hardforks.CactiHf.DefaultLambda
+			cc.LambdaMs = cc.Hardforks.CactiHf.LambdaMax
 		}
 	}
 }
@@ -145,10 +147,10 @@ func (cc *ChainConfig) AdjustLambda(period uint64, lambda *uint64) {
 }
 
 func (cc *ChainConfig) GetLambda(round uint64) uint64 {
-	if round == 1 {
-		return cc.LambdaMs
+	if round > 1 {
+		return cc.Hardforks.CactiHf.DefaultLambda
 	}
-	return cc.Hardforks.CactiHf.DefaultLambda
+	return cc.LambdaMs
 }
 
 func DefaultChainConfig() *ChainConfig {

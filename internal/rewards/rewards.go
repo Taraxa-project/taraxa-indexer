@@ -11,20 +11,20 @@ import (
 )
 
 type Rewards struct {
-	storage     storage.Storage
-	batch       storage.Batch
-	config      *common.ChainConfig
-	validators  *Validators
-	totalStake  *big.Int
-	totalSupply *big.Int
-	blockNum    uint64
-	blockTime   uint64
-
+	storage          storage.Storage
+	batch            storage.Batch
+	config           *common.ChainConfig
+	validators       *Validators
+	totalStake       *big.Int
+	totalSupply      *big.Int
+	blockNum         uint64
+	blockTime        uint64
+	round            uint64
 	prevYieldsSaving *storage.YieldSaving
 }
 
 func MakeRewards(storage storage.Storage, batch storage.Batch, config *common.ChainConfig, block *chain.BlockData, prevYieldsSaving *storage.YieldSaving) *Rewards {
-	r := Rewards{storage, batch, config, MakeValidators(config, block.Validators), block.TotalAmountDelegated, block.TotalSupply, block.Pbft.Number, block.Pbft.Timestamp, prevYieldsSaving}
+	r := Rewards{storage, batch, config, MakeValidators(config, block.Validators), block.TotalAmountDelegated, block.TotalSupply, block.Pbft.Number, block.Pbft.Timestamp, block.Round, prevYieldsSaving}
 	// special case for  the networks without aspen hf part1 (incorrect initialization of the supply without aspen hf part1)
 	if r.totalSupply.Sign() == 0 {
 		r.totalSupply = r.storage.GetTotalSupply()
@@ -80,7 +80,7 @@ func (r *Rewards) ProcessStats(periodStats *storage.RewardsStats, totalMinted *b
 func (r *Rewards) makeRewardsStats(
 	dags []common.DagBlock, votes common.VotesResponse,
 	trxs []common.Transaction, block_author string) *storage.RewardsStats {
-	return makeRewardsStats(r.config.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.CommitteeSize.Uint64(), block_author, r.config.GetLambda(votes.Round)).ToStorage()
+	return makeRewardsStats(r.config.Hardforks.IsAspenHfOne(r.blockNum), dags, votes, trxs, r.config.CommitteeSize.Uint64(), block_author, r.config.GetLambda(r.round)).ToStorage()
 }
 
 func (r *Rewards) calculateBlockReward(total_stake, current_total_tara_supply, blocks_per_year *big.Int) (block_reward *big.Int, yield *big.Int) {

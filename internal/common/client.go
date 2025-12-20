@@ -14,7 +14,6 @@ type Client interface {
 	TraceBlockTransactions(number uint64) (traces []TransactionTrace, err error)
 	GetTransactionByHash(hash string) (trx Transaction, err error)
 	GetPeriodTransactions(period uint64) (trxs []Transaction, err error)
-	GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags PbftBlockWithDags, err error)
 	GetDagBlockByHash(hash string) (dag DagBlock, err error)
 	GetPeriodDagBlocks(period uint64) (dags []DagBlock, err error)
 	GetPreviousBlockCertVotes(period uint64) (vr VotesResponse, err error)
@@ -29,6 +28,7 @@ type Client interface {
 	GetLogs(fromBlock, toBlock uint64, addresses []string, topics [][]string) (logs []EventLog, err error)
 	FilterContracts(addresses []models.Address) (contracts []models.Address, err error)
 	GetPeriodLambda(block_num uint64) (lambdaMs *uint64, err error)
+	GetPeriodRound(block_num uint64) (round uint64, err error)
 	// Close disconnects from the node
 	Close()
 }

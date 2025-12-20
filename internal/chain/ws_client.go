@@ -125,12 +125,6 @@ func (client *WsClient) GetPeriodTransactions(number uint64) (trxs []common.Tran
 	return
 }
 
-func (client *WsClient) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags common.PbftBlockWithDags, err error) {
-	err = client.rpc.Call(&pbftWithDags, "taraxa_getScheduleBlockByPeriod", fmt.Sprintf("0x%x", period))
-	metrics.RpcCallsCounter.Inc()
-	return
-}
-
 func (client *WsClient) GetDagBlockByHash(hash string) (dag common.DagBlock, err error) {
 	err = client.rpc.Call(&dag, "taraxa_getDagBlockByHash", hash, false)
 	metrics.RpcCallsCounter.Inc()
@@ -214,6 +208,14 @@ func (client *WsClient) GetPeriodLambda(period uint64) (lambdaMs *uint64, err er
 	*lambdaMs = common.ParseUInt(lambdaStr)
 	metrics.RpcCallsCounter.Inc()
 	return
+}
+
+func (client *WsClient) GetPeriodRound(period uint64) (round uint64, err error) {
+	votes, err := client.GetPreviousBlockCertVotes(period + 1)
+	if err != nil {
+		return
+	}
+	return votes.Round, nil
 }
 
 func (client *WsClient) FilterContracts(addresses []models.Address) (contracts []models.Address, err error) {
