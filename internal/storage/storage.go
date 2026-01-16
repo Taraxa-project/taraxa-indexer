@@ -38,7 +38,7 @@ type Storage interface {
 	GetMonthlyActiveAddresses(to_date uint64) *uint64
 	GetDailyContractUsers(address string, timestamp uint64) DailyContractUsersList
 	GetYieldIntervals(from_block, to_block uint64) []uint64
-	GetYieldInterval(block uint64) (uint64, uint64)
+	GetYieldInterval(block *uint64) (uint64, uint64)
 	GetLatestYieldSaving() *YieldSaving
 	GetLambda() *uint64
 }

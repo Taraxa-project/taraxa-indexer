@@ -126,7 +126,7 @@ func (s *SimpleStorage) GetDailyContractUsers(address string, timestamp uint64) 
 	return storage.DailyContractUsersList{}
 }
 func (s *SimpleStorage) GetYieldIntervals(from_block, to_block uint64) []uint64 { return []uint64{} }
-func (s *SimpleStorage) GetYieldInterval(block uint64) (uint64, uint64)         { return 0, 0 }
+func (s *SimpleStorage) GetYieldInterval(block *uint64) (uint64, uint64)        { return 0, 0 }
 
 func (s *SimpleStorage) GetLatestYieldSaving() *storage.YieldSaving {
 	return &storage.YieldSaving{}

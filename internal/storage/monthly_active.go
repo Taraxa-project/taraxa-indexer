@@ -26,7 +26,7 @@ func CacheMonthlyActiveAddresses(s Storage, from_date, to_date uint64) {
 		"count":     count,
 		"from_date": from_date,
 		"to_date":   to_date,
-	}).Info("MonthlyActiveAddresses cached")
+	}).Debug("MonthlyActiveAddresses cached")
 	queried = nil
 }
 

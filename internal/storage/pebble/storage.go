@@ -410,23 +410,46 @@ func (s *Storage) GetDailyContractUsers(address string, timestamp uint64) storag
 	return ret
 }
 
-func (s *Storage) GetYieldInterval(block uint64) (uint64, uint64) {
-	blocks := s.GetYieldIntervals(block, block)
-	if len(blocks) == 0 {
+func getBlockFromKey(key []byte) (uint64, error) {
+	keyParts := strings.Split(string(key), "|")
+	if len(keyParts) < 2 {
+		return 0, fmt.Errorf("key parts less than 2")
+	}
+	// Parse as base 10 to handle leading zeros correctly
+	curr_block, err := strconv.ParseUint(keyParts[1], 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return curr_block, nil
+}
+
+func (s *Storage) GetYieldInterval(block *uint64) (from_block uint64, to_block uint64) {
+	iter := s.find(GetPrefixKey(GetPrefix(storage.Yield{}), "00"))
+	var err error
+	if block == nil {
+		iter.Last()
+	} else {
+		found := iter.SeekGE(getKey(GetPrefix(storage.Yield{}), "", *block))
+		if !found {
+			return 0, 0
+		}
+	}
+	to_block, err = getBlockFromKey(iter.Key())
+	if err != nil {
 		return 0, 0
 	}
-	return blocks[0], blocks[len(blocks)-1]
+	found := iter.SeekLT(getKey(GetPrefix(storage.Yield{}), "", to_block))
+	if !found {
+		return 0, to_block
+	}
+	from_block, err = getBlockFromKey(iter.Key())
+	return
 }
 
 func (s *Storage) GetYieldIntervals(from_block, to_block uint64) []uint64 {
 	intervals := make([]uint64, 0)
 	s.ForEachFromKey([]byte(GetPrefix(storage.Yield{})), []byte(storage.FormatIntToKey(from_block)), storage.Forward, func(key, res []byte) (stop bool) {
-		keyParts := strings.Split(string(key), "|")
-		if len(keyParts) < 2 {
-			return false
-		}
-		// Parse as base 10 to handle leading zeros correctly
-		curr_block, err := strconv.ParseUint(keyParts[1], 10, 64)
+		curr_block, err := getBlockFromKey(key)
 		if err != nil {
 			return false
 		}

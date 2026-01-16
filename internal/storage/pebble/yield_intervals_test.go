@@ -11,7 +11,7 @@ func TestGetYieldInterval_EmptyStorage(t *testing.T) {
 	s := NewStorage("")
 	defer func() { _ = s.Close() }()
 
-	from, to := s.GetYieldInterval(100)
+	from, to := s.GetYieldInterval(func() *uint64 { b := uint64(100); return &b }())
 	assert.Equal(t, uint64(0), from)
 	assert.Equal(t, uint64(0), to)
 }
@@ -26,8 +26,8 @@ func TestGetYieldInterval_SingleBlock(t *testing.T) {
 	batch.Add(&yield, "", 100)
 	batch.CommitBatch()
 
-	from, to := s.GetYieldInterval(100)
-	assert.Equal(t, uint64(100), from)
+	from, to := s.GetYieldInterval(func() *uint64 { b := uint64(100); return &b }())
+	assert.Equal(t, uint64(0), from)
 	assert.Equal(t, uint64(100), to)
 }
 
@@ -45,8 +45,8 @@ func TestGetYieldInterval_MultipleBlocks(t *testing.T) {
 
 	// GetYieldInterval returns the range for the specific block
 	// Since we're querying for block 103, and it exists, it should return 103, 103
-	from, to := s.GetYieldInterval(103)
-	assert.Equal(t, uint64(103), from)
+	from, to := s.GetYieldInterval(func() *uint64 { b := uint64(103); return &b }())
+	assert.Equal(t, uint64(102), from)
 	assert.Equal(t, uint64(103), to)
 }
 
@@ -168,21 +168,21 @@ func TestGetYieldIntervals_WithValidatorYields(t *testing.T) {
 
 	// Add both total yields and validator-specific yields
 	batch := s.NewBatch()
-	
+
 	// Total yields (empty validator address)
 	totalBlocks := []uint64{100, 110, 120}
 	for _, block := range totalBlocks {
 		yield := storage.Yield{Yield: "10.5"}
 		batch.Add(&yield, "", block)
 	}
-	
+
 	// Validator-specific yields (should not be included in GetYieldIntervals)
 	validatorBlocks := []uint64{105, 115, 125}
 	for _, block := range validatorBlocks {
 		yield := storage.Yield{Yield: "5.2"}
 		batch.Add(&yield, "validator1", block)
 	}
-	
+
 	batch.CommitBatch()
 
 	// GetYieldIntervals should only return total yields (empty validator address)
@@ -206,7 +206,7 @@ func TestDebugKeyFormat(t *testing.T) {
 	// Test GetYieldInterval for a specific block
 	intervals := s.GetYieldIntervals(103, 103)
 	assert.Equal(t, []uint64{103}, intervals)
-	
+
 	// Test that all blocks are stored correctly
 	allIntervals := s.GetYieldIntervals(100, 105)
 	assert.Equal(t, blocks, allIntervals)
@@ -227,10 +227,10 @@ func TestGetYieldIntervals_KeyParsing(t *testing.T) {
 
 	// Debug: let's see what keys are actually stored
 	intervals := s.GetYieldIntervals(1, 10000)
-	
+
 	// The actual parsing depends on the key format, so let's be more flexible
 	assert.Equal(t, len(blocks), len(intervals))
-	
+
 	// Verify that intervals are in ascending order
 	for i := 1; i < len(intervals); i++ {
 		assert.Greater(t, intervals[i], intervals[i-1])

@@ -250,7 +250,7 @@ func (a *ApiHandler) GetTransactionLogs(ctx echo.Context, hash models.HashParam)
 
 func (a *ApiHandler) getAddressYield(address models.AddressParam, block *uint64) (resp *models.YieldResponse, err error) {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
-	from_block, to_block := a.storage.GetYieldInterval(*block)
+	from_block, to_block := a.storage.GetYieldInterval(block)
 	if pbft_count < to_block {
 		err = fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, to_block)
 		return
@@ -319,7 +319,7 @@ func (a *ApiHandler) GetAddressYieldForInterval(ctx echo.Context, address models
 
 func (a *ApiHandler) GetTotalYield(ctx echo.Context, params models.GetTotalYieldParams) error {
 	pbft_count := a.storage.GetFinalizationData().PbftCount
-	from_block, to_block := a.storage.GetYieldInterval(*params.BlockNumber)
+	from_block, to_block := a.storage.GetYieldInterval(params.BlockNumber)
 	if pbft_count < to_block {
 		return fmt.Errorf("not enough PBFT blocks(%d) to calculate yield for the interval [%d, %d]", pbft_count, from_block, to_block)
 	}

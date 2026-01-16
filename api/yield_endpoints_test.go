@@ -39,13 +39,13 @@ func (m *MockStorageWithYields) GetTotalYield(block uint64) storage.Yield {
 	return m.GetValidatorYield("", block) // Total yield stored under empty validator
 }
 
-func (m *MockStorageWithYields) GetYieldInterval(block uint64) (uint64, uint64) {
+func (m *MockStorageWithYields) GetYieldInterval(block *uint64) (uint64, uint64) {
 	if len(m.yieldIntervals) == 0 {
 		return 0, 0
 	}
 	// Find the closest interval for the given block
 	for i, intervalBlock := range m.yieldIntervals {
-		if intervalBlock >= block {
+		if intervalBlock >= *block {
 			if i == 0 {
 				return intervalBlock, intervalBlock
 			}
@@ -361,8 +361,8 @@ func TestYieldEndpoints_Integration(t *testing.T) {
 	assert.Equal(t, expectedIntervals, intervals)
 
 	// Test GetYieldInterval
-	from, to := st.GetYieldInterval(2000)
-	assert.Equal(t, uint64(2000), from)
+	from, to := st.GetYieldInterval(func() *uint64 { b := uint64(2000); return &b }())
+	assert.Equal(t, uint64(1000), from)
 	assert.Equal(t, uint64(2000), to)
 
 	// Test API with real storage

@@ -169,7 +169,8 @@ func (i *Indexer) sync(start, end uint64) error {
 		}
 
 		if bd.Pbft.Number%100 == 0 {
-			log.WithFields(log.Fields{"period": bd.Pbft.Number, "elapsed_ms": time.Since(prev).Milliseconds()}).Info("Syncing: block applied")
+			date := time.Unix(int64(bd.Pbft.Timestamp), 0)
+			log.WithFields(log.Fields{"period": bd.Pbft.Number, "elapsed_ms": time.Since(prev).Milliseconds(), "timestamp": date}).Info("Syncing: block applied")
 			prev = time.Now()
 		}
 		log.WithFields(log.Fields{"period": bd.Pbft.Number, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")
