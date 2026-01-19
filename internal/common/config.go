@@ -146,13 +146,6 @@ func (cc *ChainConfig) AdjustLambda(period uint64, lambda *uint64) {
 	}
 }
 
-func (cc *ChainConfig) GetLambda(round uint64) uint64 {
-	if round > 1 {
-		return cc.Hardforks.CactiHf.DefaultLambda
-	}
-	return cc.LambdaMs
-}
-
 func DefaultChainConfig() *ChainConfig {
 	return &ChainConfig{
 		CommitteeSize:               big.NewInt(1000),

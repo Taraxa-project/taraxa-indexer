@@ -442,7 +442,7 @@ func (s *Storage) GetYieldInterval(block *uint64) (from_block uint64, to_block u
 	if !found {
 		return 0, to_block
 	}
-	from_block, err = getBlockFromKey(iter.Key())
+	from_block, _ = getBlockFromKey(iter.Key())
 	return
 }
 
