@@ -43,9 +43,14 @@ func (m *BalanceToAddressStats) MigrateAccounts(s *pebble.Storage) error {
 
 func (m *BalanceToAddressStats) Apply(s *pebble.Storage) error {
 	err := m.MigrateAccounts(s)
+	// if the accounts are not found, we don't need to migrate the address stats, it means that indexer was not running yet
+	if err == pebble.ErrNotFound {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
+
 	batch := s.NewBatch()
 	balances := s.GetAccounts().ToMap()
 	count := 0

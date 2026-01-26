@@ -24,7 +24,7 @@ func makeIntervalRewards() (r IntervalRewards) {
 
 func (r *Rewards) accumulateRewards(stats *storage.RewardsStats, intervalRewards *IntervalRewards) {
 	pr := r.rewardsFromStats(stats)
-	if r.config.Chain.Hardforks.IsAspenHfTwo(r.blockNum) {
+	if r.config.Hardforks.IsAspenHfTwo(r.blockNum) {
 		r.totalSupply.Add(r.totalSupply, pr.TotalReward)
 	}
 	for validator, reward := range pr.ValidatorRewards {

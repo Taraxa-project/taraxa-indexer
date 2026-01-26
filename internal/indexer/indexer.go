@@ -12,12 +12,14 @@ import (
 type Indexer struct {
 	client                      common.Client
 	storage                     storage.Storage
-	config                      *common.Config
+	config                      *common.ChainConfig
 	retry_time                  time.Duration
 	consistency_check_available bool
 	stats                       *chain.Stats
 	dayStats                    *storage.DayStatsWithTimestamp
 	lastBlockTimestamp          uint64
+	prevYieldsSaving            storage.YieldSaving
+	syncQueueLimit              uint64
 }
 
 func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) {
@@ -33,10 +35,11 @@ func MakeAndRun(client common.Client, s storage.Storage, c *common.Config, stats
 func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats *chain.Stats, retry_time time.Duration) (i *Indexer) {
 	i = new(Indexer)
 	i.storage = s
-	i.config = c
+	i.config = c.Chain
 	i.stats = stats
 	i.client = client
 	i.retry_time = retry_time
+	i.syncQueueLimit = c.SyncQueueLimit
 
 	version, err := i.client.GetVersion()
 	if err != nil || !chain.CheckProtocolVersion(version) {
@@ -48,6 +51,19 @@ func NewIndexer(client common.Client, s storage.Storage, c *common.Config, stats
 	if !i.consistency_check_available {
 		log.WithError(stats_err).Warn("Method for consistency check isn't available")
 	}
+	// get it from the database
+	ys := i.storage.GetLatestYieldSaving()
+	log.WithFields(log.Fields{"ys": ys}).Info("GetLatestYieldSaving")
+	if ys != nil {
+		i.prevYieldsSaving = *ys
+	} else {
+		i.prevYieldsSaving = storage.YieldSaving{
+			Time:   i.config.DagGenesisBlock.Timestamp,
+			Period: 0,
+		}
+	}
+	i.config.InitLambda(i.storage.GetFinalizationData().PbftCount, i.storage.GetLambda())
+
 	return
 }
 
@@ -77,7 +93,7 @@ func (i *Indexer) init() {
 	if err != nil {
 		log.WithError(err).Fatal("GetGenesis error")
 	}
-	i.config.Chain = chain_genesis.ToChainConfig()
+	i.config = chain_genesis.ToChainConfig()
 
 	// Process genesis if db is clean
 	if db_clean {
@@ -95,12 +111,23 @@ func (i *Indexer) initDayStats(block *common.Block) {
 	i.dayStats = &day_stats
 }
 
+func (i *Indexer) saveLambda(lambdaMs *uint64) {
+	if lambdaMs == nil {
+		return
+	}
+	batch := i.storage.NewBatch()
+	batch.AddLambda(*lambdaMs)
+	batch.CommitBatch()
+}
+
 func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint64, error) {
+	i.config.AdjustLambda(bd.Pbft.Number, bd.LambdaMs)
+
 	if i.dayStats == nil {
 		i.initDayStats(bd.Pbft)
 	}
 	bc := MakeBlockContext(i.storage, i.client, i.config, i.dayStats)
-	dc, tc, err := bc.process(bd, i.stats)
+	dc, tc, err := bc.process(bd, i.stats, &i.prevYieldsSaving)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -113,6 +140,7 @@ func (i *Indexer) processBlock(bd *chain.BlockData) (*blockContext, uint64, uint
 	}
 	i.lastBlockTimestamp = bd.Pbft.Timestamp
 
+	i.saveLambda(bd.LambdaMs)
 	return bc, dc, tc, nil
 }
 
@@ -121,7 +149,7 @@ func (i *Indexer) sync(start, end uint64) error {
 	if start >= end {
 		return nil
 	}
-	queue_limit := min(end-start, i.config.SyncQueueLimit)
+	queue_limit := min(end-start, i.syncQueueLimit)
 	log.WithFields(log.Fields{"start": start, "end": end, "queue_limit": queue_limit}).Info("Syncing: started")
 	sq := MakeSyncQueue(start, end, queue_limit, i.client)
 
@@ -141,7 +169,8 @@ func (i *Indexer) sync(start, end uint64) error {
 		}
 
 		if bd.Pbft.Number%100 == 0 {
-			log.WithFields(log.Fields{"period": bd.Pbft.Number, "elapsed_ms": time.Since(prev).Milliseconds()}).Info("Syncing: block applied")
+			date := time.Unix(int64(bd.Pbft.Timestamp), 0)
+			log.WithFields(log.Fields{"period": bd.Pbft.Number, "elapsed_ms": time.Since(prev).Milliseconds(), "timestamp": date}).Info("Syncing: block applied")
 			prev = time.Now()
 		}
 		log.WithFields(log.Fields{"period": bd.Pbft.Number, "dags": dc, "trxs": tc}).Debug("Syncing: block processed")

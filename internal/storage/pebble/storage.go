@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -39,22 +40,14 @@ const RewardsStatsPrefix = "rs"
 const dayStatsPrefix = "ds"
 const monthlyActiveAddressesPrefix = "ma"
 const dailyContractUsersPrefix = "cu"
+const yieldSavingPrefix = "ys"
+const lambdaPrefix = "l"
+
+var ErrNotFound = pebble.ErrNotFound
 
 type Storage struct {
 	db   *pebble.DB
 	path string
-}
-
-func navigate(direction storage.Direction) func(iter *pebble.Iterator) {
-	if direction == storage.Backward {
-		return func(iter *pebble.Iterator) {
-			iter.Prev()
-		}
-	}
-
-	return func(iter *pebble.Iterator) {
-		iter.Next()
-	}
 }
 
 func (s *Storage) NewBatch() storage.Batch {
@@ -151,6 +144,10 @@ func GetPrefix(o any) (ret string) {
 		ret = monthlyActiveAddressesPrefix
 	case *storage.DailyContractUsersList, storage.DailyContractUsersList:
 		ret = dailyContractUsersPrefix
+	case *storage.YieldSaving, storage.YieldSaving:
+		ret = yieldSavingPrefix
+	case *storage.Lambda, storage.Lambda:
+		ret = lambdaPrefix
 	// hack if we aren't passing original type directly to this function, but passing any from other function
 	case *any:
 		ret = GetPrefix(*o.(*any))
@@ -201,6 +198,18 @@ func (s *Storage) find(prefix []byte) *pebble.Iterator {
 		log.WithError(err).Fatal("NewIter failed")
 	}
 	return iter
+}
+
+func navigate(direction storage.Direction) func(iter *pebble.Iterator) {
+	if direction == storage.Backward {
+		return func(iter *pebble.Iterator) {
+			iter.Prev()
+		}
+	}
+
+	return func(iter *pebble.Iterator) {
+		iter.Next()
+	}
 }
 
 func (s *Storage) forEachKey(prefix, start_key []byte, fn func(key, res []byte) (stop bool), navigate func(iter *pebble.Iterator)) {
@@ -399,6 +408,90 @@ func (s *Storage) GetDailyContractUsers(address string, timestamp uint64) storag
 		log.WithError(err).Fatal("GetDailyContractUsers failed")
 	}
 	return ret
+}
+
+func getBlockFromKey(key []byte) (uint64, error) {
+	keyParts := strings.Split(string(key), "|")
+	if len(keyParts) < 2 {
+		return 0, fmt.Errorf("key parts less than 2")
+	}
+	// Parse as base 10 to handle leading zeros correctly
+	curr_block, err := strconv.ParseUint(keyParts[1], 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return curr_block, nil
+}
+
+func (s *Storage) GetYieldInterval(block *uint64) (from_block uint64, to_block uint64) {
+	iter := s.find(GetPrefixKey(GetPrefix(storage.Yield{}), "00"))
+	var err error
+	if block == nil {
+		iter.Last()
+	} else {
+		found := iter.SeekGE(getKey(GetPrefix(storage.Yield{}), "", *block))
+		if !found {
+			return 0, 0
+		}
+	}
+	to_block, err = getBlockFromKey(iter.Key())
+	if err != nil {
+		return 0, 0
+	}
+	found := iter.SeekLT(getKey(GetPrefix(storage.Yield{}), "", to_block))
+	if !found {
+		return 0, to_block
+	}
+	from_block, _ = getBlockFromKey(iter.Key())
+	return
+}
+
+func (s *Storage) GetYieldIntervals(from_block, to_block uint64) []uint64 {
+	intervals := make([]uint64, 0)
+	s.ForEachFromKey([]byte(GetPrefix(storage.Yield{})), []byte(storage.FormatIntToKey(from_block)), storage.Forward, func(key, res []byte) (stop bool) {
+		curr_block, err := getBlockFromKey(key)
+		if err != nil {
+			return false
+		}
+		// Only include blocks within the range [from_block, to_block]
+		if curr_block >= from_block && curr_block <= to_block {
+			intervals = append(intervals, curr_block)
+		}
+		// Stop if we've gone past the to_block
+		return curr_block > to_block
+	})
+	return intervals
+}
+
+func (s *Storage) GetLatestYieldSaving() (res *storage.YieldSaving) {
+	res = new(storage.YieldSaving)
+	itr := s.find([]byte(GetPrefix(res)))
+	for itr.Valid() {
+		log.WithFields(log.Fields{"key": itr.Key()}).Info("GetLatestYieldSaving")
+		itr.Next()
+	}
+	itr.Last()
+	if !itr.Valid() {
+		return
+	}
+	err := rlp.DecodeBytes(itr.Value(), res)
+	if err != nil {
+		log.WithError(err).Fatal("GetLatestYieldSaving failed")
+	}
+	log.WithFields(log.Fields{"res": res}).Info("GetLatestYieldSaving")
+	return res
+}
+
+func (s *Storage) GetLambda() *uint64 {
+	res := storage.Lambda{}
+	err := s.GetFromDB(&res, []byte(GetPrefix(res)))
+	if err != nil && err != pebble.ErrNotFound {
+		log.WithError(err).Fatal("GetLambda failed")
+	}
+	if err == pebble.ErrNotFound {
+		return nil
+	}
+	return &res.LambdaMs
 }
 
 func (s *Storage) GetFromDB(o any, key []byte) error {

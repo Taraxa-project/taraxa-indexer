@@ -14,7 +14,7 @@ var YieldFractionDecimalPrecision = big.NewInt(1e+6)
 
 func (r *Rewards) calculateCurrentYield(current_total_tara_supply *big.Int) *big.Int {
 	// Current yield = (max supply - current total supply) / current total supply
-	current_yield := big.NewInt(0).Sub(r.config.Chain.Hardforks.AspenHf.MaxSupply, current_total_tara_supply)
+	current_yield := big.NewInt(0).Sub(r.config.Hardforks.AspenHf.MaxSupply, current_total_tara_supply)
 	current_yield.Mul(current_yield, YieldFractionDecimalPrecision)
 	current_yield.Div(current_yield, current_total_tara_supply)
 
@@ -54,28 +54,25 @@ func GetYieldForInterval(yields_sum, blocks_per_year *big.Int, elem_count int64)
 	ret /= float64(percentage_multiplier.Uint64())
 	return ret
 }
-func (r *Rewards) processIntervalYield(batch storage.Batch) {
+
+func (r *Rewards) processIntervalYield(intervalStart uint64, batch storage.Batch) {
 	sum := big.NewInt(0)
-	storage.ProcessIntervalData(r.storage, r.blockNum-r.config.TotalYieldSavingInterval, func(key []byte, o storage.MultipliedYield) (stop bool) {
+	storage.ProcessIntervalData(r.storage, intervalStart, func(key []byte, o storage.MultipliedYield) (stop bool) {
 		sum.Add(sum, o.Yield)
 		batch.Remove([]byte(key))
 		return false
 	})
 
-	yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.TotalYieldSavingInterval))
+	yield := GetYieldForInterval(sum, r.config.BlocksPerYear, int64(r.blockNum-intervalStart))
 	log.WithFields(log.Fields{"total_yield": yield}).Info("processIntervalYield")
 	batch.AddSingleKey(&storage.Yield{Yield: common.FormatFloat(yield)}, storage.FormatIntToKey(r.blockNum))
 }
 
-func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
-	start := uint64(0)
-	if r.blockNum > r.config.ValidatorsYieldSavingInterval {
-		start = r.blockNum - r.config.ValidatorsYieldSavingInterval
-	}
+func (r *Rewards) processValidatorsIntervalYield(intervalStart uint64, batch storage.Batch) {
 
 	sum_by_validator := make(map[string]*big.Int)
 
-	storage.ProcessIntervalData(r.storage, start, func(key []byte, o storage.ValidatorsYield) (stop bool) {
+	storage.ProcessIntervalData(r.storage, intervalStart, func(key []byte, o storage.ValidatorsYield) (stop bool) {
 		for _, y := range o.Yields {
 			if sum_by_validator[y.Validator] == nil {
 				sum_by_validator[y.Validator] = big.NewInt(0)
@@ -89,7 +86,7 @@ func (r *Rewards) processValidatorsIntervalYield(batch storage.Batch) {
 	log.WithFields(log.Fields{"validators": len(sum_by_validator)}).Info("processValidatorsIntervalYield")
 
 	for val, sum := range sum_by_validator {
-		yield := GetYieldForInterval(sum, r.config.Chain.BlocksPerYear, int64(r.config.ValidatorsYieldSavingInterval))
+		yield := GetYieldForInterval(sum, r.config.BlocksPerYear, int64(r.blockNum-intervalStart))
 		log.WithFields(log.Fields{"validator": val, "yield": yield}).Info("processValidatorsIntervalYield")
 		batch.Add(&storage.Yield{Yield: common.FormatFloat(yield)}, val, r.blockNum)
 	}

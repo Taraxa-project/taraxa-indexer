@@ -18,7 +18,7 @@ import (
 type blockContext struct {
 	Storage            storage.Storage
 	Batch              storage.Batch
-	Config             *common.Config
+	Config             *common.ChainConfig
 	Client             common.Client
 	Block              *chain.BlockData
 	addressStats       *storage.AddressStatsMap
@@ -27,7 +27,7 @@ type blockContext struct {
 	dailyContractUsers map[string]*storage.DailyContractUsers // key: contract_address
 }
 
-func MakeBlockContext(s storage.Storage, client common.Client, config *common.Config, dayStats *storage.DayStatsWithTimestamp) *blockContext {
+func MakeBlockContext(s storage.Storage, client common.Client, config *common.ChainConfig, dayStats *storage.DayStatsWithTimestamp) *blockContext {
 	var bc blockContext
 	bc.Storage = s
 	bc.Batch = s.NewBatch()
@@ -84,13 +84,16 @@ func (bc *blockContext) addContractUser(sender, receiver string) {
 
 // saveDailyContractUsers saves all tracked daily contract users to storage
 func (bc *blockContext) saveDailyContractUsers() {
+	if bc.Block == nil {
+		return
+	}
 	dayStart := common.DayStart(bc.Block.Pbft.Timestamp)
 	for contractAddress, users := range bc.dailyContractUsers {
 		bc.Batch.AddDailyContractUsers(contractAddress, dayStart, users)
 	}
 }
 
-func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_count, trx_count uint64, err error) {
+func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats, prevYieldsSaving *storage.YieldSaving) (dags_count, trx_count uint64, err error) {
 	if (bc.finalized.PbftCount + 1) != bd.Pbft.Number {
 		err = fmt.Errorf("block number mismatch: %d != %d", bc.finalized.PbftCount+1, bd.Pbft.Number)
 		return
@@ -110,11 +113,11 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats) (dags_c
 
 	totalReward := common.ParseStringToBigInt(bd.Pbft.TotalReward)
 
-	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block)
-	blockFee := r.Process(totalReward, bc.Block.Dags, bc.Block.Transactions, bc.Block.Votes, bc.Block.Pbft.Author)
+	r := rewards.MakeRewards(bc.Storage, bc.Batch, bc.Config, bc.Block, prevYieldsSaving)
+	blockFee := r.Process(totalReward, bc.Block)
 
 	// add total fee to the dpos contract balance after the magnolia hardfork(it is added to block producers commission pools)
-	if bc.Config.Chain != nil && (bc.Block.Pbft.Number >= bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
+	if bc.Config != nil && (bc.Block.Pbft.Number >= bc.Config.Hardforks.MagnoliaHf.BlockNum) {
 		if blockFee != nil && blockFee.Cmp(big.NewInt(0)) > 0 {
 			bc.addressStats.AddToBalance(bc.Storage, common.DposContractAddress, blockFee)
 		}

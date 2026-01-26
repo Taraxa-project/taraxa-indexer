@@ -16,6 +16,7 @@ type BlockData struct {
 	Validators           []common.Validator
 	TotalAmountDelegated *big.Int
 	TotalSupply          *big.Int
+	LambdaMs             *uint64
 }
 
 func MakeEmptyBlockData() *BlockData {
@@ -37,6 +38,7 @@ func scheduleBlockDataTasks(tp pool.Pool, c common.Client, period uint64, bd *Bl
 	tp.Go(common.MakeTaskWithResult(c.GetPreviousBlockCertVotes, period, &bd.Votes, err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetValidatorsAtBlock, period, &bd.Validators, err).Run)
 	tp.Go(common.MakeTaskWithResult(c.GetTotalAmountDelegated, period, &bd.TotalAmountDelegated, err).Run)
+	tp.Go(common.MakeTaskWithResult(c.GetPeriodLambda, period, &bd.LambdaMs, err).Run)
 	supplyPeriod := period
 	if period >= 100 {
 		supplyPeriod = period - 100

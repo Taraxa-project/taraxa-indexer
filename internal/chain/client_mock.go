@@ -69,10 +69,6 @@ func (c *ClientMock) GetPeriodTransactions(num uint64) (trxs []common.Transactio
 	return trxs, nil
 }
 
-func (c *ClientMock) GetPbftBlockWithDagBlocks(period uint64) (pbftWithDags common.PbftBlockWithDags, err error) {
-	return common.PbftBlockWithDags{}, ErrNotImplemented
-}
-
 func (c *ClientMock) GetDagBlockByHash(hash string) (dag common.DagBlock, err error) {
 	return common.DagBlock{}, ErrNotImplemented
 }
@@ -114,6 +110,13 @@ func (c *ClientMock) GetTotalSupply(uint64) (totalSupply *big.Int, err error) {
 
 func (c *ClientMock) SubscribeNewHeads() (chan common.Block, *rpc.ClientSubscription, error) {
 	return nil, nil, nil
+}
+
+func (c *ClientMock) GetPeriodLambda(uint64) (lambdaMs *uint64, err error) {
+	return nil, nil
+}
+func (c *ClientMock) GetPeriodRound(uint64) (round uint64, err error) {
+	return 1, nil
 }
 
 func (c *ClientMock) Close() {

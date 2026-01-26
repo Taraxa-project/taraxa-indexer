@@ -35,7 +35,7 @@ func (bc *blockContext) processTransactions() (err error) {
 	elapsed_tp := time.Since(start_tp)
 	log.WithFields(log.Fields{"func": "scheduleTransactions", "period": bc.Block.Pbft.Number, "elapsed": elapsed_tp}).Debug("Schedule transactions time")
 	// add total fee to the block producer balance before the magnolia hardfork
-	if bc.Config.Chain != nil && (bc.Block.Pbft.Number < bc.Config.Chain.Hardforks.MagnoliaHf.BlockNum) {
+	if bc.Config != nil && (bc.Block.Pbft.Number < bc.Config.Hardforks.MagnoliaHf.BlockNum) {
 		bc.addressStats.AddToBalance(bc.Storage, bc.Block.Pbft.Author, feeReward)
 	}
 	elapsed := time.Since(start)

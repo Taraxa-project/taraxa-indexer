@@ -75,6 +75,22 @@ func (b *Batch) AddDayStats(d *storage.DayStatsWithTimestamp) {
 	}
 }
 
+func (b *Batch) AddYieldSaving(period, timestamp uint64) {
+	yst := storage.YieldSaving{
+		Time:   timestamp,
+		Period: period,
+	}
+	b.Add(&yst, "", period)
+}
+
+func (b *Batch) AddLambda(lambdaMs uint64) {
+	lambda := storage.Lambda{LambdaMs: lambdaMs}
+	err := b.AddWithKey(&lambda, []byte(GetPrefix(&lambda)))
+	if err != nil {
+		log.WithError(err).Fatal("SaveLambda failed")
+	}
+}
+
 func (b *Batch) Add(o any, key1 string, key2 uint64) {
 	err := b.AddWithKey(o, getKey(GetPrefix(o), key1, key2))
 	if err != nil {
