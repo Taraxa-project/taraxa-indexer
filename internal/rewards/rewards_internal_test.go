@@ -363,7 +363,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
 		count := 0
-		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
+		storage.ProcessIntervalData(r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
 			count++
 			return false
 		})
@@ -374,7 +374,7 @@ func TestTotalYieldSaving(t *testing.T) {
 	// check that this data was removed
 	{
 		count := 0
-		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
+		storage.ProcessIntervalData(r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
 			count++
 			return false
 		})
@@ -409,7 +409,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	assert.Equal(t, st.GetTotalYield(10), storage.Yield{})
 	{
 		count := 0
-		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
+		storage.ProcessIntervalData(r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
 			count++
 			return false
 		})
@@ -420,7 +420,7 @@ func TestValidatorsYieldSaving(t *testing.T) {
 	// check that this data was removed
 	{
 		count := 0
-		storage.ProcessIntervalData[storage.MultipliedYield](r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
+		storage.ProcessIntervalData(r.storage, 1, func(key []byte, o storage.MultipliedYield) (stop bool) {
 			count++
 			return false
 		})

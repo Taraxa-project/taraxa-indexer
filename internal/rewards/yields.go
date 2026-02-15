@@ -63,7 +63,13 @@ func (r *Rewards) processIntervalYield(intervalStart uint64, batch storage.Batch
 		return false
 	})
 
-	yield := GetYieldForInterval(sum, r.config.BlocksPerYear, int64(r.blockNum-intervalStart))
+	// TODO: calculate it dynamically for the interval, not just use latest value
+	blocks_per_year := r.config.BlocksPerYear
+	if r.config.Hardforks.IsCactiHf(r.blockNum) {
+		blocks_per_year = blocksPerYearFromLambdaMs(r.config.LambdaMs, r.config.Hardforks.CactiHf.ConsensusDelay)
+	}
+
+	yield := GetYieldForInterval(sum, blocks_per_year, int64(r.blockNum-intervalStart))
 	log.WithFields(log.Fields{"total_yield": yield}).Info("processIntervalYield")
 	batch.AddSingleKey(&storage.Yield{Yield: common.FormatFloat(yield)}, storage.FormatIntToKey(r.blockNum))
 }
