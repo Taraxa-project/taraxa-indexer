@@ -4,6 +4,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 	"github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble"
 	migration "github.com/Taraxa-project/taraxa-indexer/internal/storage/pebble/migrations"
 	"github.com/labstack/echo/v4"
+	echomiddleware "github.com/oapi-codegen/echo-middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,7 +42,7 @@ var (
 func init() {
 	http_port = flag.Int("http_port", 8080, "port to listen")
 	metrics_port = flag.Int("metrics_port", 2112, "metrics http port")
-	blockchain_ws = flag.String("blockchain_ws", "wss://ws.testnet.taraxa.io", "ws url to connect to blockchain")
+	blockchain_ws = flag.String("blockchain_ws", "wss://ws.mainnet.taraxa.io", "ws url to connect to blockchain")
 	data_dir = flag.String("data_dir", "./data", "path to directory where indexer database will be saved")
 	log_level = flag.String("log_level", "info", "minimum log level. could be only [trace, debug, info, warn, error, fatal]")
 	sync_queue_limit = flag.Int("sync_queue_limit", 10, "limit of blocks in the sync queue")
@@ -105,6 +107,11 @@ func main() {
 	swagger.Servers = nil
 
 	e := echo.New()
+	e.Use(echomiddleware.OapiRequestValidator(swagger))
+	// Add http error handler to return a proper error JSON on request error
+	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
+		_ = ctx.JSON(http.StatusInternalServerError, map[string]any{"message": err.Error()})
+	}
 
 	c := common.DefaultConfig()
 	c.SyncQueueLimit = uint64(*sync_queue_limit)
