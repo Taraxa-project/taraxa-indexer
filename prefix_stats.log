@@ -1,0 +1,23 @@
+bytes=539711 count=1 db_prefix="b|" name=accounts
+bytes=4335908723453 count=22128355401 db_prefix="t|" name=transactions
+bytes=13 count=1 db_prefix="ts|" name=total_supply
+bytes=3493 count=308 db_prefix="ds|" name=day_stats
+bytes=44 count=4 db_prefix="ys|" name=yield_saving
+bytes=68 count=1 db_prefix="g|" name=genesis_hash
+bytes=10703 count=1529 db_prefix="my|" name=multiplied_yield
+bytes=574052084 count=7802 db_prefix="cu|" name=daily_contract_users
+bytes=4 count=1 db_prefix="l|" name=lambda
+bytes=17 count=1 db_prefix="f|" name=finalization_data
+bytes=476180 count=151 db_prefix="w|" name=week_stats
+bytes=9753 count=7 db_prefix="rs|" name=rewards_stats
+bytes=9093048161 count=324361171 db_prefix="e|" name=transaction_logs
+bytes=2345619 count=18798 db_prefix="p|" name=pbft
+bytes=11603194 count=142895 db_prefix="d|" name=dags
+bytes=236808791 count=3657960 db_prefix="s|" name=address_stats
+bytes=576083783818 count=1330974 db_prefix="i|" name=internal_transactions
+bytes=91400 count=11425 db_prefix="y|" name=yield
+bytes=3732097 count=1529 db_prefix="vy|" name=validators_yield
+bytes=1029 count=222 db_prefix="ma|" name=monthly_active_addresses
+
+
+total_bytes=4921915229632 total_count=22457890181

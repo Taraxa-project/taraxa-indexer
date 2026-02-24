@@ -256,6 +256,22 @@ func (s *Storage) ForEach(o any, address string, start *uint64, direction storag
 	s.forEach(iter, fn, navigate(direction))
 }
 
+// ForEachKeyAll iterates over all key/value pairs in the DB in key order.
+// This is intentionally prefix-agnostic and should be used sparingly (e.g. diagnostics/migrations).
+func (s *Storage) ForEachKeyAll(fn func(key, value []byte) (stop bool)) {
+	iter, err := s.db.NewIter(&pebble.IterOptions{})
+	if err != nil {
+		log.WithError(err).Fatal("NewIter failed")
+	}
+	defer func() { _ = iter.Close() }()
+
+	for iter.First(); iter.Valid(); iter.Next() {
+		if fn(iter.Key(), iter.Value()) {
+			return
+		}
+	}
+}
+
 func (s *Storage) addToDBTest(o any, key1 string, key2 uint64) error {
 	return s.addToDB(getKey(GetPrefix(o), key1, key2), o)
 }

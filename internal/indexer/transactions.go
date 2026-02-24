@@ -68,21 +68,19 @@ func (bc *blockContext) processTransaction(t_idx int) (err error) {
 		return
 	}
 	if len(bc.Block.Traces) > 0 {
-		if internal_transactions := bc.processInternalTransactions(t_idx); internal_transactions != nil {
-			bc.Batch.AddSingleKey(internal_transactions, trx.Hash)
-		}
+		bc.processInternalTransactions(t_idx)
 	}
 
 	return
 }
 
-func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transactions *models.InternalTransactionsResponse) {
+func (bc *blockContext) processInternalTransactions(t_idx int) {
 	trace := &bc.Block.Traces[t_idx]
 	trx := &bc.Block.Transactions[t_idx]
 	if len(trace.Trace) <= 1 {
-		return nil
+		return
 	}
-	internal_transactions = new(models.InternalTransactionsResponse)
+	internal_transactions := new(models.InternalTransactionsResponse)
 	internal_transactions.Data = make([]models.Transaction, 0, len(trace.Trace)-1)
 
 	for e_idx, entry := range trace.Trace {
@@ -92,12 +90,17 @@ func (bc *blockContext) processInternalTransactions(t_idx int) (internal_transac
 		internal := makeInternal(*trx.GetModel(), entry, trx.GasPrice)
 		internal_transactions.Data = append(internal_transactions.Data, internal)
 
+		if !common.IsTrxSignificant(&internal) {
+			continue
+		}
+
 		bc.SaveTransaction(internal, true)
 		if entry.Action.CallType != "delegatecall" {
 			bc.addressStats.UpdateBalances(bc.Storage, internal.From, internal.To, internal.Value)
 		}
 	}
-	return
+
+	// bc.Batch.AddSingleKey(internal_transactions, trx.Hash)
 }
 
 func makeInternal(trx models.Transaction, entry common.TraceEntry, gasCost uint64) (internal models.Transaction) {
@@ -126,7 +129,8 @@ func (bc *blockContext) SaveTransaction(trx models.Transaction, internal bool) {
 		bc.Batch.AddSerialized(trx, trx_bytes, trx.To, to_index)
 	}
 
-	if !internal {
-		bc.Batch.AddSerializedSingleKey(trx, trx_bytes, trx.Hash)
-	}
+	// Do not save transactions by hash
+	// if !internal {
+	// 	bc.Batch.AddSerializedSingleKey(trx, trx_bytes, trx.Hash)
+	// }
 }

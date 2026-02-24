@@ -26,6 +26,14 @@ func GetTypeName[T any]() string {
 	return strings.Split(tt.String(), ".")[1]
 }
 
+func GetObjectTypeName(obj any) string {
+	tt := reflect.TypeOf(obj)
+	if tt.Kind() == reflect.Pointer {
+		tt = tt.Elem()
+	}
+	return strings.Split(tt.String(), ".")[1]
+}
+
 type GenesisHash string
 
 type ValidatorYield struct {
