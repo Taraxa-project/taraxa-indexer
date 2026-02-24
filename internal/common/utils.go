@@ -17,6 +17,7 @@ import (
 )
 
 const DposContractAddress = "0x00000000000000000000000000000000000000fe"
+const FaucetAddress = "0x35307b7b24fb1473abb364f0c3dd3082b3730cd5"
 const Day = 24 * 60 * 60
 const Days30 = 30 * Day
 

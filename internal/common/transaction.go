@@ -39,6 +39,17 @@ func IsInternalTransaction(trx_type models.TransactionType) bool {
 	return trx_type >= models.InternalTransfer
 }
 
+func IsValueEmpty(value string) bool {
+	return value == "" || value == "0x" || value == "0" || value == "0x0"
+}
+
+func IsTrxSignificant(trx *models.Transaction) bool {
+	if IsValueEmpty(trx.Value) && (trx.Type == models.InternalTransfer || trx.Type == models.InternalContractCall) {
+		return false
+	}
+	return true
+}
+
 type EventLog struct {
 	Address          string   `json:"address"`
 	Data             string   `json:"data"`

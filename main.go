@@ -90,6 +90,12 @@ func main() {
 	setupCloseHandler(func() { _ = st.Close() })
 	fin := st.GetFinalizationData()
 
+	manager := migration.NewManager(st)
+	err := manager.ApplyAll()
+	if err != nil {
+		log.WithError(err).Fatal("Error applying migrations")
+	}
+
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		log.WithError(err).Fatal("Error loading swagger spec")
@@ -97,11 +103,6 @@ func main() {
 	client, err := connectToChain()
 	if err != nil {
 		log.WithError(err).Fatal("Error connecting to chain")
-	}
-	manager := migration.NewManager(st, client)
-	err = manager.ApplyAll()
-	if err != nil {
-		log.WithError(err).Fatal("Error applying migrations")
 	}
 
 	swagger.Servers = nil

@@ -16,7 +16,10 @@ func (bc *blockContext) processTransactionLogs(tx common.Transaction) (err error
 	logsResponse := models.TransactionLogsResponse{
 		Data: logs,
 	}
-	bc.Batch.AddSingleKey(logsResponse, tx.Hash)
+	// Save logs only for dpos contract
+	if tx.To == common.DposContractAddress {
+		bc.Batch.AddSingleKey(logsResponse, tx.Hash)
+	}
 	err = bc.addressStats.UpdateEvents(bc.Storage, logs)
 	if err != nil {
 		return err
