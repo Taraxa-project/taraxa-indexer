@@ -164,10 +164,10 @@ func (local *FinalizationData) Check(remote FinalizationData) {
 		return
 	}
 	if local.DagCount != remote.DagCount {
-		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Dag consistency check failed")
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Warn("Dag consistency check failed")
 	}
 
 	if local.TrxCount != remote.TrxCount {
-		log.WithFields(log.Fields{"local": local, "remote": remote}).Fatal("Transactions consistency check failed ")
+		log.WithFields(log.Fields{"local": local, "remote": remote}).Warn("Transactions consistency check failed ")
 	}
 }

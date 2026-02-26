@@ -155,6 +155,7 @@ func (bc *blockContext) process(bd *chain.BlockData, stats *chain.Stats, prevYie
 }
 
 func (bc *blockContext) SaveHoldersLeaderboard() {
+	log.Info("Saving holders")
 	accounts := storage.MakeAccountBalancesMap()
 	start := time.Now()
 	stats := storage.AddressStats{}
